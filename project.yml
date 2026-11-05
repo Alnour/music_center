@@ -1,0 +1,116 @@
+name: Scales
+options:
+  bundleIdPrefix: com.alnourkhalifa
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    # The Mac version is this app built for macOS (Mac Catalyst) and handed out as a
+    # download, outside the App Store (scripts/build_mac_dmg.sh).
+    SUPPORTS_MACCATALYST: YES
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: "858CYQVKF8"
+    ENABLE_USER_SCRIPT_SANDBOXING: true
+    SWIFT_EMIT_LOC_STRINGS: true
+targets:
+  Scales:
+    type: application
+    platform: iOS
+    sources:
+      - path: Scales
+        excludes:
+          - "**/.DS_Store"
+    info:
+      path: Scales/Info.plist
+      properties:
+        CFBundleDisplayName: Scales
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "3"
+        UILaunchScreen: {}
+        # Landscape is allowed so the full-screen board can fill the phone when mirroring.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        ITSAppUsesNonExemptEncryption: false
+        # Where Finder and Launchpad file the Mac version.
+        LSApplicationCategoryType: public.app-category.music
+        # The phone serves its board clips to the TV over Wi-Fi (see ClipServer).
+        NSLocalNetworkUsageDescription: "Scales sends the fretboard to your TV over your Wi-Fi network."
+        NSBonjourServices: [_airplay._tcp]
+        # Keeps the board playing on the TV (and the clip server answering it) while the
+        # phone is locked or another app is open, the way video apps keep AirPlay going.
+        UIBackgroundModes: [audio]
+        # Multiple scenes let iOS hand the app a second, TV-only scene when AirPlay
+        # screen mirroring connects (Roku, Apple TV, AirPlay smart TVs).
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          # Declared statically: iOS only offers the external screen to apps that list a
+          # scene for it here. The phone scene is left to SwiftUI.
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleExternalDisplayNonInteractive:
+              - UISceneConfigurationName: TV
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).TVSceneDelegate
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alnourkhalifa.Scales
+        # The Mac copy gets its own id, so it never touches the App Store record of the
+        # iPhone and iPad app (Mac Catalyst builds against the macOS SDK).
+        "PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]": maccatalyst.com.alnourkhalifa.Scales
+        # iPhone and iPad. Set explicitly so the target and project-level values agree;
+        # the store needs iPad screenshots for review.
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+      configs:
+        # Apple only notarizes Mac apps built with the hardened runtime. Release only, so
+        # debug builds can still load the unit tests into the app.
+        Release:
+          ENABLE_HARDENED_RUNTIME: YES
+  ScalesTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ScalesTests
+    dependencies:
+      - target: Scales
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alnourkhalifa.ScalesTests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Scales.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Scales"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: true
+  ScalesUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: ScalesUITests
+    dependencies:
+      - target: Scales
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alnourkhalifa.ScalesUITests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: Scales
+schemes:
+  Scales:
+    build:
+      targets:
+        Scales: all
+        ScalesTests: [test]
+        ScalesUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ScalesTests
+        - ScalesUITests

@@ -1,0 +1,81 @@
+import XCTest
+
+/// Walks the app through the states shown on the App Store page and keeps a screenshot
+/// of each. Run alone on an iPhone 17 Pro simulator for the 6.3-inch size (1206x2622),
+/// and on an iPad Pro 13-inch simulator for the 13-inch iPad size (2064x2752):
+///   make screenshots
+///   make screenshots-ipad
+final class StoreScreenshots: XCTestCase {
+    private var app: XCUIApplication!
+
+    override func setUp() async throws {
+        continueAfterFailure = false
+        app = await XCUIApplication()
+        await app.launch()
+    }
+
+    @MainActor
+    func testCaptureStoreScreenshots() throws {
+        // 1. G major across the neck, the state the app ships in. The settings survive
+        //    between launches, so they are chosen explicitly rather than assumed fresh.
+        XCUIDevice.shared.orientation = .portrait
+        app.menuButton(labelled: "Root").tap()
+        app.buttons["G"].firstMatch.tap()
+        app.menuButton(labelled: "Scale").tap()
+        app.buttons["Major"].firstMatch.tap()
+        app.buttons["Notes"].tap()
+        XCTAssertTrue(app.navigationBars["G Major"].waitForExistence(timeout: 5))
+        keep("01-g-major")
+
+        // 2. A different key and scale, picked the way a player would.
+        app.menuButton(labelled: "Root").tap()
+        app.buttons["A"].firstMatch.tap()
+        app.menuButton(labelled: "Scale").tap()
+        app.buttons["Minor Pentatonic"].tap()
+        XCTAssertTrue(app.navigationBars["A Minor Pentatonic"].waitForExistence(timeout: 3))
+        keep("02-a-minor-pentatonic")
+
+        // 3. Scale degrees instead of note names, on a blues scale.
+        app.buttons["Degrees"].tap()
+        app.menuButton(labelled: "Root").tap()
+        app.buttons["E"].firstMatch.tap()
+        app.menuButton(labelled: "Scale").tap()
+        app.buttons["Blues"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["E Blues"].waitForExistence(timeout: 3))
+        keep("03-e-blues-degrees")
+
+        // 4. The TV layout filling the screen, the picture the TV shows. The iPhone turns
+        //    itself for it; iPadOS never rotates an app, so the iPad is turned by hand
+        //    the way a player would.
+        app.swipeUp()
+        app.swipeUp()
+        let fullScreenButton = app.buttons["Full-screen board"]
+        XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 3))
+        if app.isPad {
+            XCUIDevice.shared.orientation = .landscapeLeft
+        }
+        fullScreenButton.tap()
+        let closeButton = app.buttons["Close"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 3))
+        sleep(1)
+        keep("04-tv-board-landscape")
+        closeButton.tap()
+        // The board locks the phone to landscape; turn it back before the next screen.
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 3))
+        sleep(1)
+
+        // 5. The chord tables for every key.
+        app.openTab("Chords")
+        XCTAssertTrue(app.staticTexts["C major"].waitForExistence(timeout: 3))
+        keep("05-chord-tables")
+    }
+
+    @MainActor
+    private func keep(_ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}

@@ -1,0 +1,54 @@
+/// Common six-string tunings.
+enum Tuning: String, CaseIterable, Codable, Identifiable, Sendable {
+    case standard
+    case halfStepDown
+    case dropD
+    case dadgad
+    case openG
+    case openD
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .standard: "Standard (E A D G B E)"
+        case .halfStepDown: "Half Step Down (E♭ A♭ D♭ G♭ B♭ E♭)"
+        case .dropD: "Drop D (D A D G B E)"
+        case .dadgad: "DADGAD"
+        case .openG: "Open G (D G D G B D)"
+        case .openD: "Open D (D A D F♯ A D)"
+        }
+    }
+
+    var shortName: String {
+        switch self {
+        case .standard: "Standard tuning"
+        case .halfStepDown: "Half step down"
+        case .dropD: "Drop D"
+        case .dadgad: "DADGAD"
+        case .openG: "Open G"
+        case .openD: "Open D"
+        }
+    }
+
+    /// Open-string notes from the thickest (6th) string to the thinnest (1st).
+    var openStrings: [NoteName] {
+        switch self {
+        case .standard:
+            [NoteName(.e), NoteName(.a), NoteName(.d), NoteName(.g), NoteName(.b), NoteName(.e)]
+        case .halfStepDown:
+            [
+                NoteName(.e, -1), NoteName(.a, -1), NoteName(.d, -1),
+                NoteName(.g, -1), NoteName(.b, -1), NoteName(.e, -1),
+            ]
+        case .dropD:
+            [NoteName(.d), NoteName(.a), NoteName(.d), NoteName(.g), NoteName(.b), NoteName(.e)]
+        case .dadgad:
+            [NoteName(.d), NoteName(.a), NoteName(.d), NoteName(.g), NoteName(.a), NoteName(.d)]
+        case .openG:
+            [NoteName(.d), NoteName(.g), NoteName(.d), NoteName(.g), NoteName(.b), NoteName(.d)]
+        case .openD:
+            [NoteName(.d), NoteName(.a), NoteName(.d), NoteName(.f, 1), NoteName(.a), NoteName(.d)]
+        }
+    }
+}
