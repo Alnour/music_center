@@ -126,7 +126,7 @@ struct ChordChangeReport: Sendable {
         }
         let reason: String
         if missing.isEmpty {
-            reason = "its notes no longer stack into a major, minor, diminished or augmented chord"
+            reason = "its notes no longer stack into a chord with a name"
         } else {
             let verb = missing.count == 1 ? "is" : "are"
             reason = "it needed \(list(missing)), which \(verb) no longer in the scale"

@@ -303,6 +303,40 @@ struct CustomScaleSettingsTests {
         #expect(session.scale.title == "G Dorian", "falls back to the built-in chosen before")
     }
 
+    @Test func settingsSavedBeforeTheKeyboardDefaultToTheGuitar() throws {
+        let savedByTheFirstRelease = """
+            {"root":{"letter":4,"accidental":0},"scaleType":"dorian","tuning":"standard",
+            "fretCount":15,"labelStyle":"noteNames","isLeftHanded":false,
+            "thinStringOnTop":true,"tvUsesDarkTheme":true}
+            """
+        let settings = try JSONDecoder().decode(
+            PracticeSettings.self,
+            from: Data(savedByTheFirstRelease.utf8)
+        )
+        #expect(settings.instrument == nil)
+        #expect(settings.selectedInstrument == .guitar)
+    }
+
+    @Test func guitarSettingsAreSavedWithoutAnInstrumentKey() throws {
+        var settings = PracticeSettings()
+        settings.selectedInstrument = .keyboard
+        settings.selectedInstrument = .guitar
+        #expect(settings == PracticeSettings(), "choosing the guitar again stores nil")
+        let data = try JSONEncoder().encode(settings)
+        let text = try #require(String(data: data, encoding: .utf8))
+        #expect(!text.contains("instrument"))
+        #expect(!text.contains("keyboardOctaves"))
+    }
+
+    @Test func theKeyboardGetsItsOwnTVClip() {
+        var keyboard = PracticeSettings()
+        keyboard.selectedInstrument = .keyboard
+
+        #expect(keyboard.instrument == .keyboard)
+        #expect(ClipCache.key(for: keyboard) != ClipCache.key(for: PracticeSettings()))
+        #expect(ClipCache.bundledShortClip(for: keyboard) == nil)
+    }
+
     @Test func aCustomScaleGetsItsOwnTVClip() {
         let definition = ScaleDefinition(
             name: "Augmented Major",

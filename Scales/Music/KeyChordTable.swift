@@ -17,22 +17,23 @@ struct KeyChordRow: Identifiable, Sendable {
     }
 }
 
-/// The major and minor key tables, laid out around the circle of fifths.
+/// The major and minor key tables, one row per key, sorted by key name.
 ///
-/// Rows follow the circle (each key one sharp more, or one flat fewer, than the last),
-/// the order musicians learn keys in, and each minor key sits in the same row position as
-/// its relative major (A minor beside C major, E minor beside G major, and so on).
+/// Rows run alphabetically from A to G so a player can find a key by name at a glance;
+/// within a letter the flat comes first, then the natural, then the sharp (A♭, A, A♯),
+/// which is also their order in pitch. The twelve keys are the ones with the usual
+/// spelling (D♭ major rather than C♯ major, G♯ minor rather than A♭ minor).
 enum KeyChordTable {
     static let majorKeyRoots: [NoteName] = [
-        NoteName(.c), NoteName(.g), NoteName(.d), NoteName(.a), NoteName(.e), NoteName(.b),
-        NoteName(.f, 1), NoteName(.d, -1), NoteName(.a, -1), NoteName(.e, -1), NoteName(.b, -1),
-        NoteName(.f),
+        NoteName(.a, -1), NoteName(.a), NoteName(.b, -1), NoteName(.b), NoteName(.c),
+        NoteName(.d, -1), NoteName(.d), NoteName(.e, -1), NoteName(.e), NoteName(.f),
+        NoteName(.f, 1), NoteName(.g),
     ]
 
     static let minorKeyRoots: [NoteName] = [
-        NoteName(.a), NoteName(.e), NoteName(.b), NoteName(.f, 1), NoteName(.c, 1),
-        NoteName(.g, 1), NoteName(.d, 1), NoteName(.b, -1), NoteName(.f), NoteName(.c),
-        NoteName(.g), NoteName(.d),
+        NoteName(.a), NoteName(.b, -1), NoteName(.b), NoteName(.c), NoteName(.c, 1),
+        NoteName(.d), NoteName(.d, 1), NoteName(.e), NoteName(.f), NoteName(.f, 1),
+        NoteName(.g), NoteName(.g, 1),
     ]
 
     static func majorRows() -> [KeyChordRow] {

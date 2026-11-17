@@ -18,6 +18,11 @@ struct FretboardPalette: Sendable {
     let inlay: Color
     let title: Color
     let secondaryText: Color
+    /// Piano keys outside the scale keep their natural colours; keys in the scale take
+    /// `toneFill` or `rootFill`, the same colours as the fretboard circles.
+    let whiteKey: Color
+    let blackKey: Color
+    let keyOutline: Color
 
     static let light = FretboardPalette(
         background: Color(hex: 0xFFFFFF),
@@ -31,7 +36,10 @@ struct FretboardPalette: Sendable {
         fretNumber: Color(hex: 0x5F6472),
         inlay: Color(hex: 0x2B2E36),
         title: Color(hex: 0x1C2440),
-        secondaryText: Color(hex: 0x5B6275)
+        secondaryText: Color(hex: 0x5B6275),
+        whiteKey: Color(hex: 0xFAFAF7),
+        blackKey: Color(hex: 0x2B2E36),
+        keyOutline: Color(hex: 0x8A8F9C)
     )
 
     static let dark = FretboardPalette(
@@ -46,7 +54,10 @@ struct FretboardPalette: Sendable {
         fretNumber: Color(hex: 0x9AA1B2),
         inlay: Color(hex: 0x9AA1B2),
         title: Color(hex: 0xF2F4F8),
-        secondaryText: Color(hex: 0x9AA1B2)
+        secondaryText: Color(hex: 0x9AA1B2),
+        whiteKey: Color(hex: 0xE4E7EE),
+        blackKey: Color(hex: 0x1C2029),
+        keyOutline: Color(hex: 0x4A5162)
     )
 
     static func matching(_ colorScheme: ColorScheme) -> FretboardPalette {

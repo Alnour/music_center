@@ -1,7 +1,8 @@
 # Scales
 
-SwiftUI iOS app (iOS 26+, Swift 6) that draws any scale across the guitar neck and shows it
-full-screen on a TV through AirPlay screen mirroring (Roku, Apple TV, AirPlay smart TVs).
+SwiftUI iOS app (iOS 26+, Swift 6) that draws any scale across the guitar neck, or on one
+piano keyboard (two octaves by default) when the player picks Keyboard, and shows it full-screen on a TV through AirPlay
+screen mirroring (Roku, Apple TV, AirPlay smart TVs).
 The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml, never the
 `.xcodeproj` (git-ignored).
 
@@ -15,14 +16,41 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   so nothing is registered with the developer account. The Mac copy's bundle id is
   `maccatalyst.com.alnourkhalifa.Scales` (`PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]`; Xcode 27
   rejects `DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER`), so the App Store record is untouched.
+  `make install-mac` (`scripts/install_mac.sh`) builds a Release copy signed for this Mac
+  only and replaces `/Applications/Scales.app`, quitting a running copy first; run it after
+  each release to update the Mac in hand.
   `scripts/build_mac_dmg.sh` makes `DerivedData/MacRelease/Scales-<version>.dmg`; it needs a
   Developer ID Application certificate (`--local-test` signs for this Mac only), and Release
   builds use the hardened runtime that notarization requires. `scripts/notarize_mac_dmg.sh`
   uploads it to Apple's notary service and staples it; like the store script, the owner runs it.
   `DeviceKind` names the device (phone, iPad, Mac); the Mac skips the mirroring-detected
   fallback to the full-screen board.
+- Instrument (Display section of the Scales tab): `Instrument` is guitar or keyboard.
+  `KeyboardLayout` (C to a closing C, 13 keys per octave plus one; one or two octaves) and
+  `KeyboardView` mirror `FretboardLayout` and `FretboardView`; `TVDisplayView` and
+  `ContentView` switch on `PracticeSettings.selectedInstrument`. The stored fields
+  `instrument` and `keyboardOctaves` are optional and nil for the defaults (guitar, two
+  octaves), so old settings still load, a guitar player's saved JSON and TV clip key are
+  unchanged, and default settings still equal `PracticeSettings()` for the prebuilt clip.
+  Scale keys carry a circle (labels as on the fretboard) and the note name on the key
+  unless the circles already show names. Frets, tuning and string options are hidden while
+  Keyboard is chosen; the Octaves picker is hidden for the guitar.
 - Layout: `Scales/Music` is pure theory (spelling, formulas, tunings, fret positions) with no UI;
   `Scales/Session` holds the saved settings shared by both screens; `Scales/Views` draws them.
+- Chords on the Scales screen (`ScaleChordsRow`): the scale's `letterTriads()` as chips
+  under the board, all on one screen with the notes row, the board and a single row holding
+  the Root and Scale menus plus `CompactScaleEditMenu` (nested menus; the Transform tab
+  keeps the row-per-note `ScaleEditMenus`) to change one note in place. Tapping a chip
+  rings the chord's notes on the board, the notes row, the TV scene and the full-screen
+  board (`PracticeSession.ringedChord`, this run only; `ringedNotes` is empty once the
+  scale lacks one of the notes; `ChordRing` draws the ring). The cast AirPlay clip is keyed
+  by settings and does not carry the rings. `PracticeSession.transform` saves the change as a lesson (a new scale is kept
+  under its working name, "Major ♭7"), puts the result on the board and keeps a
+  `BoardChange` for this run only; `currentBoardChange` is nil once the player picks another
+  scale or key. The chips then mark each chord that used the note ("was D", new note in
+  green, lost chords crossed out) and a Back button restores the starting scale. The
+  Display and TV sections hide behind the toolbar button (`showsControls`,
+  `@AppStorage`) so the board and chords get the screen.
 - Transform tab (`TransformView`): the player changes one note of a scale (lower, raise,
   remove or add) and a lesson explains what each chord becomes. Scales are `ScaleDefinition`s
   (name + degrees); chords are stacked by letter (`Scale.letterTriads`) so any scale size

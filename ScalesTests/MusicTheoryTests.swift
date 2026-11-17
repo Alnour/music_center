@@ -339,11 +339,31 @@ struct DiatonicChordTests {
         let minors = KeyChordTable.minorRows()
         #expect(majors.count == 12)
         #expect(minors.count == 12)
-        for (major, minor) in zip(majors, minors) {
-            #expect(major.key.keySignature == minor.key.keySignature, "\(major.id) vs \(minor.id)")
+        var majorSignatures: Set<String> = []
+        for major in majors {
+            majorSignatures.insert(major.key.keySignature)
             #expect(major.chords.count == 7)
+        }
+        var minorSignatures: Set<String> = []
+        for minor in minors {
+            minorSignatures.insert(minor.key.keySignature)
             #expect(minor.chords.count == 7)
         }
+        #expect(majorSignatures.count == 12)
+        #expect(majorSignatures == minorSignatures)
+    }
+
+    @Test func tableRowsAreSortedByKeyName() {
+        var majorNames: [String] = []
+        for row in KeyChordTable.majorRows() {
+            majorNames.append(row.key.root.displayName)
+        }
+        #expect(majorNames == ["A♭", "A", "B♭", "B", "C", "D♭", "D", "E♭", "E", "F", "F♯", "G"])
+        var minorNames: [String] = []
+        for row in KeyChordTable.minorRows() {
+            minorNames.append(row.key.root.displayName)
+        }
+        #expect(minorNames == ["A", "B♭", "B", "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯"])
     }
 
     @Test func keySignatures() {

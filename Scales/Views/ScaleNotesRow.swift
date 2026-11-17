@@ -2,7 +2,8 @@ import SwiftUI
 
 /// The scale spelled out as a row of chips, each with its degree underneath,
 /// so the player can read the formula (1 2 ♭3 …) as well as the note names.
-/// A lesson rings the notes it is about: the one that was changed, and what it became.
+/// A lesson rings the notes it is about: the one that was changed, and what it became;
+/// the Scales screen rings the notes of the chord the player picked.
 struct ScaleNotesRow: View {
     let scale: Scale
     let palette: FretboardPalette
@@ -22,7 +23,7 @@ struct ScaleNotesRow: View {
                         )
                         .overlay {
                             if highlightedNotes.contains(tone.name) {
-                                Circle().strokeBorder(Color.orange, lineWidth: noteSize * 0.18)
+                                Circle().strokeBorder(ChordRing.color, lineWidth: noteSize * 0.18)
                             }
                         }
                     Text(tone.degree.label)

@@ -25,6 +25,39 @@ final class PracticeSession {
     /// Sends the board to a TV as AirPlay video when the player picks one in the app.
     let caster = AirPlayCaster()
 
+    /// The last note change made from the Scales screen. Kept only for this run, so the
+    /// chords under the board can show what the change did until the player picks another
+    /// scale or key (see `currentBoardChange`).
+    var boardChange: BoardChange?
+
+    /// The chord whose notes are ringed on the board, picked from the chords under it.
+    /// Kept for this run only; `ringedNotes` ignores it once the scale no longer holds
+    /// all its notes, so the rings vanish with the chord instead of pointing at nothing.
+    var ringedChord: ScaleChord?
+
+    /// The notes to ring on the board: the picked chord's notes, while every one of them
+    /// is in the scale as spelled now.
+    var ringedNotes: Set<NoteName> {
+        guard let ringedChord else { return [] }
+        var scaleNotes = Set<NoteName>()
+        for tone in scale.tones {
+            scaleNotes.insert(tone.name)
+        }
+        let chordNotes = Set(ringedChord.notes)
+        guard chordNotes.isSubset(of: scaleNotes) else { return [] }
+        return chordNotes
+    }
+
+    /// Rings a chord's notes on the board, or clears the rings when the same chord is
+    /// picked again.
+    func toggleRing(for chord: ScaleChord) {
+        if ringedChord == chord {
+            ringedChord = nil
+        } else {
+            ringedChord = chord
+        }
+    }
+
     var tvStatus: TVStatus {
         if isTVConnected { return .showingBoard }
         if let error = caster.playbackError { return .castFailed(reason: error) }
@@ -65,6 +98,51 @@ final class PracticeSession {
         settings = updated
     }
 
+    /// The last board change while the board still shows its result; nil once the player
+    /// has moved on to another scale or key, when there is nothing left to compare against.
+    var currentBoardChange: BoardChange? {
+        guard let boardChange else { return nil }
+        guard boardChange.after == settings.scaleReference else { return nil }
+        guard boardChange.transformation.root == settings.root else { return nil }
+        return boardChange
+    }
+
+    /// Changes one note of the scale on the board and puts the result on the board.
+    ///
+    /// The change is kept as a lesson so the Transform screen can explain it later. A result
+    /// the app knows takes that scale's name; a new one is saved to My Scales under its
+    /// working name ("Major ♭7"), which the player can rename there. An edit the scale
+    /// does not allow (the menus only offer legal ones) changes nothing.
+    ///
+    /// - Throws: `couldNotSave` when the library file can't be written.
+    func transform(_ edit: ScaleEdit, from library: ScaleLibrary) throws(ScaleLibraryError) {
+        guard
+            let transformation = try? ScaleTransformation(
+                root: settings.root,
+                before: settings.scaleDefinition,
+                edit: edit
+            )
+        else { return }
+        let lesson = try library.saveLesson(
+            transformation,
+            newScaleName: transformation.after.name
+        )
+        let before = settings.scaleReference
+        choose(lesson.result, from: library)
+        boardChange = BoardChange(
+            transformation: lesson.transformation,
+            before: before,
+            after: lesson.result
+        )
+    }
+
+    /// Puts back the scale the last board change started from. The lesson it made stays.
+    func revertBoardChange(from library: ScaleLibrary) {
+        guard let change = currentBoardChange else { return }
+        choose(change.before, from: library)
+        boardChange = nil
+    }
+
     /// Keeps the board's copy of a saved scale in step with the library: a renamed scale
     /// takes its new name, and a deleted one gives way to the built-in scale chosen before.
     func refreshCustomScale(from library: ScaleLibrary) {
@@ -82,6 +160,10 @@ final class PracticeSession {
         FretboardLayout(scale: scale, tuning: settings.tuning, fretCount: settings.fretCount)
     }
 
+    var keyboardLayout: KeyboardLayout {
+        KeyboardLayout(scale: scale, octaveCount: settings.selectedKeyboardOctaves)
+    }
+
     private func save() {
         guard let data = try? JSONEncoder().encode(settings) else { return }
         defaults.set(data, forKey: Self.settingsKey)
@@ -93,6 +175,15 @@ final class PracticeSession {
         let decoded = try? JSONDecoder().decode(PracticeSettings.self, from: data)
         return decoded ?? PracticeSettings()
     }
+}
+
+/// One note change made to the scale on the board, with where it started and ended.
+struct BoardChange: Equatable, Sendable {
+    let transformation: ScaleTransformation
+    /// The scale on the board before the change, to go back to.
+    let before: ScaleReference
+    /// The scale the change produced, which the board shows now.
+    let after: ScaleReference
 }
 
 /// What the TV is showing, as far as the app can tell.

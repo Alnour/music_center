@@ -6,27 +6,6 @@ private struct PendingLesson: Identifiable {
     let transformation: ScaleTransformation
 }
 
-/// The changes a scale allows, sorted once into the menus that offer them: one list per
-/// note (lower, raise, remove) and one list of notes that could be added.
-private struct EditChoices {
-    private var editsByDegree: [ScaleDegree: [ScaleEdit]] = [:]
-    private(set) var additions: [ScaleEdit] = []
-
-    init(_ definition: ScaleDefinition) {
-        for edit in definition.legalEdits() {
-            if case .add = edit {
-                additions.append(edit)
-            } else {
-                editsByDegree[edit.degree, default: []].append(edit)
-            }
-        }
-    }
-
-    func edits(for degree: ScaleDegree) -> [ScaleEdit] {
-        editsByDegree[degree] ?? []
-    }
-}
-
 /// The Transform tab: pick a scale, change one note, and read what that does to the chords.
 ///
 /// It starts on the scale shown on the Scales screen and follows it whenever it changes
@@ -113,24 +92,10 @@ struct TransformView: View {
     }
 
     private func changeSection(_ startScale: Scale) -> some View {
-        let choices = EditChoices(startScale.definition)
-        return Section {
-            ForEach(startScale.tones, id: \.self) { tone in
-                if !tone.isRoot {
-                    noteMenu(for: tone, edits: choices.edits(for: tone.degree))
-                }
+        Section {
+            ScaleEditMenus(scale: startScale) { edit in
+                begin(edit, from: startScale.definition)
             }
-            Menu {
-                ForEach(choices.additions, id: \.self) { edit in
-                    Button(menuTitle(for: edit)) {
-                        begin(edit, from: startScale.definition)
-                    }
-                }
-            } label: {
-                Label("Add a note", systemImage: "plus.circle")
-            }
-            .disabled(choices.additions.isEmpty)
-            .accessibilityIdentifier("addNote")
         } header: {
             Text("Change one note")
         } footer: {
@@ -139,31 +104,6 @@ struct TransformView: View {
                     + "every chord, and names the new scale."
             )
         }
-    }
-
-    private func noteMenu(for tone: ScaleTone, edits: [ScaleEdit]) -> some View {
-        Menu {
-            ForEach(edits, id: \.self) { edit in
-                Button(menuTitle(for: edit)) {
-                    begin(edit, from: definition(for: start))
-                }
-            }
-        } label: {
-            HStack {
-                Text(tone.name.displayName)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
-                Text(tone.degree.label)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Image(systemName: "chevron.up.chevron.down")
-                    .foregroundStyle(.secondary)
-            }
-            .contentShape(Rectangle())
-        }
-        .disabled(edits.isEmpty)
-        .accessibilityLabel("Change \(tone.name.displayName), the \(tone.degree.label)")
-        .accessibilityIdentifier("editNote-\(tone.degree.label)")
     }
 
     private var myScalesSection: some View {
@@ -263,23 +203,6 @@ struct TransformView: View {
             return type.definition
         case .custom(let id):
             return library.scale(id: id)?.definition ?? ScaleType.major.definition
-        }
-    }
-
-    /// "Lower to F (♭7)", "Raise to G♯ (♯4)", "Remove F♯", "Add D♭ (♭2)".
-    private func menuTitle(for edit: ScaleEdit) -> String {
-        let note = Scale.spell(edit.degree, above: root).displayName
-        guard let result = edit.resultingDegree else {
-            return "Remove \(note)"
-        }
-        let newNote = Scale.spell(result, above: root).displayName
-        switch edit {
-        case .lower:
-            return "Lower to \(newNote) (\(result.label))"
-        case .raise:
-            return "Raise to \(newNote) (\(result.label))"
-        case .add, .remove:
-            return "Add \(newNote) (\(result.label))"
         }
     }
 

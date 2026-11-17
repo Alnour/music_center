@@ -8,6 +8,7 @@ final class ScalesUITests: XCTestCase {
         continueAfterFailure = false
         app = await XCUIApplication()
         await app.launch()
+        await app.showControlsIfHidden()
     }
 
     @MainActor
@@ -21,11 +22,55 @@ final class ScalesUITests: XCTestCase {
         attachScreenshot(named: "A minor pentatonic on the phone")
     }
 
+    /// The keyboard replaces the fretboard and hides the guitar-only options. The choice is
+    /// saved between launches, so the test puts the guitar back for the other tests.
+    @MainActor
+    func testChoosingTheKeyboardShowsAnOctave() throws {
+        let guitarChoice = app.buttons["Guitar"]
+        XCTAssertTrue(app.scrollUntilVisible(guitarChoice))
+        guitarChoice.tap()
+        let tuningRow = app.menuButton(labelled: "Tuning")
+        XCTAssertTrue(app.scrollUntilVisible(tuningRow), "guitar options start visible")
+        app.buttons["Keyboard"].tap()
+        XCTAssertFalse(tuningRow.exists, "tuning means nothing on a piano")
+
+        // The board sits above the chords and the display options, so scroll back up to it.
+        app.swipeDown()
+        let keyboard = app.otherElements.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Keyboard showing")
+        ).firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 3), "the octave replaces the fretboard")
+        attachScreenshot(named: "The scale on two octaves")
+
+        let chips = app.scrollViews["boardChords"]
+        XCTAssertTrue(app.scrollUntilVisible(chips), "the chords sit under the keyboard")
+        let firstChip = chips.buttons.firstMatch
+        firstChip.tap()
+        XCTAssertTrue(firstChip.isSelected, "the picked chord is marked on the keyboard too")
+        app.swipeDown()
+        attachScreenshot(named: "A chord ringed on the keyboard")
+        XCTAssertTrue(app.scrollUntilVisible(chips))
+        firstChip.tap()
+        XCTAssertFalse(firstChip.isSelected, "picking it again clears the keyboard rings")
+        app.swipeDown()
+
+        let oneOctave = app.buttons["1 octave"]
+        XCTAssertTrue(app.scrollUntilVisible(oneOctave), "the keyboard offers one octave")
+        oneOctave.tap()
+        app.swipeDown()
+        attachScreenshot(named: "The scale on one octave")
+        XCTAssertTrue(app.scrollUntilVisible(app.buttons["2 octaves"]))
+        app.buttons["2 octaves"].tap()
+
+        XCTAssertTrue(app.scrollUntilVisible(guitarChoice))
+        guitarChoice.tap()
+        XCTAssertTrue(app.scrollUntilVisible(tuningRow), "guitar options return")
+    }
+
     @MainActor
     func testFullScreenBoardOpensInLandscapeAndCloses() throws {
         let fullScreenButton = app.buttons["Full-screen board"]
-        app.swipeUp()
-        XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.scrollUntilVisible(fullScreenButton))
         fullScreenButton.tap()
 
         let closeButton = app.buttons["Close"]
@@ -58,12 +103,24 @@ final class ScalesUITests: XCTestCase {
 
     @MainActor
     func testTVSectionOffersAirPlayAndStatus() throws {
-        app.swipeUp()
-        app.swipeUp()
         let airPlayButton = app.buttons["AirPlay"]
-        XCTAssertTrue(airPlayButton.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.scrollUntilVisible(airPlayButton))
         XCTAssertTrue(app.staticTexts["Not mirroring"].exists)
         attachScreenshot(named: "TV section")
+    }
+
+    @MainActor
+    func testDrumsTabPlaysAndPausesTheGroove() throws {
+        app.openTab("Drums")
+        let playButton = app.buttons["Play"]
+        XCTAssertTrue(playButton.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["tempoLabel"].exists)
+        playButton.tap()
+        let pauseButton = app.buttons["Pause"]
+        XCTAssertTrue(pauseButton.waitForExistence(timeout: 3))
+        attachScreenshot(named: "Drum trainer playing")
+        pauseButton.tap()
+        XCTAssertTrue(playButton.waitForExistence(timeout: 3))
     }
 
     @MainActor
@@ -78,6 +135,57 @@ final class ScalesUITests: XCTestCase {
         app.buttons["Major keys"].tap()
         XCTAssertTrue(app.staticTexts["C major"].waitForExistence(timeout: 3))
         attachScreenshot(named: "Major key chords")
+    }
+
+    /// The Scales screen shows the chords under the board, hides its controls on request,
+    /// and changes one note in place: the chords that used it change with it.
+    @MainActor
+    func testScalesScreenHidesControlsAndChangesANote() throws {
+        let rootMenu = app.menuButton(labelled: "Root")
+        rootMenu.tap()
+        app.buttons["G"].firstMatch.tap()
+        app.menuButton(labelled: "Scale").tap()
+        app.buttons["Major"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["G Major"].waitForExistence(timeout: 3))
+
+        app.buttons["toggleControls"].tap()
+        XCTAssertTrue(app.buttons["Notes"].waitForNonExistence(timeout: 3), "the controls are hidden")
+        attachScreenshot(named: "Board and chords without controls")
+
+        let dominantChip = app.buttons["V, D major: D, F♯, A"]
+        XCTAssertTrue(dominantChip.waitForExistence(timeout: 3), "the chords are listed")
+        dominantChip.tap()
+        XCTAssertTrue(dominantChip.isSelected, "the picked chord is marked")
+        attachScreenshot(named: "The V chord ringed on the board")
+        dominantChip.tap()
+        XCTAssertFalse(dominantChip.isSelected, "picking it again clears the rings")
+
+        app.buttons["changeBoardNote"].tap()
+        let seventh = app.descendants(matching: .any)["F♯ (7)"]
+        XCTAssertTrue(seventh.waitForExistence(timeout: 3), "the menu lists the seventh")
+        seventh.tap()
+        let lowering = app.descendants(matching: .any)["Lower to F (♭7)"]
+        XCTAssertTrue(lowering.waitForExistence(timeout: 3), "the seventh can be lowered")
+        lowering.tap()
+        XCTAssertTrue(app.navigationBars["G Mixolydian"].waitForExistence(timeout: 3))
+        let dominant = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS %@", "D minor: D, F, A. Was D major")
+        ).firstMatch
+        XCTAssertTrue(dominant.waitForExistence(timeout: 3), "the V chord shows what it was")
+        attachScreenshot(named: "Chords after lowering the seventh")
+
+        app.buttons["revertBoardChange"].tap()
+        XCTAssertTrue(app.navigationBars["G Major"].waitForExistence(timeout: 3))
+        app.buttons["toggleControls"].tap()
+        XCTAssertTrue(app.scrollUntilVisible(app.buttons["Notes"]), "the controls are back")
+
+        // The change was kept as a lesson; remove it so the library is as it was.
+        app.openTab("Transform")
+        let lessonRow = app.staticTexts["G Major → G Mixolydian"].firstMatch
+        XCTAssertTrue(app.scrollUntilVisible(lessonRow), "the board change is a lesson")
+        lessonRow.swipeLeft()
+        app.buttons["Delete"].firstMatch.tap()
+        XCTAssertTrue(lessonRow.waitForNonExistence(timeout: 3))
     }
 
     @MainActor
@@ -96,7 +204,7 @@ final class ScalesUITests: XCTestCase {
         attachScreenshot(named: "Chord changes for a flat seventh")
         app.buttons["saveLessonButton"].tap()
 
-        let lessonRow = app.staticTexts["G Major → G Mixolydian"]
+        let lessonRow = app.staticTexts["G Major → G Mixolydian"].firstMatch
         XCTAssertTrue(app.scrollUntilVisible(lessonRow), "the saved lesson is listed")
         attachScreenshot(named: "Saved lesson in the list")
         lessonRow.swipeLeft()

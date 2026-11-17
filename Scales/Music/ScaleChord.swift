@@ -3,7 +3,8 @@ struct ScaleChord: Hashable, Sendable {
     /// The degree the chord is built on.
     let degree: ScaleDegree
     let triad: Triad
-    /// Root, third and fifth, spelled as the scale spells them.
+    /// Root, middle note (the third, or the fourth or second of a suspended chord) and
+    /// fifth, spelled as the scale spells them.
     let notes: [NoteName]
     /// The numeral counted from the scale's own steps, as key tables print it: the chord
     /// on C in A minor is III.
@@ -40,8 +41,12 @@ extension Scale {
     /// The chords this scale makes from its own notes, for a scale of any size.
     ///
     /// A chord is stacked by letter: on a tone, take the scale's tone two letters up (its
-    /// third) and four letters up (its fifth). When the scale has no tone on one of those
-    /// letters, or the three notes are not one of the four triads, that tone has no chord.
+    /// third) and four letters up (its fifth). An altered third or fifth is still a chord
+    /// with a chart name (C(♭5), Cm(♯5)), so an edit that moves one note renames the chord
+    /// rather than losing it. When the scale has no tone on the third's letter, the fourth
+    /// stands in for it, then the second (Csus4, Csus2), which is how players voice a chord
+    /// in a scale that skips the third. When neither the fifth nor a middle note is there,
+    /// or the three notes have no chart name, that tone has no chord.
     /// This is the textbook rule for seven-note scales, and it also shows what happens
     /// when a note is removed (chords that needed it disappear) or added (new ones form).
     ///
@@ -58,39 +63,56 @@ extension Scale {
         return chords
     }
 
+    /// Letters above the root that can take the middle place of a chord, tried in order:
+    /// the third first, then the fourth and the second for a suspended chord.
+    private static let middleLetterSteps = [2, 3, 1]
+
     private func chord(on rootTone: ScaleTone) -> ScaleChord? {
-        let thirdNumber = Self.letterNumber(rootTone.degree.number + 2)
         let fifthNumber = Self.letterNumber(rootTone.degree.number + 4)
-        var thirds: [ScaleTone] = []
         var fifths: [ScaleTone] = []
+        var tonesByLetter: [Int: [ScaleTone]] = [:]
         for tone in tones {
-            if tone.degree.number == thirdNumber {
-                thirds.append(tone)
-            } else if tone.degree.number == fifthNumber {
+            if tone.degree.number == fifthNumber {
                 fifths.append(tone)
             }
+            tonesByLetter[tone.degree.number, default: []].append(tone)
         }
 
+        for step in Self.middleLetterSteps {
+            let middleNumber = Self.letterNumber(rootTone.degree.number + step)
+            guard let middles = tonesByLetter[middleNumber] else { continue }
+            if let chord = bestChord(on: rootTone, middles: middles, fifths: fifths) {
+                return chord
+            }
+        }
+        return nil
+    }
+
+    /// The chord on a root from one set of candidate middle notes and fifths, favouring
+    /// the pairing with the fewest flats and sharps.
+    private func bestChord(on rootTone: ScaleTone, middles: [ScaleTone], fifths: [ScaleTone])
+        -> ScaleChord?
+    {
         let rootPitchClass = rootTone.name.pitchClass
         var best: ScaleChord?
         var bestAccidentalCount = Int.max
-        for third in thirds {
+        for middle in middles {
             for fifth in fifths {
-                let thirdSemitones = PitchMath.wrap(third.name.pitchClass - rootPitchClass)
+                let middleSemitones = PitchMath.wrap(middle.name.pitchClass - rootPitchClass)
                 let fifthSemitones = PitchMath.wrap(fifth.name.pitchClass - rootPitchClass)
                 guard
                     let quality = TriadQuality(
-                        thirdSemitones: thirdSemitones,
+                        thirdSemitones: middleSemitones,
                         fifthSemitones: fifthSemitones
                     )
                 else { continue }
-                let accidentalCount = abs(third.degree.alteration) + abs(fifth.degree.alteration)
+                let accidentalCount = abs(middle.degree.alteration) + abs(fifth.degree.alteration)
                 guard accidentalCount < bestAccidentalCount else { continue }
                 bestAccidentalCount = accidentalCount
                 best = ScaleChord(
                     degree: rootTone.degree,
                     triad: Triad(root: rootTone.name, quality: quality),
-                    notes: [rootTone.name, third.name, fifth.name]
+                    notes: [rootTone.name, middle.name, fifth.name]
                 )
             }
         }

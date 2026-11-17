@@ -10,7 +10,7 @@ SIM_APP   := $(DERIVED)/Build/Products/Debug-iphonesimulator/$(NAME).app
 DEVICE_APP := $(DERIVED)/Build/Products/Debug-iphoneos/$(NAME).app
 
 .PHONY: gen build test run run-device lint format clean screenshots screenshots-ipad archive upload \
-	mac mac-test run-mac mac-dmg
+	mac mac-test run-mac mac-dmg install-mac
 
 gen:
 	xcodegen generate --quiet
@@ -37,7 +37,8 @@ run-device: gen
 	@test -n "$(DEVICE)" || (echo 'set DEVICE="<iPhone name or UDID>"'; exit 1)
 	xcodebuild -project $(NAME).xcodeproj -scheme $(NAME) \
 	  -destination "platform=iOS,name=$(DEVICE)" \
-	  -derivedDataPath $(DERIVED) -allowProvisioningUpdates -quiet build
+	  -derivedDataPath $(DERIVED) -allowProvisioningUpdates \
+	  -allowProvisioningDeviceRegistration -quiet build
 	xcrun devicectl device install app --device "$(DEVICE)" $(DEVICE_APP)
 	xcrun devicectl device process launch --device "$(DEVICE)" --terminate-existing $(BUNDLE_ID)
 
@@ -63,6 +64,10 @@ run-mac: mac
 # One downloadable Scales-<version>.dmg; see the script for signing and notarizing.
 mac-dmg:
 	scripts/build_mac_dmg.sh
+
+# A Release copy in this Mac's /Applications, replacing the one there; run after each release.
+install-mac:
+	scripts/install_mac.sh
 
 lint:
 	xcrun swift-format lint --strict --recursive Scales ScalesTests

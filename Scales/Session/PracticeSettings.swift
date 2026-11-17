@@ -36,8 +36,33 @@ struct PracticeSettings: Codable, Equatable, Sendable {
     /// the TV clip cache, keyed by these settings, makes a new clip whenever the scale's
     /// notes or name change; and the TV screen can draw the board without the library.
     var customScale: CustomScale?
+    /// Which board is drawn. Optional and nil for the guitar, so settings saved before the
+    /// keyboard existed still load, a guitar player's saved JSON is unchanged, and the
+    /// default settings still match the prebuilt G major clip (`ClipCache.bundledShortClip`).
+    var instrument: Instrument?
+    /// How many octaves the keyboard shows. Nil for the default of two, the same way
+    /// `instrument` is nil for the guitar, so a default player's saved JSON and clip key
+    /// never change.
+    var keyboardOctaves: Int?
+
+    /// Two octaves by default: a scale then shows its root twice and every chord shape
+    /// fits without wrapping back to the start of the keyboard.
+    static let defaultKeyboardOctaves = 2
 
     static let fretCountChoices = [12, 15, 17, 22, 24]
+    static let keyboardOctaveChoices = [1, 2]
+
+    /// The instrument as the pickers see it; the guitar is stored as nil (see `instrument`).
+    var selectedInstrument: Instrument {
+        get { instrument ?? .guitar }
+        set { instrument = newValue == .guitar ? nil : newValue }
+    }
+
+    /// The octave count as the pickers see it; the default of two is stored as nil.
+    var selectedKeyboardOctaves: Int {
+        get { keyboardOctaves ?? Self.defaultKeyboardOctaves }
+        set { keyboardOctaves = newValue == Self.defaultKeyboardOctaves ? nil : newValue }
+    }
 
     /// The scale on the board, for pickers to select.
     var scaleReference: ScaleReference {

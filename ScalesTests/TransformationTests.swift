@@ -226,11 +226,46 @@ struct LetterTriadTests {
         }
     }
 
-    @Test func pentatonicScalesMakeTwoChords() {
+    @Test func pentatonicScalesMakeTwoTriadsAndTwoSuspendedChords() {
         let cMajorPentatonic = Scale(root: NoteName(.c), type: .majorPentatonic)
-        #expect(chordNames(cMajorPentatonic.letterTriads()) == ["C", "Am"])
+        #expect(chordNames(cMajorPentatonic.letterTriads()) == ["C", "Dsus4", "Gsus4", "Am"])
         let aMinorPentatonic = Scale(root: NoteName(.a), type: .minorPentatonic)
-        #expect(chordNames(aMinorPentatonic.letterTriads()) == ["Am", "C"])
+        #expect(chordNames(aMinorPentatonic.letterTriads()) == ["Am", "C", "Dsus4", "Gsus4"])
+    }
+
+    @Test func suspendedChordsCarryTheStandInNote() throws {
+        let chords = Scale(root: NoteName(.c), type: .majorPentatonic).letterTriads()
+        let onD = try #require(chords.first { $0.degree.number == 2 })
+        #expect(onD.notes == [NoteName(.d), NoteName(.g), NoteName(.a)])
+        #expect(onD.triad.spokenName == "D suspended fourth")
+        #expect(onD.formulaNumeral == "IIsus4")
+    }
+
+    @Test func theSecondStandsInWhenThereIsNoFourthEither() {
+        // C D G: no E, no F, so the chord on C is Csus2.
+        let definition = ScaleDefinition(
+            name: "Test",
+            degrees: [degree("1"), degree("2"), degree("5")]
+        )
+        let chords = Scale(root: NoteName(.c), definition: definition).letterTriads()
+        #expect(chordNames(chords) == ["Csus2", "Gsus4"])
+    }
+
+    @Test func everyChordQualityHasAChartName() {
+        var names: [String] = []
+        for quality in TriadQuality.allCases {
+            names.append(Triad(root: NoteName(.c), quality: quality).name)
+        }
+        #expect(
+            names == [
+                "C", "Cm", "C°", "C+", "C(♭5)", "Cm(♯5)", "Csus4", "Csus2",
+                "Csus4(♭5)", "Csus2(♭5)", "Csus4(♯5)", "Csus2(♯5)",
+            ]
+        )
+        #expect(TriadQuality.majorFlatFive.numeral("I") == "I(♭5)")
+        #expect(TriadQuality.minorSharpFive.numeral("III") == "iii(♯5)")
+        #expect(TriadQuality.suspendedSecond.numeral("IV") == "IVsus2")
+        #expect(TriadQuality(thirdSemitones: 5, fifthSemitones: 9) == nil)
     }
 
     @Test func bluesPrefersThePairingWithFewestAccidentals() throws {
@@ -262,7 +297,7 @@ struct LetterTriadTests {
 
     @Test func keyTablesStillOnlyCoverSevenNoteScales() {
         #expect(Scale(root: NoteName(.a), type: .minorPentatonic).diatonicTriads().isEmpty)
-        #expect(Scale(root: NoteName(.a), type: .minorPentatonic).letterTriads().count == 2)
+        #expect(Scale(root: NoteName(.a), type: .minorPentatonic).letterTriads().count == 4)
     }
 }
 
@@ -307,26 +342,35 @@ struct ChordChangeReportTests {
         #expect(seventh.notesNew == [NoteName(.b, -1)])
     }
 
-    @Test func removingTheFourthDropsTheChordsThatNeededIt() throws {
+    @Test func removingTheFourthDropsOrSuspendsTheChordsThatNeededIt() throws {
         let result = try report(NoteName(.c), .major, .remove(degree("4")))
         #expect(
             kinds(result)
-                == [.unchanged, .removed, .unchanged, .removed, .unchanged, .unchanged, .removed]
+                == [.unchanged, .changed, .unchanged, .removed, .unchanged, .unchanged, .removed]
         )
         #expect(
             result.changes[1].summary
-                == "ii, D minor, is gone: it needed F, which is no longer in the scale."
+                == "ii, D minor, becomes IIsus4, D suspended fourth: it had D, F, A "
+                + "and now has D, G, A."
         )
         #expect(result.changes[3].notesGone == [NoteName(.f)])
+        #expect(
+            result.changes[6].summary
+                == "vii°, B diminished, is gone: it needed F, which is no longer in the scale."
+        )
     }
 
-    @Test func addingTheFourthToPentatonicMakesNewChords() throws {
+    @Test func addingTheFourthToPentatonicMakesNewChordsAndResolvesASuspension() throws {
         let result = try report(NoteName(.c), .majorPentatonic, .add(degree("4")))
-        #expect(kinds(result) == [.unchanged, .added, .added, .unchanged])
+        #expect(kinds(result) == [.unchanged, .changed, .added, .unchanged, .unchanged])
         #expect(
-            result.changes[1].summary == "ii, D minor, is new: D, F, A are all in the scale now."
+            result.changes[1].summary
+                == "IIsus4, D suspended fourth, becomes ii, D minor: it had D, G, A "
+                + "and now has D, F, A."
         )
         #expect(result.changes[2].after?.triad.name == "F")
+        // There is still no B, so the chord on G keeps its suspended fourth.
+        #expect(result.changes[3].after?.triad.name == "Gsus4")
     }
 
     @Test func raisingTheFlatThreeFollowsTheChordOntoItsNewRoot() throws {
@@ -343,13 +387,21 @@ struct ChordChangeReportTests {
         #expect(result.changes[5].after?.triad.name == "F+")
     }
 
-    @Test func loweringTheFifthBreaksTheHomeChord() throws {
+    @Test func loweringTheFifthFlattensTheHomeChord() throws {
         let result = try report(NoteName(.c), .major, .lower(degree("5")))
-        #expect(result.changes[0].kind == .removed)
+        #expect(result.changes[0].kind == .changed)
         #expect(
             result.changes[0].summary
-                == "I, C major, is gone: it needed G, which is no longer in the scale."
+                == "I, C major, becomes I(♭5), C major flat five: it had C, E, G "
+                + "and now has C, E, G♭."
         )
+        #expect(result.changes[0].after?.triad.name == "C(♭5)")
+    }
+
+    @Test func raisingTheFifthOfAMinorChordSharpensIt() throws {
+        let result = try report(NoteName(.a), .dorian, .raise(degree("5")))
+        #expect(result.changes[0].after?.triad.name == "Am(♯5)")
+        #expect(result.changes[0].after?.formulaNumeral == "i(♯5)")
     }
 
     @Test func identicalScalesReportNoChange() {

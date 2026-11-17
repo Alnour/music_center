@@ -10,12 +10,24 @@ extension XCUIApplication {
         return buttons.matching(predicate).firstMatch
     }
 
-    /// Opens one of the app's three tabs. The iPhone shows them in a bar along the bottom;
+    /// Opens one of the app's tabs. The iPhone shows them in a bar along the bottom;
     /// the iPad floats them at the top of the window, where the test framework does not
     /// report a tab bar at all, so the tab's button is looked up wherever it is.
     @MainActor
     func openTab(_ title: String) {
         buttons[title].firstMatch.tap()
+    }
+
+    /// Puts the Scales screen's controls back when an earlier run left them hidden. The
+    /// choice is saved between launches, and the other tests expect the Display and TV
+    /// rows to be there to scroll to.
+    @MainActor
+    func showControlsIfHidden() {
+        let toggle = buttons["toggleControls"]
+        guard toggle.waitForExistence(timeout: 3) else { return }
+        if toggle.label == "Show Controls" {
+            toggle.tap()
+        }
     }
 
     /// Any element with this accessibility identifier, whatever kind it is; SwiftUI menus

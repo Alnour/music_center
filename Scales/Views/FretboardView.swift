@@ -8,6 +8,8 @@ struct FretboardView: View {
     let isLeftHanded: Bool
     let thinStringOnTop: Bool
     let palette: FretboardPalette
+    /// Notes to ring on the board, the notes of the chord the player picked.
+    var ringedNotes: Set<NoteName> = []
 
     private static let singleInlayFrets: Set<Int> = [3, 5, 7, 9, 15, 17, 19, 21]
     private static let doubleInlayFrets: Set<Int> = [12, 24]
@@ -146,6 +148,9 @@ struct FretboardView: View {
         )
         let fill = tone.isRoot ? palette.rootFill : palette.toneFill
         context.fill(Path(ellipseIn: rect), with: .color(fill))
+        if ringedNotes.contains(tone.name) {
+            ChordRing.draw(around: rect, in: context)
+        }
 
         guard let labelText = label(for: tone) else { return }
         let fontScale: CGFloat = labelText.count > 1 ? 0.78 : 0.95
@@ -162,5 +167,17 @@ struct FretboardView: View {
         case .degrees: tone.degree.label
         case .none: nil
         }
+    }
+}
+
+/// The ring drawn around a note that belongs to the chord the player picked: the same
+/// orange as the notes row uses, just outside the note's circle so the label stays clear.
+enum ChordRing {
+    static let color = Color.orange
+
+    static func draw(around circle: CGRect, in context: GraphicsContext) {
+        let lineWidth = max(1.5, circle.width * 0.1)
+        let ring = circle.insetBy(dx: -lineWidth * 0.9, dy: -lineWidth * 0.9)
+        context.stroke(Path(ellipseIn: ring), with: .color(color), lineWidth: lineWidth)
     }
 }

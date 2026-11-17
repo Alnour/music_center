@@ -1,11 +1,12 @@
 import Observation
 import SwiftUI
 
-/// The app's three screens.
+/// The app's four screens.
 enum AppTab: Hashable {
     case scales
     case chords
     case transform
+    case drums
 }
 
 /// Which screen is showing, shared so a lesson can send the player to the fretboard.
@@ -15,8 +16,9 @@ final class AppNavigation {
     var selectedTab: AppTab = .scales
 }
 
-/// The app's three screens: the fretboard with its TV controls, the key chord tables, and
-/// the Transform screen where the player changes a scale and reads what it does to the chords.
+/// The app's four screens: the fretboard with its TV controls, the key chord tables, the
+/// Transform screen where the player changes a scale and reads what it does to the chords,
+/// and the drum trainer with its bouncing ball.
 struct RootView: View {
     @Environment(PracticeSession.self) private var session
     @Environment(ScaleLibrary.self) private var library
@@ -33,6 +35,9 @@ struct RootView: View {
             }
             Tab("Transform", systemImage: "wand.and.stars", value: AppTab.transform) {
                 TransformView()
+            }
+            Tab("Drums", systemImage: "metronome", value: AppTab.drums) {
+                DrumTrainerView()
             }
         }
         .environment(navigation)

@@ -11,7 +11,8 @@ enum ClipCache {
     private static let bundledClipName = "GMajorBoard"
     /// Bumped whenever the way clips are made changes, so clips made the old way are
     /// never replayed. Version 2: one continuous stream instead of stitched copies.
-    private static let clipFormatVersion = 2
+    /// Version 3: a keyboard clip with no stored octave count shows two octaves, not one.
+    private static let clipFormatVersion = 3
 
     /// A short, stable name for one combination of settings. Keys are sorted before
     /// hashing so the same settings always give the same name across launches.
