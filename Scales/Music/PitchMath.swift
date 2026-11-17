@@ -1,3 +1,10 @@
+// Scales — draws any scale across the guitar neck or a piano keyboard and shows it on a TV.
+// Copyright © 2026 Alnour Alharin <alnour.ahmed@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This file is part of Scales, free software: you may redistribute and change it under the
+// GNU General Public License, version 3 or later (see LICENSE). It comes with no warranty.
+
 /// Arithmetic on pitch classes: the twelve semitone positions of the octave, numbered
 /// 0 (C) through 11 (B). Octaves don't matter for scale membership, so every
 /// calculation here wraps around twelve.
