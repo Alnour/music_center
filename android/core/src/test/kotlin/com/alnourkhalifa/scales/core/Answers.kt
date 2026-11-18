@@ -32,7 +32,7 @@ object Answers {
             "roots" to "AnswersSpellingTest",
             "scaleTypes" to "AnswersSpellingTest",
             "families" to "AnswersSpellingTest",
-            "tunings" to "AnswersFretboardTest",
+            "tunings" to "AnswersTuningTest",
             "spellings" to "AnswersSpellingTest",
             "fretboards" to "AnswersFretboardTest",
             "keyboards" to "AnswersKeyboardTest",
