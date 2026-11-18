@@ -27,9 +27,7 @@ import com.alnourkhalifa.scales.ui.PhoneFretboard
 import com.alnourkhalifa.scales.ui.ScaleNotesRow
 
 /*
- * Placeholders for the four tabs until each screen is ported; RootView's parameters are where
- * the real screens replace them. The Scales placeholder already draws the saved board, so the
- * app shows what the player last chose from the first launch.
+ * The Scales tab's slot in RootView; replaced by the ported ContentView in wave 3.
  */
 
 /**
@@ -77,21 +75,6 @@ fun ScalesTabStub(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-fun ChordsTabStub(modifier: Modifier = Modifier) {
-    TabNamePlaceholder(name = "Chords", modifier = modifier)
-}
-
-@Composable
-fun TransformTabStub(modifier: Modifier = Modifier) {
-    TabNamePlaceholder(name = "Transform", modifier = modifier)
-}
-
-@Composable
-fun DrumsTabStub(modifier: Modifier = Modifier) {
-    TabNamePlaceholder(name = "Drums", modifier = modifier)
-}
-
 /** The guitar neck or the keyboard, whichever the player picked, with every saved option. */
 @Composable
 private fun SavedBoard(
@@ -125,18 +108,5 @@ private fun SavedBoard(
                 ringedNotes = state.ringedNotes,
             )
         }
-    }
-}
-
-@Composable
-private fun TabNamePlaceholder(
-    name: String,
-    modifier: Modifier,
-) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = name, style = MaterialTheme.typography.headlineMedium)
     }
 }

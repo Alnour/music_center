@@ -14,8 +14,10 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -27,21 +29,6 @@ import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-
-/**
- * The app's four screens, in the iPhone's tab order. Twin of `AppTab` in
- * `Scales/Views/RootView.swift`. [testTag] ("tab-scales"…) is how UI tests open a tab; tests
- * use the tag text, so the enum stays private to this file.
- */
-private enum class AppTab(
-    val label: String,
-    val testTag: String,
-) {
-    SCALES("Scales", "tab-scales"),
-    CHORDS("Chords", "tab-chords"),
-    TRANSFORM("Transform", "tab-transform"),
-    DRUMS("Drums", "tab-drums"),
-}
 
 /**
  * The phone's four screens behind a bottom navigation bar: the fretboard, the key chord
@@ -67,12 +54,38 @@ fun RootView(
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.SCALES) }
+    val navigation = remember { AppNavigation(select = { tab -> selectedTab = tab }) }
     val screenInsets = WindowInsets(left = 0, top = 0, right = 0, bottom = 0)
+    CompositionLocalProvider(LocalAppNavigation provides navigation) {
+        RootScaffold(
+            selectedTab = selectedTab,
+            onSelect = { tab -> selectedTab = tab },
+            screenInsets = screenInsets,
+            modifier = modifier,
+            scales = scales,
+            chords = chords,
+            transform = transform,
+            drums = drums,
+        )
+    }
+}
+
+@Composable
+private fun RootScaffold(
+    selectedTab: AppTab,
+    onSelect: (AppTab) -> Unit,
+    screenInsets: WindowInsets,
+    modifier: Modifier,
+    scales: @Composable () -> Unit,
+    chords: @Composable () -> Unit,
+    transform: @Composable () -> Unit,
+    drums: @Composable () -> Unit,
+) {
     Scaffold(
         modifier = modifier,
         contentWindowInsets = screenInsets,
         bottomBar = {
-            TabBar(selectedTab = selectedTab, onSelect = { tab -> selectedTab = tab })
+            TabBar(selectedTab = selectedTab, onSelect = onSelect)
         },
     ) { innerPadding ->
         Box(
