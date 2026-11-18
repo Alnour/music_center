@@ -22,35 +22,41 @@ struct TVDisplayView: View {
         let scale = session.scale
         let palette: FretboardPalette = settings.tvUsesDarkTheme ? .dark : .light
         GeometryReader { proxy in
-            let unit = min(proxy.size.height / 100, proxy.size.width / 178)
-            VStack(alignment: .leading, spacing: unit * 3) {
+            let metrics = TVLayoutMetrics(size: proxy.size)
+            VStack(alignment: .leading, spacing: metrics.spacing) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(scale.title)
-                        .font(.system(size: unit * 8, weight: .bold, design: .rounded))
+                        .font(.system(size: metrics.titleFontSize, weight: .bold, design: .rounded))
                         .foregroundStyle(palette.title)
                     Spacer()
                     Text(boardCaption(for: settings))
-                        .font(.system(size: unit * 3.5, weight: .medium, design: .rounded))
+                        .font(
+                            .system(
+                                size: metrics.captionFontSize,
+                                weight: .medium,
+                                design: .rounded
+                            )
+                        )
                         .foregroundStyle(palette.secondaryText)
                     if let onClose {
                         Button("Close", systemImage: "xmark.circle.fill", action: onClose)
                             .labelStyle(.iconOnly)
-                            .font(.system(size: unit * 6))
+                            .font(.system(size: metrics.closeIconSize))
                             .foregroundStyle(palette.secondaryText)
-                            .padding(.leading, unit * 3)
+                            .padding(.leading, metrics.closeLeadingPadding)
                     }
                 }
                 ScaleNotesRow(
                     scale: scale,
                     palette: palette,
-                    noteSize: unit * 3.6,
+                    noteSize: metrics.notesFontSize,
                     highlightedNotes: session.ringedNotes
                 )
                 board(for: settings, palette: palette)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .padding(.horizontal, proxy.size.width * 0.04)
-            .padding(.vertical, proxy.size.height * 0.05)
+            .padding(.horizontal, metrics.horizontalMargin)
+            .padding(.vertical, metrics.verticalMargin)
         }
         .background(palette.background.ignoresSafeArea())
     }

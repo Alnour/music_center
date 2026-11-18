@@ -22,6 +22,7 @@ final class StoreScreenshots: XCTestCase {
     }
 
     @MainActor
+    // feature: board
     func testCaptureStoreScreenshots() throws {
         // 1. G major across the neck, the state the app ships in. The settings survive
         //    between launches, so they are chosen explicitly rather than assumed fresh.

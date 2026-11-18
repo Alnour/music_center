@@ -61,6 +61,7 @@ struct ContentView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .frame(maxHeight: .infinity)
                         .accessibilityLabel(boardAccessibilityLabel)
+                        .accessibilityValue(session.settings.labelStyle.accessibilityDescription)
                     if let change = session.currentBoardChange {
                         BoardChangeRow(change: change) {
                             session.revertBoardChange(from: library)
@@ -93,9 +94,9 @@ struct ContentView: View {
                     .popover(isPresented: $isShowingTVMenu) {
                         TVMenu(
                             status: session.tvStatus,
-                            player: session.caster.player,
-                            resumeCasting: { session.caster.resume() },
-                            takeOverTV: { session.caster.takeOverTVIfChosen() },
+                            player: AirPlayCaster.shared.player,
+                            resumeCasting: { AirPlayCaster.shared.resume() },
+                            takeOverTV: { AirPlayCaster.shared.takeOverTVIfChosen() },
                             tvUsesDarkTheme: $session.settings.tvUsesDarkTheme,
                             showFullScreenBoard: {
                                 opensFullScreenBoardAfterTVMenu = true
@@ -222,7 +223,7 @@ struct ContentView: View {
     /// Hands the current settings to the caster, which draws the board only when it has
     /// no clip for them yet. The TV layout is drawn at full HD, the size AirPlay sends.
     private func castCurrentBoard() {
-        session.caster.cast(session.settings) {
+        AirPlayCaster.shared.cast(session.settings) {
             let renderer = ImageRenderer(
                 content: TVDisplayView()
                     .environment(session)
@@ -301,7 +302,7 @@ private struct PhoneKeyboard: View {
             ringedNotes: ringedNotes
         )
         .aspectRatio(
-            KeyboardView.widthToHeight(whiteKeyCount: layout.whiteKeys.count),
+            KeyboardGeometry.widthToHeight(whiteKeyCount: layout.whiteKeys.count),
             contentMode: .fit
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)

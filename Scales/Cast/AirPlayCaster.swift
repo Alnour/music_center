@@ -21,7 +21,11 @@ import UIKit
 /// there is something to cast from the first second, before any clip has been written.
 @MainActor
 @Observable
-final class AirPlayCaster {
+final class AirPlayCaster: BoardCaster {
+    /// The one caster the app uses: the session reads its status, and the TV menu and the
+    /// Scales screen drive it. One instance because it owns the player and the clip server.
+    static let shared = AirPlayCaster()
+
     /// True while the clip is playing on a TV rather than on the phone.
     private(set) var isPlayingOnTV = false
     /// The TV's name as AirPlay reports it, for the status line.

@@ -111,17 +111,17 @@ struct DrumStaffView: View {
             lines.move(to: CGPoint(x: layout.staffLeft, y: y))
             lines.addLine(to: CGPoint(x: layout.staffRight, y: y))
         }
-        context.stroke(lines, with: .color(ink), lineWidth: layout.lineSpacing * 0.08)
+        context.stroke(lines, with: .color(ink), lineWidth: layout.staffLineWidth)
 
         var barLine = Path()
         barLine.move(to: CGPoint(x: layout.staffRight, y: layout.staffTop))
         barLine.addLine(to: CGPoint(x: layout.staffRight, y: layout.staffBottom))
-        context.stroke(barLine, with: .color(ink), lineWidth: layout.lineSpacing * 0.2)
+        context.stroke(barLine, with: .color(ink), lineWidth: layout.barLineWidth)
     }
 
     private func drawCurrentCountMarker(_ context: GraphicsContext, _ layout: DrumStaffLayout) {
         let x = layout.columnX(ball.step)
-        let width = layout.lineSpacing * 0.9
+        let width = layout.countMarkerWidth
         let rect = CGRect(
             x: x - width / 2,
             y: layout.beamY - layout.lineSpacing * 0.6,
@@ -133,7 +133,7 @@ struct DrumStaffView: View {
     }
 
     private func drawCounts(_ context: GraphicsContext, _ layout: DrumStaffLayout, _ ink: Color) {
-        let font = Font.system(size: layout.lineSpacing * 1.7, weight: .heavy, design: .rounded)
+        let font = Font.system(size: layout.countFontSize, weight: .heavy, design: .rounded)
         for step in 0..<groove.stepsPerBar {
             let label = Text(groove.countLabel(forStep: step)).font(font).foregroundStyle(ink)
             context.draw(label, at: CGPoint(x: layout.columnX(step), y: layout.countY))
@@ -141,7 +141,7 @@ struct DrumStaffView: View {
     }
 
     private func drawHits(_ context: GraphicsContext, _ layout: DrumStaffLayout, _ ink: Color) {
-        let headRadius = layout.lineSpacing * 0.45
+        let headRadius = layout.headRadius
         var stems = Path()
         var beams = Path()
         for beat in 0..<groove.beatsPerBar {
@@ -153,7 +153,7 @@ struct DrumStaffView: View {
             beams.addPath(beam)
             if groove.subdivision == 4 {
                 var second = Path()
-                let y = layout.beamY + layout.lineSpacing * 0.55
+                let y = layout.beamY + layout.secondBeamOffset
                 second.move(to: CGPoint(x: layout.stemX(firstStep), y: y))
                 second.addLine(to: CGPoint(x: layout.stemX(lastStep), y: y))
                 beams.addPath(second)
@@ -171,8 +171,8 @@ struct DrumStaffView: View {
             stems.move(to: CGPoint(x: layout.stemX(step), y: layout.beamY))
             stems.addLine(to: CGPoint(x: layout.stemX(step), y: lowestY))
         }
-        context.stroke(stems, with: .color(ink), lineWidth: layout.lineSpacing * 0.1)
-        context.stroke(beams, with: .color(ink), lineWidth: layout.lineSpacing * 0.35)
+        context.stroke(stems, with: .color(ink), lineWidth: layout.stemWidth)
+        context.stroke(beams, with: .color(ink), lineWidth: layout.beamWidth)
     }
 
     private func drawHead(
@@ -205,7 +205,7 @@ struct DrumStaffView: View {
         let toX = fromX + layout.columnWidth
         let x = fromX + (toX - fromX) * ball.travel
         let y = layout.ballRestY - layout.bounceHeight * ball.bounce
-        let radius = layout.lineSpacing * 0.75
+        let radius = layout.ballRadius
         let rect = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
         let shading = GraphicsContext.Shading.radialGradient(
             Gradient(colors: [Color.cyan, Color.blue]),
@@ -214,43 +214,6 @@ struct DrumStaffView: View {
             endRadius: radius * 1.6
         )
         context.fill(Path(ellipseIn: rect), with: shading)
-    }
-}
-
-/// Where everything sits on the staff for a view of this size.
-struct DrumStaffLayout {
-    let groove: DrumGroove
-    let size: CGSize
-
-    var lineSpacing: CGFloat { size.height * 0.075 }
-    var staffTop: CGFloat { size.height * 0.6 }
-    var staffBottom: CGFloat { staffTop + lineSpacing * 4 }
-    var staffLeft: CGFloat { size.width * 0.02 }
-    var staffRight: CGFloat { size.width * 0.98 }
-    var beamY: CGFloat { staffTop - lineSpacing * 2.6 }
-    var countY: CGFloat { staffTop - lineSpacing * 4.6 }
-    var ballRestY: CGFloat { countY }
-    var bounceHeight: CGFloat { size.height * 0.16 }
-
-    var columnWidth: CGFloat {
-        (staffRight - staffLeft) / CGFloat(groove.stepsPerBar + 1)
-    }
-
-    func columnX(_ step: Int) -> CGFloat {
-        staffLeft + columnWidth * (CGFloat(step) + 0.6)
-    }
-
-    /// Stems hang off the right side of the head, as engraved music does.
-    func stemX(_ step: Int) -> CGFloat {
-        columnX(step) + lineSpacing * 0.5
-    }
-
-    func headY(for voice: DrumVoice) -> CGFloat {
-        switch voice {
-        case .hiHat: return staffTop - lineSpacing * 0.5
-        case .snare: return staffTop + lineSpacing * 1.5
-        case .kick: return staffTop + lineSpacing * 3.5
-        }
     }
 }
 

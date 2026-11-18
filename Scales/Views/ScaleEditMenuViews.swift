@@ -7,27 +7,6 @@
 
 import SwiftUI
 
-/// The changes a scale allows, sorted once into the menus that offer them: one list per
-/// note (lower, raise, remove) and one list of notes that could be added.
-struct EditChoices {
-    private var editsByDegree: [ScaleDegree: [ScaleEdit]] = [:]
-    private(set) var additions: [ScaleEdit] = []
-
-    init(_ definition: ScaleDefinition) {
-        for edit in definition.legalEdits() {
-            if case .add = edit {
-                additions.append(edit)
-            } else {
-                editsByDegree[edit.degree, default: []].append(edit)
-            }
-        }
-    }
-
-    func edits(for degree: ScaleDegree) -> [ScaleEdit] {
-        editsByDegree[degree] ?? []
-    }
-}
-
 /// The rows that change one note of a scale: a menu per note but the root (lower, raise,
 /// remove) and a menu of notes that could be added. Shared by the Transform screen and the
 /// chords on the Scales screen, so a change is offered the same way in both places.
@@ -106,25 +85,5 @@ struct CompactScaleEditMenu: View {
             Label("Change a note", systemImage: "wand.and.stars")
         }
         .accessibilityIdentifier("changeBoardNote")
-    }
-}
-
-extension ScaleEdit {
-    /// The edit as a menu item, with the notes spelled in the key it is offered in:
-    /// "Lower to F (♭7)", "Raise to G♯ (♯4)", "Remove F♯", "Add D♭ (♭2)".
-    func menuTitle(above root: NoteName) -> String {
-        let note = Scale.spell(degree, above: root).displayName
-        guard let result = resultingDegree else {
-            return "Remove \(note)"
-        }
-        let newNote = Scale.spell(result, above: root).displayName
-        switch self {
-        case .lower:
-            return "Lower to \(newNote) (\(result.label))"
-        case .raise:
-            return "Raise to \(newNote) (\(result.label))"
-        case .add, .remove:
-            return "Add \(newNote) (\(result.label))"
-        }
     }
 }

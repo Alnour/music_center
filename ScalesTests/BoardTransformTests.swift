@@ -37,6 +37,7 @@ private func freshSession() -> PracticeSession {
 /// note change with it, and the change can be undone.
 @MainActor
 struct BoardTransformTests {
+    // feature: note-edit-revert
     @Test func loweringTheSeventhPutsMixolydianOnTheBoard() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -56,6 +57,7 @@ struct BoardTransformTests {
 
     /// Every chord that had F♯ now has F instead: iii Bm becomes iii° B°, V D becomes v Dm,
     /// vii° F♯° becomes ♭VII F. The others keep their notes.
+    // feature: note-edit-revert, chord-chips-rings
     @Test func chordsThatUsedTheOldNoteTakeTheNewOne() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -86,6 +88,7 @@ struct BoardTransformTests {
         #expect(changedNames == ["Bm → B°", "D → Dm", "F♯° → F"])
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func anUnknownResultIsSavedUnderItsWorkingName() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -100,6 +103,7 @@ struct BoardTransformTests {
         #expect(session.scale.title == "G Major ♯5")
     }
 
+    // feature: note-edit-revert
     @Test func revertingPutsTheStartingScaleBack() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -114,6 +118,7 @@ struct BoardTransformTests {
         #expect(library.lessons.count == 1)
     }
 
+    // feature: note-edit-revert
     @Test func pickingAnotherScaleOrKeyDropsTheChange() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -131,6 +136,7 @@ struct BoardTransformTests {
         #expect(session.currentBoardChange == nil)
     }
 
+    // feature: note-edit-revert
     @Test func anIllegalEditChangesNothing() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -144,6 +150,7 @@ struct BoardTransformTests {
         #expect(library.lessons.isEmpty)
     }
 
+    // feature: chord-chips-rings
     @Test func pickingAChordRingsItsNotesUntilTheScaleLosesOne() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
