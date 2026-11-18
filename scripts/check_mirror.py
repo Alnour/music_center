@@ -36,6 +36,8 @@ KOTLIN_ONLY = {
     f"{CORE}/session/KeyValueStore.kt",
     f"{CORE}/session/SettingsStore.kt",
     f"{CORE}/session/ScaleLibraryJson.kt",
+    # Size, Point and Rect stand in for CoreGraphics, which Kotlin lacks.
+    f"{CORE}/board/Geometry.kt",
 }
 # Not ported yet; wave 1 empties this.
 PENDING = {
