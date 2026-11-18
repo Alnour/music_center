@@ -1,0 +1,53 @@
+# Only the rules that differ from detekt's defaults (buildUponDefaultConfig = true).
+# The limits are tighter than detekt's so a reviewer can follow each function's business
+# purpose without tracing its execution order. Key names are detekt 2.0's (`allowed*`).
+
+complexity:
+  CognitiveComplexMethod:
+    active: true
+    allowedComplexity: 10
+  CyclomaticComplexMethod:
+    allowedComplexity: 10
+  ComplexCondition:
+    allowedConditions: 3
+  LargeClass:
+    allowedLines: 300
+  LongMethod:
+    allowedLines: 50
+  LongParameterList:
+    allowedFunctionParameters: 5
+    # Compose functions take many optional parameters (modifier, colours); only the
+    # required ones count.
+    ignoreDefaultParameters: true
+  NestedBlockDepth:
+    allowedDepth: 3
+  TooManyFunctions:
+    allowedFunctionsPerFile: 15
+    allowedFunctionsPerClass: 12
+
+naming:
+  FunctionNaming:
+    # Composable functions are nouns in PascalCase by Compose convention.
+    ignoreAnnotated: ['Composable']
+
+style:
+  MaxLineLength:
+    maxLineLength: 100
+  ReturnCount:
+    max: 3
+  MagicNumber:
+    # Drawing code in ui and app is full of proportions copied from the Swift geometry;
+    # naming each one would hide the formula. The pure-Kotlin core keeps the rule.
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/*.kts'
+      - '**/ui/src/**'
+      - '**/app/src/**'
+
+comments:
+  UndocumentedPublicClass:
+    active: true
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
