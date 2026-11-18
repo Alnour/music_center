@@ -82,15 +82,16 @@ struct KeyboardView: View {
             width: radius * 2,
             height: radius * 2
         )
-        let fill = tone.isRoot ? palette.rootFill : palette.toneFill
-        context.fill(Path(ellipseIn: circle), with: .color(fill))
-        if ringedNotes.contains(tone.name) {
-            ChordRing.draw(around: circle, in: context)
+        let isRinged = ringedNotes.contains(tone.name)
+        let colors = palette.toneColors(isRoot: tone.isRoot, isInChord: isRinged)
+        context.fill(Path(ellipseIn: circle), with: .color(colors.fill))
+        if isRinged {
+            ChordRing.draw(around: circle, color: palette.chordRing, in: context)
         }
 
         guard let labelText = label(for: tone) else { return }
         let fontScale: CGFloat = labelText.count > 1 ? 0.78 : 0.95
-        let textColor = tone.isRoot ? palette.rootText : palette.toneText
+        let textColor = colors.text
         let label = Text(labelText)
             .font(.system(size: radius * fontScale, weight: .bold, design: .rounded))
             .foregroundStyle(textColor)

@@ -20,17 +20,17 @@ struct ScaleNotesRow: View {
     var body: some View {
         HStack(spacing: noteSize * 0.45) {
             ForEach(scale.tones, id: \.self) { tone in
+                let isHighlighted = highlightedNotes.contains(tone.name)
+                let colors = palette.toneColors(isRoot: tone.isRoot, isInChord: isHighlighted)
                 VStack(spacing: noteSize * 0.2) {
                     Text(tone.name.displayName)
                         .font(.system(size: noteSize, weight: .bold, design: .rounded))
-                        .foregroundStyle(tone.isRoot ? palette.rootText : palette.toneText)
+                        .foregroundStyle(colors.text)
                         .frame(width: noteSize * 2, height: noteSize * 2)
-                        .background(
-                            Circle().fill(tone.isRoot ? palette.rootFill : palette.toneFill)
-                        )
+                        .background(Circle().fill(colors.fill))
                         .overlay {
-                            if highlightedNotes.contains(tone.name) {
-                                Circle().strokeBorder(ChordRing.color, lineWidth: noteSize * 0.18)
+                            if isHighlighted {
+                                Circle().strokeBorder(palette.chordRing, lineWidth: noteSize * 0.18)
                             }
                         }
                     Text(tone.degree.label)

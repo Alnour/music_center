@@ -153,15 +153,16 @@ struct FretboardView: View {
             width: radius * 2,
             height: radius * 2
         )
-        let fill = tone.isRoot ? palette.rootFill : palette.toneFill
-        context.fill(Path(ellipseIn: rect), with: .color(fill))
-        if ringedNotes.contains(tone.name) {
-            ChordRing.draw(around: rect, in: context)
+        let isRinged = ringedNotes.contains(tone.name)
+        let colors = palette.toneColors(isRoot: tone.isRoot, isInChord: isRinged)
+        context.fill(Path(ellipseIn: rect), with: .color(colors.fill))
+        if isRinged {
+            ChordRing.draw(around: rect, color: palette.chordRing, in: context)
         }
 
         guard let labelText = label(for: tone) else { return }
         let fontScale: CGFloat = labelText.count > 1 ? 0.78 : 0.95
-        let textColor = tone.isRoot ? palette.rootText : palette.toneText
+        let textColor = colors.text
         let label = Text(labelText)
             .font(.system(size: radius * fontScale, weight: .bold, design: .rounded))
             .foregroundStyle(textColor)
@@ -177,14 +178,27 @@ struct FretboardView: View {
     }
 }
 
-/// The ring drawn around a note that belongs to the chord the player picked: the same
-/// orange as the notes row uses, just outside the note's circle so the label stays clear.
+/// The ring drawn around a note that belongs to the chord the player picked, in the
+/// palette's chord colour, just outside the note's circle so the label stays clear.
 enum ChordRing {
-    static let color = Color.orange
-
-    static func draw(around circle: CGRect, in context: GraphicsContext) {
+    static func draw(around circle: CGRect, color: Color, in context: GraphicsContext) {
         let lineWidth = max(1.5, circle.width * 0.1)
         let ring = circle.insetBy(dx: -lineWidth * 0.9, dy: -lineWidth * 0.9)
         context.stroke(Path(ellipseIn: ring), with: .color(color), lineWidth: lineWidth)
+    }
+}
+
+extension FretboardPalette {
+    /// Fill and text for one note circle. A chord note takes the green chord colours; the
+    /// scale's root keeps its own colour even inside a chord, because losing the root
+    /// marker while a chord rings would confuse more than it helps. The ring says "chord".
+    func toneColors(isRoot: Bool, isInChord: Bool) -> (fill: Color, text: Color) {
+        if isRoot {
+            return (rootFill, rootText)
+        }
+        if isInChord {
+            return (chordFill, chordText)
+        }
+        return (toneFill, toneText)
     }
 }

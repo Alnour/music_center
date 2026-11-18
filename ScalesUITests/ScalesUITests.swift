@@ -15,7 +15,6 @@ final class ScalesUITests: XCTestCase {
         continueAfterFailure = false
         app = await XCUIApplication()
         await app.launch()
-        await app.showControlsIfHidden()
     }
 
     @MainActor
@@ -34,50 +33,52 @@ final class ScalesUITests: XCTestCase {
     @MainActor
     func testChoosingTheKeyboardShowsAnOctave() throws {
         let guitarChoice = app.buttons["Guitar"]
-        XCTAssertTrue(app.scrollUntilVisible(guitarChoice))
+        XCTAssertTrue(guitarChoice.waitForExistence(timeout: 3), "the instrument pills are in the toolbar")
         guitarChoice.tap()
+        app.openBoardSettings()
         let tuningRow = app.menuButton(labelled: "Tuning")
-        XCTAssertTrue(app.scrollUntilVisible(tuningRow), "guitar options start visible")
-        app.buttons["Keyboard"].tap()
-        XCTAssertFalse(tuningRow.exists, "tuning means nothing on a piano")
+        XCTAssertTrue(tuningRow.waitForExistence(timeout: 3), "guitar options start in the settings")
+        app.dismissPopover()
+        XCTAssertTrue(tuningRow.waitForNonExistence(timeout: 3), "the settings close")
 
-        // The board sits above the chords and the display options, so scroll back up to it.
-        app.swipeDown()
+        app.buttons["Keyboard"].tap()
         let keyboard = app.otherElements.matching(
             NSPredicate(format: "label BEGINSWITH %@", "Keyboard showing")
         ).firstMatch
         XCTAssertTrue(keyboard.waitForExistence(timeout: 3), "the octave replaces the fretboard")
         attachScreenshot(named: "The scale on two octaves")
 
-        let chips = app.scrollViews["boardChords"]
-        XCTAssertTrue(app.scrollUntilVisible(chips), "the chords sit under the keyboard")
-        let firstChip = chips.buttons.firstMatch
+        let firstChip = app.element(identified: "boardChords").buttons.firstMatch
+        XCTAssertTrue(firstChip.waitForExistence(timeout: 3), "the chords sit under the keyboard")
         firstChip.tap()
         XCTAssertTrue(firstChip.isSelected, "the picked chord is marked on the keyboard too")
-        app.swipeDown()
         attachScreenshot(named: "A chord ringed on the keyboard")
-        XCTAssertTrue(app.scrollUntilVisible(chips))
         firstChip.tap()
         XCTAssertFalse(firstChip.isSelected, "picking it again clears the keyboard rings")
-        app.swipeDown()
 
+        app.openBoardSettings()
+        XCTAssertFalse(tuningRow.exists, "tuning means nothing on a piano")
         let oneOctave = app.buttons["1 octave"]
-        XCTAssertTrue(app.scrollUntilVisible(oneOctave), "the keyboard offers one octave")
+        XCTAssertTrue(oneOctave.waitForExistence(timeout: 3), "the keyboard offers one octave")
         oneOctave.tap()
-        app.swipeDown()
+        app.dismissPopover()
         attachScreenshot(named: "The scale on one octave")
-        XCTAssertTrue(app.scrollUntilVisible(app.buttons["2 octaves"]))
+        app.openBoardSettings()
+        XCTAssertTrue(app.buttons["2 octaves"].waitForExistence(timeout: 3))
         app.buttons["2 octaves"].tap()
+        app.dismissPopover()
 
-        XCTAssertTrue(app.scrollUntilVisible(guitarChoice))
         guitarChoice.tap()
-        XCTAssertTrue(app.scrollUntilVisible(tuningRow), "guitar options return")
+        app.openBoardSettings()
+        XCTAssertTrue(tuningRow.waitForExistence(timeout: 3), "guitar options return")
+        app.dismissPopover()
     }
 
     @MainActor
     func testFullScreenBoardOpensInLandscapeAndCloses() throws {
+        app.openTVMenu()
         let fullScreenButton = app.buttons["Full-screen board"]
-        XCTAssertTrue(app.scrollUntilVisible(fullScreenButton))
+        XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 3))
         fullScreenButton.tap()
 
         let closeButton = app.buttons["Close"]
@@ -91,7 +92,7 @@ final class ScalesUITests: XCTestCase {
         }
 
         closeButton.tap()
-        XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["tvMenu"].waitForExistence(timeout: 3))
     }
 
     /// iPadOS never rotates an app on request, so an upright iPad shows the board at the
@@ -109,11 +110,13 @@ final class ScalesUITests: XCTestCase {
     }
 
     @MainActor
-    func testTVSectionOffersAirPlayAndStatus() throws {
+    func testTVMenuOffersAirPlayAndStatus() throws {
+        app.openTVMenu()
         let airPlayButton = app.buttons["AirPlay"]
-        XCTAssertTrue(app.scrollUntilVisible(airPlayButton))
+        XCTAssertTrue(airPlayButton.waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["Not mirroring"].exists)
-        attachScreenshot(named: "TV section")
+        attachScreenshot(named: "TV menu")
+        app.dismissPopover()
     }
 
     @MainActor
@@ -144,10 +147,10 @@ final class ScalesUITests: XCTestCase {
         attachScreenshot(named: "Major key chords")
     }
 
-    /// The Scales screen shows the chords under the board, hides its controls on request,
-    /// and changes one note in place: the chords that used it change with it.
+    /// The Scales screen shows the chords as cards under the board and changes one note in
+    /// place: the chords that used it change with it.
     @MainActor
-    func testScalesScreenHidesControlsAndChangesANote() throws {
+    func testScalesScreenChangesANote() throws {
         let rootMenu = app.menuButton(labelled: "Root")
         rootMenu.tap()
         app.buttons["G"].firstMatch.tap()
@@ -155,9 +158,7 @@ final class ScalesUITests: XCTestCase {
         app.buttons["Major"].firstMatch.tap()
         XCTAssertTrue(app.navigationBars["G Major"].waitForExistence(timeout: 3))
 
-        app.buttons["toggleControls"].tap()
-        XCTAssertTrue(app.buttons["Notes"].waitForNonExistence(timeout: 3), "the controls are hidden")
-        attachScreenshot(named: "Board and chords without controls")
+        attachScreenshot(named: "Board and chords")
 
         let dominantChip = app.buttons["V, D major: D, F♯, A"]
         XCTAssertTrue(dominantChip.waitForExistence(timeout: 3), "the chords are listed")
@@ -183,8 +184,6 @@ final class ScalesUITests: XCTestCase {
 
         app.buttons["revertBoardChange"].tap()
         XCTAssertTrue(app.navigationBars["G Major"].waitForExistence(timeout: 3))
-        app.buttons["toggleControls"].tap()
-        XCTAssertTrue(app.scrollUntilVisible(app.buttons["Notes"]), "the controls are back")
 
         // The change was kept as a lesson; remove it so the library is as it was.
         app.openTab("Transform")

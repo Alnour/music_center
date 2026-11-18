@@ -19,7 +19,6 @@ final class StoreScreenshots: XCTestCase {
         continueAfterFailure = false
         app = await XCUIApplication()
         await app.launch()
-        await app.showControlsIfHidden()
     }
 
     @MainActor
@@ -31,10 +30,7 @@ final class StoreScreenshots: XCTestCase {
         app.buttons["G"].firstMatch.tap()
         app.menuButton(labelled: "Scale").tap()
         app.buttons["Major"].firstMatch.tap()
-        let notesChoice = app.buttons["Notes"]
-        XCTAssertTrue(app.scrollUntilVisible(notesChoice), "the label choices are below the chords")
-        notesChoice.tap()
-        app.swipeDown()
+        app.buttons["Notes"].tap()
         XCTAssertTrue(app.navigationBars["G Major"].waitForExistence(timeout: 5))
         keep("01-g-major")
 
@@ -47,10 +43,7 @@ final class StoreScreenshots: XCTestCase {
         keep("02-a-minor-pentatonic")
 
         // 3. Scale degrees instead of note names, on a blues scale.
-        let degreesChoice = app.buttons["Degrees"]
-        XCTAssertTrue(app.scrollUntilVisible(degreesChoice))
-        degreesChoice.tap()
-        app.swipeDown()
+        app.buttons["Degrees"].tap()
         app.menuButton(labelled: "Root").tap()
         app.buttons["E"].firstMatch.tap()
         app.menuButton(labelled: "Scale").tap()
@@ -61,11 +54,12 @@ final class StoreScreenshots: XCTestCase {
         // 4. The TV layout filling the screen, the picture the TV shows. The iPhone turns
         //    itself for it; iPadOS never rotates an app, so the iPad is turned by hand
         //    the way a player would.
-        let fullScreenButton = app.buttons["Full-screen board"]
-        XCTAssertTrue(app.scrollUntilVisible(fullScreenButton))
         if app.isPad {
             XCUIDevice.shared.orientation = .landscapeLeft
         }
+        app.openTVMenu()
+        let fullScreenButton = app.buttons["Full-screen board"]
+        XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 3))
         fullScreenButton.tap()
         let closeButton = app.buttons["Close"]
         XCTAssertTrue(closeButton.waitForExistence(timeout: 3))
@@ -74,7 +68,7 @@ final class StoreScreenshots: XCTestCase {
         closeButton.tap()
         // The board locks the phone to landscape; turn it back before the next screen.
         XCUIDevice.shared.orientation = .portrait
-        XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["tvMenu"].waitForExistence(timeout: 3))
         sleep(1)
 
         // 5. The chord tables for every key.

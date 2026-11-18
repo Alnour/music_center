@@ -16,82 +16,105 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isShowingFullScreenBoard = false
+    @State private var isShowingBoardSettings = false
+    @State private var isShowingTVMenu = false
+    /// Set by the TV menu's Full-screen button. The board opens once the menu has gone:
+    /// presenting it while the popover is still closing cancels the presentation.
+    @State private var opensFullScreenBoardAfterTVMenu = false
     @State private var libraryError: ScaleLibraryError?
-    /// Whether the Scale, Display and TV sections are on screen. Hidden, the screen is
-    /// the board and its chords alone, which is all a player needs while practising.
-    @AppStorage("showsControls") private var showsControls = true
     /// Delay before falling back to the full-screen board once mirroring starts, giving
     /// iOS time to offer the app its own TV screen first.
     private static let tvScreenGracePeriod: Duration = .seconds(2)
+    /// The largest share of the screen the chord cards may take, so the board always keeps
+    /// most of the height even when a changed scale lists every chord it had and has.
+    private static let chordsHeightShare: CGFloat = 0.34
 
     var body: some View {
         @Bindable var session = session
         let palette = FretboardPalette.matching(colorScheme)
         let isWide = horizontalSizeClass == .regular
         NavigationStack {
-            Form {
-                // One screen: the notes, the board, the key and scale in a single row with
-                // the note-change menu, and the chords. Rarer choices sit below, behind the
-                // controls button, so the board and its chords never have to scroll.
-                Section {
-                    ScaleNotesRow(
-                        scale: session.scale,
-                        palette: palette,
-                        noteSize: isWide ? 20 : 15,
-                        highlightedNotes: session.ringedNotes
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
-                    phoneBoard(palette: palette, boardHeight: isWide ? 420 : 300)
-                        .listRowInsets(EdgeInsets())
-                        .accessibilityLabel(boardAccessibilityLabel)
-                    ScaleChoiceRow(
+            // The board and its chords get the whole screen. One slim row above the board
+            // holds every choice a player makes while practising; one-time setup and the
+            // TV controls sit behind the two toolbar buttons.
+            GeometryReader { proxy in
+                VStack(spacing: isWide ? 12 : 8) {
+                    BoardToolbar(
                         root: $session.settings.root,
                         scale: scaleSelection,
+                        instrument: $session.settings.selectedInstrument,
+                        labelStyle: $session.settings.labelStyle,
                         customScales: library.scales,
                         changeNote: CompactScaleEditMenu(
                             scale: session.scale,
                             onPick: transformBoard
                         )
                     )
-                    ScaleChordsRow(
+                    ScaleNotesRow(
                         scale: session.scale,
-                        change: session.currentBoardChange,
-                        ringedChord: session.ringedChord,
-                        onTap: { chord in session.toggleRing(for: chord) }
+                        palette: palette,
+                        noteSize: isWide ? 18 : 14,
+                        highlightedNotes: session.ringedNotes
                     )
+                    .frame(maxWidth: .infinity)
+                    phoneBoard(palette: palette)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(maxHeight: .infinity)
+                        .accessibilityLabel(boardAccessibilityLabel)
                     if let change = session.currentBoardChange {
                         BoardChangeRow(change: change) {
                             session.revertBoardChange(from: library)
                         }
                     }
+                    ScrollView(.vertical, showsIndicators: false) {
+                        ScaleChordsRow(
+                            scale: session.scale,
+                            change: session.currentBoardChange,
+                            ringedChord: session.ringedChord,
+                            onTap: { chord in session.toggleRing(for: chord) },
+                            cardMinimumWidth: isWide ? 120 : 84
+                        )
+                    }
+                    .frame(maxHeight: proxy.size.height * Self.chordsHeightShare)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
-                if showsControls {
-                    DisplayOptionsSection(settings: $session.settings)
-                    TVSection(
-                        status: session.tvStatus,
-                        player: session.caster.player,
-                        resumeCasting: { session.caster.resume() },
-                        takeOverTV: { session.caster.takeOverTVIfChosen() },
-                        tvUsesDarkTheme: $session.settings.tvUsesDarkTheme,
-                        showFullScreenBoard: { isShowingFullScreenBoard = true }
-                    )
-                }
+                .padding(.horizontal, isWide ? 20 : 12)
+                .padding(.bottom, 8)
             }
             .navigationTitle(session.scale.title)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(
-                        showsControls ? "Hide Controls" : "Show Controls",
-                        systemImage: showsControls
-                            ? "slider.horizontal.below.square.filled.and.square"
-                            : "slider.horizontal.3"
-                    ) {
-                        withAnimation {
-                            showsControls.toggle()
-                        }
+                    Button("TV", systemImage: tvMenuIcon) {
+                        isShowingTVMenu.toggle()
                     }
-                    .accessibilityIdentifier("toggleControls")
+                    .tint(tvMenuTint)
+                    .accessibilityIdentifier("tvMenu")
+                    .popover(isPresented: $isShowingTVMenu) {
+                        TVMenu(
+                            status: session.tvStatus,
+                            player: session.caster.player,
+                            resumeCasting: { session.caster.resume() },
+                            takeOverTV: { session.caster.takeOverTVIfChosen() },
+                            tvUsesDarkTheme: $session.settings.tvUsesDarkTheme,
+                            showFullScreenBoard: {
+                                opensFullScreenBoardAfterTVMenu = true
+                                isShowingTVMenu = false
+                            }
+                        )
+                        .presentationCompactAdaptation(.popover)
+                        .onDisappear(perform: openFullScreenBoardIfAsked)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Board settings", systemImage: "gearshape") {
+                        isShowingBoardSettings.toggle()
+                    }
+                    .accessibilityIdentifier("boardSettings")
+                    .popover(isPresented: $isShowingBoardSettings) {
+                        BoardSettingsMenu(settings: $session.settings)
+                            .presentationCompactAdaptation(.popover)
+                    }
                 }
             }
         }
@@ -122,16 +145,16 @@ struct ContentView: View {
         }
     }
 
-    /// The fretboard or the piano octave, whichever instrument the player chose.
+    /// The fretboard or the piano octave, whichever instrument the player chose, filling
+    /// whatever height the chords leave it.
     @ViewBuilder
-    private func phoneBoard(palette: FretboardPalette, boardHeight: CGFloat) -> some View {
+    private func phoneBoard(palette: FretboardPalette) -> some View {
         switch session.settings.selectedInstrument {
         case .guitar:
             PhoneFretboard(
                 settings: session.settings,
                 layout: session.layout,
                 palette: palette,
-                boardHeight: boardHeight,
                 ringedNotes: session.ringedNotes
             )
         case .keyboard:
@@ -139,7 +162,6 @@ struct ContentView: View {
                 settings: session.settings,
                 layout: session.keyboardLayout,
                 palette: palette,
-                boardHeight: boardHeight,
                 ringedNotes: session.ringedNotes
             )
         }
@@ -150,6 +172,33 @@ struct ContentView: View {
         case .guitar: "Fretboard showing \(session.scale.title)"
         case .keyboard: "Keyboard showing \(session.scale.title)"
         }
+    }
+
+    /// The TV button's symbol follows the TV: plain while nothing is connected, filled
+    /// while the board is on the TV, a warning while casting has stopped or failed.
+    private var tvMenuIcon: String {
+        switch session.tvStatus {
+        case .disconnected: "tv"
+        case .mirroringPhone: "tv"
+        case .showingBoard, .castingVideo: "tv.fill"
+        case .castFailed: "exclamationmark.triangle"
+        case .castInterrupted: "pause.circle"
+        }
+    }
+
+    private var tvMenuTint: Color? {
+        switch session.tvStatus {
+        case .disconnected: nil
+        case .mirroringPhone, .castInterrupted: .orange
+        case .showingBoard, .castingVideo: .green
+        case .castFailed: .red
+        }
+    }
+
+    private func openFullScreenBoardIfAsked() {
+        guard opensFullScreenBoardAfterTVMenu else { return }
+        opensFullScreenBoardAfterTVMenu = false
+        isShowingFullScreenBoard = true
     }
 
     /// The scale picker's selection. Choosing goes through the session so a saved scale is
@@ -195,24 +244,30 @@ struct ContentView: View {
     }
 }
 
-/// The board sized for the screen in hand: cells never shrink below a comfortable reading
-/// size, and the board scrolls sideways when all the frets don't fit. An iPad gets a taller
-/// board than the phone so the note circles grow with the wider frets instead of sitting
-/// small inside them.
+/// The board filling the height it is given. Cells never shrink below a comfortable reading
+/// size and grow with the board's height, so a taller board means larger note circles, and
+/// the board scrolls sideways when all the frets no longer fit the width.
 private struct PhoneFretboard: View {
     let settings: PracticeSettings
     let layout: FretboardLayout
     let palette: FretboardPalette
-    let boardHeight: CGFloat
     let ringedNotes: Set<NoteName>
 
     private static let minimumCellWidth: CGFloat = 46
+    /// How wide a cell is made for each point of string row height. Note circles are sized
+    /// by the smaller of the two, so cells narrower than this would waste the board's height.
+    private static let cellWidthPerRowHeight: CGFloat = 0.9
 
     var body: some View {
         GeometryReader { proxy in
             let columnUnits = FretboardGeometry.columnUnits(fretCount: settings.fretCount)
+            let rowUnits =
+                CGFloat(layout.strings.count) + FretboardGeometry.numberBandShare
+                + FretboardGeometry.inlayBandShare
+            let rowHeight = proxy.size.height / rowUnits
             let fittedCellWidth = proxy.size.width / columnUnits
-            let cellWidth = max(Self.minimumCellWidth, fittedCellWidth)
+            let readableCellWidth = rowHeight * Self.cellWidthPerRowHeight
+            let cellWidth = max(Self.minimumCellWidth, fittedCellWidth, readableCellWidth)
             ScrollView(.horizontal, showsIndicators: false) {
                 FretboardView(
                     layout: layout,
@@ -226,19 +281,16 @@ private struct PhoneFretboard: View {
             }
             .defaultScrollAnchor(settings.isLeftHanded ? .trailing : .leading)
         }
-        .frame(height: boardHeight)
         .background(palette.background)
     }
 }
 
-/// One piano octave across the screen. The whole octave always fits the width, so there is
-/// nothing to scroll, and the row is only as tall as the keys need, up to the fretboard's
-/// height on a wide screen.
+/// The piano octaves across the screen. The whole keyboard always fits the width, so there
+/// is nothing to scroll, and the keys are as tall as the width or the height allows.
 private struct PhoneKeyboard: View {
     let settings: PracticeSettings
     let layout: KeyboardLayout
     let palette: FretboardPalette
-    let boardHeight: CGFloat
     let ringedNotes: Set<NoteName>
 
     var body: some View {
@@ -252,59 +304,94 @@ private struct PhoneKeyboard: View {
             KeyboardView.widthToHeight(whiteKeyCount: layout.whiteKeys.count),
             contentMode: .fit
         )
-        .frame(maxWidth: .infinity, maxHeight: boardHeight)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(12)
         .background(palette.background)
     }
 }
 
-/// The key and the scale in one row, each a small menu, with the note-change menu at the
-/// end, so choosing takes one line under the board and the chords stay on the same screen.
-private struct ScaleChoiceRow: View {
+/// One slim row above the board with everything a player changes while practising: the
+/// key and scale as menus, the instrument and the labels as small segmented pills, and the
+/// note-change menu. On a narrow phone the row folds into two lines.
+private struct BoardToolbar: View {
     @Binding var root: NoteName
     @Binding var scale: ScaleReference
+    @Binding var instrument: Instrument
+    @Binding var labelStyle: NoteLabelStyle
     let customScales: [CustomScale]
     let changeNote: CompactScaleEditMenu
 
     var body: some View {
-        HStack(spacing: 16) {
-            Picker("Root", selection: $root) {
-                ForEach(NoteName.rootChoices, id: \.self) { note in
-                    Text(note.displayName).tag(note)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                scaleMenus
+                Spacer(minLength: 8)
+                pills
+                changeNoteButton
+            }
+            VStack(spacing: 6) {
+                HStack(spacing: 12) {
+                    scaleMenus
+                    Spacer(minLength: 0)
+                    changeNoteButton
+                }
+                HStack(spacing: 8) {
+                    pills
+                    Spacer(minLength: 0)
                 }
             }
-            .pickerStyle(.menu)
-            .fixedSize()
-            Picker("Scale", selection: $scale) {
-                ScalePickerOptions(customScales: customScales)
-            }
-            .pickerStyle(.menu)
-            .layoutPriority(1)
-            Spacer(minLength: 0)
-            changeNote
         }
+        .controlSize(.small)
+    }
+
+    @ViewBuilder
+    private var scaleMenus: some View {
+        Picker("Root", selection: $root) {
+            ForEach(NoteName.rootChoices, id: \.self) { note in
+                Text(note.displayName).tag(note)
+            }
+        }
+        .pickerStyle(.menu)
+        .fixedSize()
+        Picker("Scale", selection: $scale) {
+            ScalePickerOptions(customScales: customScales)
+        }
+        .pickerStyle(.menu)
+        .fixedSize()
+    }
+
+    @ViewBuilder
+    private var pills: some View {
+        Picker("Instrument", selection: $instrument) {
+            ForEach(Instrument.allCases) { instrument in
+                Text(instrument.title).tag(instrument)
+            }
+        }
+        .pickerStyle(.segmented)
+        .fixedSize()
+        Picker("Labels", selection: $labelStyle) {
+            ForEach(NoteLabelStyle.allCases) { style in
+                Text(style.title).tag(style)
+            }
+        }
+        .pickerStyle(.segmented)
+        .fixedSize()
+    }
+
+    private var changeNoteButton: some View {
+        changeNote
+            .labelStyle(.iconOnly)
+            .accessibilityLabel("Change a note")
     }
 }
 
-private struct DisplayOptionsSection: View {
+/// One-time setup behind the gear button: frets, tuning and string order for the guitar,
+/// the octave count for the keyboard. Each instrument shows only its own rows.
+private struct BoardSettingsMenu: View {
     @Binding var settings: PracticeSettings
 
     var body: some View {
-        Section("Display") {
-            Picker("Instrument", selection: $settings.selectedInstrument) {
-                ForEach(Instrument.allCases) { instrument in
-                    Text(instrument.title).tag(instrument)
-                }
-            }
-            .pickerStyle(.segmented)
-            Picker("Labels", selection: $settings.labelStyle) {
-                ForEach(NoteLabelStyle.allCases) { style in
-                    Text(style.title).tag(style)
-                }
-            }
-            .pickerStyle(.segmented)
-            // Frets, tuning and string order mean nothing on a piano, and octaves nothing
-            // on a guitar, so each instrument shows only its own rows.
+        Form {
             switch settings.selectedInstrument {
             case .guitar:
                 guitarOptions
@@ -317,6 +404,8 @@ private struct DisplayOptionsSection: View {
                 .pickerStyle(.segmented)
             }
         }
+        .frame(minWidth: 300, minHeight: 240)
+        .presentationBackground(.regularMaterial)
     }
 
     @ViewBuilder
@@ -336,7 +425,9 @@ private struct DisplayOptionsSection: View {
     }
 }
 
-private struct TVSection: View {
+/// The TV controls behind the TV button: the AirPlay picker with the TV's status, the way
+/// back after an interruption, the dark theme and the full-screen board.
+private struct TVMenu: View {
     let status: TVStatus
     let player: AVPlayer
     let resumeCasting: () -> Void
@@ -345,33 +436,34 @@ private struct TVSection: View {
     let showFullScreenBoard: () -> Void
 
     var body: some View {
-        Section {
-            HStack(spacing: 12) {
-                ClipPreview(player: player)
-                    .frame(width: 96, height: 54)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                statusRow
-                Spacer()
-                AirPlayPickerButton(onMenuClosed: takeOverTV)
-                    .frame(width: 44, height: 44)
-                    .accessibilityLabel("AirPlay")
+        Form {
+            Section {
+                HStack(spacing: 12) {
+                    ClipPreview(player: player)
+                        .frame(width: 96, height: 54)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    statusRow
+                    Spacer()
+                    AirPlayPickerButton(onMenuClosed: takeOverTV)
+                        .frame(width: 44, height: 44)
+                        .accessibilityLabel("AirPlay")
+                }
+                if case .castInterrupted = status {
+                    Button("Resume on TV", systemImage: "play.fill", action: resumeCasting)
+                }
+                Toggle("Dark TV theme", isOn: $tvUsesDarkTheme)
+                Button(
+                    "Full-screen board",
+                    systemImage: "arrow.up.left.and.arrow.down.right",
+                    action: showFullScreenBoard
+                )
+            } footer: {
+                Text(footerText)
             }
-            if case .castInterrupted = status {
-                Button("Resume on TV", systemImage: "play.fill", action: resumeCasting)
-            }
-            Toggle("Dark TV theme", isOn: $tvUsesDarkTheme)
-            Button(
-                "Full-screen board",
-                systemImage: "arrow.up.left.and.arrow.down.right",
-                action: showFullScreenBoard
-            )
-        } header: {
-            Text("TV")
-        } footer: {
-            Text(footerText)
         }
+        .frame(minWidth: 340, minHeight: 300)
+        .presentationBackground(.regularMaterial)
     }
-
     @ViewBuilder
     private var statusRow: some View {
         switch status {

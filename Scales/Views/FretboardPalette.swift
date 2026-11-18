@@ -30,6 +30,12 @@ struct FretboardPalette: Sendable {
     let whiteKey: Color
     let blackKey: Color
     let keyOutline: Color
+    /// Notes of the chord the player picked. Green sits far from both the grey-blue scale
+    /// tones and the root (navy in light, gold in dark), so the three kinds never read
+    /// alike; the ring uses the same hue so a ringed root still says "chord".
+    let chordFill: Color
+    let chordText: Color
+    let chordRing: Color
 
     static let light = FretboardPalette(
         background: Color(hex: 0xFFFFFF),
@@ -46,7 +52,10 @@ struct FretboardPalette: Sendable {
         secondaryText: Color(hex: 0x5B6275),
         whiteKey: Color(hex: 0xFAFAF7),
         blackKey: Color(hex: 0x2B2E36),
-        keyOutline: Color(hex: 0x8A8F9C)
+        keyOutline: Color(hex: 0x8A8F9C),
+        chordFill: Color(hex: 0x2E9E6B),
+        chordText: Color(hex: 0xFFFFFF),
+        chordRing: Color(hex: 0x1F7A50)
     )
 
     static let dark = FretboardPalette(
@@ -64,7 +73,10 @@ struct FretboardPalette: Sendable {
         secondaryText: Color(hex: 0x9AA1B2),
         whiteKey: Color(hex: 0xE4E7EE),
         blackKey: Color(hex: 0x1C2029),
-        keyOutline: Color(hex: 0x4A5162)
+        keyOutline: Color(hex: 0x4A5162),
+        chordFill: Color(hex: 0x4CD98F),
+        chordText: Color(hex: 0x07261A),
+        chordRing: Color(hex: 0x7CF0B4)
     )
 
     static func matching(_ colorScheme: ColorScheme) -> FretboardPalette {

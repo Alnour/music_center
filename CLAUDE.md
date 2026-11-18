@@ -25,7 +25,7 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   uploads it to Apple's notary service and staples it; like the store script, the owner runs it.
   `DeviceKind` names the device (phone, iPad, Mac); the Mac skips the mirroring-detected
   fallback to the full-screen board.
-- Instrument (Display section of the Scales tab): `Instrument` is guitar or keyboard.
+- Instrument (a segmented pill in the Scales tab's toolbar row): `Instrument` is guitar or keyboard.
   `KeyboardLayout` (C to a closing C, 13 keys per octave plus one; one or two octaves) and
   `KeyboardView` mirror `FretboardLayout` and `FretboardView`; `TVDisplayView` and
   `ContentView` switch on `PracticeSettings.selectedInstrument`. The stored fields
@@ -43,14 +43,20 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   keeps the row-per-note `ScaleEditMenus`) to change one note in place. Tapping a chip
   rings the chord's notes on the board, the notes row, the TV scene and the full-screen
   board (`PracticeSession.ringedChord`, this run only; `ringedNotes` is empty once the
-  scale lacks one of the notes; `ChordRing` draws the ring). The cast AirPlay clip is keyed
+  scale lacks one of the notes; `ChordRing` draws the ring; chord notes take the palette's
+  green `chordFill`, the root keeps its own colour, the ring is `chordRing`). The cast AirPlay clip is keyed
   by settings and does not carry the rings. `PracticeSession.transform` saves the change as a lesson (a new scale is kept
   under its working name, "Major ♭7"), puts the result on the board and keeps a
   `BoardChange` for this run only; `currentBoardChange` is nil once the player picks another
   scale or key. The chips then mark each chord that used the note ("was D", new note in
   green, lost chords crossed out) and a Back button restores the starting scale. The
-  Display and TV sections hide behind the toolbar button (`showsControls`,
-  `@AppStorage`) so the board and chords get the screen.
+  The Scales screen is a `VStack`, not a Form: one toolbar row (`BoardToolbar`: Root and
+  Scale menus, Guitar/Keyboard and Notes/Degrees/Dots pills, the note-change menu), the
+  notes row, the board filling the remaining height, and the chord cards in a grid capped
+  at a third of the screen. One-time setup (frets, tuning, string order, octaves) sits in
+  a popover behind the gear button (`BoardSettingsMenu`, identifier `boardSettings`); the
+  AirPlay picker, status, dark TV theme and full-screen board sit in a popover behind the
+  TV button (`TVMenu`, identifier `tvMenu`), whose symbol and tint follow `TVStatus`.
 - Transform tab (`TransformView`): the player changes one note of a scale (lower, raise,
   remove or add) and a lesson explains what each chord becomes. Scales are `ScaleDefinition`s
   (name + degrees); chords are stacked by letter (`Scale.letterTriads`) so any scale size

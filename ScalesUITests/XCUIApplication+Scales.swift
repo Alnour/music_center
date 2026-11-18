@@ -25,15 +25,30 @@ extension XCUIApplication {
         buttons[title].firstMatch.tap()
     }
 
-    /// Puts the Scales screen's controls back when an earlier run left them hidden. The
-    /// choice is saved between launches, and the other tests expect the Display and TV
-    /// rows to be there to scroll to.
+    /// Opens the Scales screen's board settings (frets, tuning, string order, octaves),
+    /// which sit behind the gear button in the navigation bar.
     @MainActor
-    func showControlsIfHidden() {
-        let toggle = buttons["toggleControls"]
-        guard toggle.waitForExistence(timeout: 3) else { return }
-        if toggle.label == "Show Controls" {
-            toggle.tap()
+    func openBoardSettings() {
+        buttons["boardSettings"].tap()
+    }
+
+    /// Opens the Scales screen's TV controls, behind the TV button in the navigation bar.
+    @MainActor
+    func openTVMenu() {
+        buttons["tvMenu"].tap()
+    }
+
+    /// Closes an open popover by tapping the board under it, which does nothing on its own.
+    @MainActor
+    func dismissPopover() {
+        let board = otherElements.matching(
+            NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@",
+                "Fretboard showing", "Keyboard showing")
+        ).firstMatch
+        if board.exists {
+            board.tap()
+        } else {
+            coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)).tap()
         }
     }
 

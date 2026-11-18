@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// The chords the scale on the board makes, in one row under the board on the Scales screen.
+/// The chords the scale on the board makes, as cards under the board on the Scales screen.
 ///
 /// After a note change, every chord is shown as it is now, and the chords that used the
 /// changed note are marked: what each one was, the note it gained in green, and the chords
@@ -19,6 +19,9 @@ struct ScaleChordsRow: View {
     let ringedChord: ScaleChord?
     /// Called with the chord the player tapped.
     let onTap: (ScaleChord) -> Void
+    /// The narrowest a card may be. A phone uses narrow cards so seven chords make two
+    /// rows; a wide window has room for roomier ones.
+    var cardMinimumWidth: CGFloat = 84
 
     var body: some View {
         if chips.isEmpty {
@@ -26,19 +29,23 @@ struct ScaleChordsRow: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 6) {
-                    ForEach(Array(chips.enumerated()), id: \.offset) { _, chip in
-                        Button {
-                            onTap(chip.chord)
-                        } label: {
-                            BoardChordChip(chip: chip, isRinged: chip.chord == ringedChord)
-                        }
-                        .buttonStyle(.plain)
+            // Cards wrap into as many rows as the width needs, so a Mac window shows them
+            // in one row and a phone in two or three, each card large enough to read from
+            // playing distance.
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: cardMinimumWidth, maximum: 200), spacing: 8)],
+                spacing: 8
+            ) {
+                ForEach(Array(chips.enumerated()), id: \.offset) { _, chip in
+                    Button {
+                        onTap(chip.chord)
+                    } label: {
+                        BoardChordChip(chip: chip, isRinged: chip.chord == ringedChord)
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.vertical, 2)
             }
+            .padding(.vertical, 2)
             .accessibilityIdentifier("boardChords")
         }
     }
@@ -97,10 +104,12 @@ struct BoardChangeRow: View {
     }
 }
 
-/// A chord's numeral, name and notes. After a change, a line above says what the chord
+/// A chord card: numeral, name and notes. After a change, a line above says what the chord
 /// was, a gained note is green, and a chord the scale lost is crossed out. The chord whose
-/// notes are ringed on the board sits on a tinted pad with the same orange edge.
+/// notes are ringed on the board sits on a tinted card edged in the board's chord colour.
 private struct BoardChordChip: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     struct Content {
         let chord: ScaleChord
         /// The chord this one replaced, when the change moved one of its notes.
@@ -114,28 +123,34 @@ private struct BoardChordChip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(caption)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(captionColor)
-            Text(chip.chord.formulaNumeral)
-                .font(.system(.caption, design: .serif).weight(.semibold))
-                .foregroundStyle(.secondary)
+            HStack {
+                Text(chip.chord.formulaNumeral)
+                    .font(.system(.subheadline, design: .serif).weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+                Text(caption)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(captionColor)
+            }
             Text(chip.chord.triad.name)
-                .font(.system(.title3, design: .rounded).weight(.bold))
+                .font(.system(.title2, design: .rounded).weight(.bold))
                 .foregroundStyle(nameColor)
                 .strikethrough(chip.kind == .removed)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Text(notesText)
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(chip.kind == .removed ? .tertiary : .primary)
         }
-        .frame(minWidth: 56, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .background {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(isRinged ? ringColor.opacity(0.12) : Color(.secondarySystemFill))
             if isRinged {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(ChordRing.color.opacity(0.12))
-                    .strokeBorder(ChordRing.color, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(ringColor, lineWidth: 2)
             }
         }
         .contentShape(Rectangle())
@@ -143,6 +158,11 @@ private struct BoardChordChip: View {
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(isRinged ? .isSelected : [])
         .accessibilityHint("Rings the chord's notes on the board")
+    }
+
+    /// The same green the board paints the chord's notes in, so card and board match.
+    private var ringColor: Color {
+        FretboardPalette.matching(colorScheme).chordRing
     }
 
     /// "was Gm", "new", "gone", or a blank line that keeps every chip the same height.
@@ -177,7 +197,7 @@ private struct BoardChordChip: View {
             var piece = AttributedString(note.displayName)
             if chip.newNotes.contains(note) {
                 piece.foregroundColor = .green
-                piece.font = .caption.bold()
+                piece.font = .subheadline.bold()
             }
             text += piece
         }
