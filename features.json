@@ -10,11 +10,10 @@
       "title": "The chosen scale drawn across the guitar neck",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -24,11 +23,10 @@
       "title": "Every root and scale type, spelled correctly",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -38,10 +36,9 @@
       "title": "Tunings and fret counts",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
-        "androidTv": "later"
+        "androidPhone": "required",
+        "androidTv": "required"
       },
-      "laterUntil": "wave 1",
       "test": "any"
     },
     {
@@ -49,11 +46,10 @@
       "title": "Note labels: notes, degrees or dots",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -63,10 +59,9 @@
       "title": "Left-handed board and thin string on top",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
-        "androidTv": "later"
+        "androidPhone": "required",
+        "androidTv": "required"
       },
-      "laterUntil": "wave 1",
       "test": "any"
     },
     {
@@ -74,11 +69,10 @@
       "title": "The scale's notes in a row above the board",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -88,11 +82,10 @@
       "title": "TV board: dark theme, 16:9 full screen",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -102,10 +95,9 @@
       "title": "Settings survive a relaunch; old settings still load",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
-        "androidTv": "later"
+        "androidPhone": "required",
+        "androidTv": "required"
       },
-      "laterUntil": "wave 1",
       "test": "any"
     },
     {
@@ -113,11 +105,10 @@
       "title": "The screen stays awake while practising",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": {
@@ -132,11 +123,10 @@
       "title": "Chord tables for every major and minor key",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -146,11 +136,10 @@
       "title": "Chord cards under the board; tapping one rings its notes",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -160,11 +149,10 @@
       "title": "Change one note of the board's scale in place and go back",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -174,10 +162,9 @@
       "title": "Transform tab: lessons, chord report, My Scales",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "no"
       },
-      "laterUntil": "wave 3",
       "reason": "no typing with a remote",
       "test": "ui"
     },
@@ -186,11 +173,10 @@
       "title": "Keyboard instrument with one or two octaves",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -200,11 +186,10 @@
       "title": "Drum trainer: grooves, tempo, play and pause",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
@@ -214,11 +199,10 @@
       "title": "Spoken labels for the board and the chord cards",
       "platforms": {
         "ios": "required",
-        "androidPhone": "later",
+        "androidPhone": "required",
         "androidTv": "later"
       },
       "laterUntil": {
-        "androidPhone": "wave 3",
         "androidTv": "wave 4"
       },
       "test": "ui"
