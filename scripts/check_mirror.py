@@ -41,14 +41,9 @@ KOTLIN_ONLY = {
 }
 # Not ported yet; wave 1 empties this.
 PENDING = {
-    "Scales/Music/ChordChangeReport.swift",
-    "Scales/Music/ScaleEdit.swift",
-    "Scales/Music/ScaleIdentifier.swift",
-    "Scales/Music/TransformationLesson.swift",
     "Scales/Session/PracticeSession.swift",
     "Scales/Session/PracticeSettings.swift",
     "Scales/Session/ScaleLibrary.swift",
-    "Scales/Music/ScaleEditMenus.swift",
     "Scales/Views/BoardChordChips.swift",
 }
 
