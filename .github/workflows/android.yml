@@ -1,0 +1,47 @@
+# Android checks on Linux: JVM tests, ktlint, detekt, Android lint and a debug build. No
+# emulator here; the Compose interface tests run on the Mac before each owner review.
+name: Android
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - "expected/**"
+      - "scripts/android.mk"
+      - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "android/**"
+      - "expected/**"
+      - "scripts/android.mk"
+      - ".github/workflows/android.yml"
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Sets ANDROID_HOME, which scripts/android.mk keeps (its default only applies on a Mac).
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: "platforms;android-37.0 build-tools;36.0.0 platform-tools"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Test, lint and build
+        run: make test-android lint-android build-android
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: android-reports
+          path: |
+            android/**/build/reports/
+            android/**/build/test-results/
