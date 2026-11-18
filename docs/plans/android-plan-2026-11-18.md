@@ -429,7 +429,10 @@ owns only the files listed, never edits `features.json`, `RootView.kt`, `TvApp.k
 agent's test file, and commits when `make verify` passes in its worktree (Android targets are
 skipped until they exist). The orchestrator then merges the sub-branches into `android`,
 resolves nothing but import lists, flips `features.json`, runs `make verify-all`, and commits
-"Wave N integration". Each wave ends with an owner gate; `android` merges to `main` after it.
+"Wave N integration". No owner gates (Alnour, 18 Nov): each wave ends with automated checks instead: the Compose UI tests on the
+phone and TV emulators, plus side-by-side screenshots of the iOS simulator and the Android emulator in the
+same state, compared by the orchestrator. `android` merges to `main` after each wave passes. Only the real
+Fire TV stick and the store uploads need Alnour.
 
 | Wave | Pre-wiring by orchestrator | Parallel agents (Opus, own worktrees, disjoint files) | Done when | Owner gate |
 |---|---|---|---|---|
