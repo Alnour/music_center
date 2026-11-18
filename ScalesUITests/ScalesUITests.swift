@@ -35,11 +35,17 @@ final class ScalesUITests: XCTestCase {
     // feature: keyboard, chord-chips-rings
     func testChoosingTheKeyboardShowsAnOctave() throws {
         let guitarChoice = app.buttons["Guitar"]
-        XCTAssertTrue(guitarChoice.waitForExistence(timeout: 3), "the instrument pills are in the toolbar")
+        XCTAssertTrue(
+            guitarChoice.waitForExistence(timeout: 3),
+            "the instrument pills are in the toolbar"
+        )
         guitarChoice.tap()
         app.openBoardSettings()
         let tuningRow = app.menuButton(labelled: "Tuning")
-        XCTAssertTrue(tuningRow.waitForExistence(timeout: 3), "guitar options start in the settings")
+        XCTAssertTrue(
+            tuningRow.waitForExistence(timeout: 3),
+            "guitar options start in the settings"
+        )
         app.dismissPopover()
         XCTAssertTrue(tuningRow.waitForNonExistence(timeout: 3), "the settings close")
 

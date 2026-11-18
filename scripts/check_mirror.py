@@ -23,7 +23,9 @@ EXPLICIT = {
     "Scales/Views/FretboardGeometry.swift": f"{CORE}/board/FretboardGeometry.kt",
     "Scales/Views/KeyboardGeometry.swift": f"{CORE}/board/KeyboardGeometry.kt",
     "Scales/Views/DrumStaffLayout.swift": f"{CORE}/board/DrumStaffLayout.kt",
-    "Scales/Views/ScaleEditMenus.swift": f"{CORE}/music/ScaleEditMenus.kt",
+    "Scales/Views/BoardChordChips.swift": f"{CORE}/board/BoardChordChips.kt",
+    "Scales/Views/ChordTableMetrics.swift": f"{CORE}/board/ChordTableMetrics.kt",
+    "Scales/Views/TVLayoutMetrics.swift": f"{CORE}/board/TVLayoutMetrics.kt",
 }
 # Apple-only: the audio engine player and the AirPlay casting protocol.
 SWIFT_ONLY = {"Scales/Drums/DrumPlayer.swift", "Scales/Session/BoardCaster.swift"}
@@ -63,7 +65,10 @@ PENDING = {
     "Scales/Views/FretboardGeometry.swift",
     "Scales/Views/KeyboardGeometry.swift",
     "Scales/Views/DrumStaffLayout.swift",
-    "Scales/Views/ScaleEditMenus.swift",
+    "Scales/Music/ScaleEditMenus.swift",
+    "Scales/Views/BoardChordChips.swift",
+    "Scales/Views/ChordTableMetrics.swift",
+    "Scales/Views/TVLayoutMetrics.swift",
 }
 
 

@@ -40,8 +40,9 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   `Scales/Session` holds the saved settings shared by both screens; `Scales/Views` draws them.
 - Chords on the Scales screen (`ScaleChordsRow`): the scale's `letterTriads()` as chips
   under the board, all on one screen with the notes row, the board and a single row holding
-  the Root and Scale menus plus `CompactScaleEditMenu` (nested menus; the Transform tab
-  keeps the row-per-note `ScaleEditMenus`) to change one note in place. Tapping a chip
+  the Root and Scale menus plus `CompactScaleEditMenu` (nested menus in `ScaleEditMenuViews.swift`; the Transform tab
+  keeps the row-per-note `ScaleEditMenus` view; the edit choices and menu titles are UI-free in
+  `Music/ScaleEditMenus.swift`) to change one note in place. Tapping a chip
   rings the chord's notes on the board, the notes row, the TV scene and the full-screen
   board (`PracticeSession.ringedChord`, this run only; `ringedNotes` is empty once the
   scale lacks one of the notes; `ChordRing` draws the ring; chord notes take the palette's

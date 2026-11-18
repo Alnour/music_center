@@ -42,8 +42,11 @@ extension XCUIApplication {
     @MainActor
     func dismissPopover() {
         let board = otherElements.matching(
-            NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@",
-                "Fretboard showing", "Keyboard showing")
+            NSPredicate(
+                format: "label BEGINSWITH %@ OR label BEGINSWITH %@",
+                "Fretboard showing",
+                "Keyboard showing"
+            )
         ).firstMatch
         if board.exists {
             board.tap()

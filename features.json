@@ -1,95 +1,182 @@
 {
-  "platforms": ["ios", "androidPhone", "androidTv"],
+  "platforms": [
+    "ios",
+    "androidPhone",
+    "androidTv"
+  ],
   "features": [
     {
       "id": "board",
       "title": "The chosen scale drawn across the guitar neck",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "roots-scales",
       "title": "Every root and scale type, spelled correctly",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "tunings-frets",
       "title": "Tunings and fret counts",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
       "laterUntil": "wave 1",
       "test": "any"
     },
     {
       "id": "labels",
       "title": "Note labels: notes, degrees or dots",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "left-handed-thin-top",
       "title": "Left-handed board and thin string on top",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
       "laterUntil": "wave 1",
       "test": "any"
     },
     {
       "id": "notes-row",
       "title": "The scale's notes in a row above the board",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "tv-board",
       "title": "TV board: dark theme, 16:9 full screen",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "settings-persist",
       "title": "Settings survive a relaunch; old settings still load",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
       "laterUntil": "wave 1",
       "test": "any"
     },
     {
       "id": "keep-awake",
       "title": "The screen stays awake while practising",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
-      "test": { "ios": "manual", "androidPhone": "manual", "androidTv": "ui" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
+      "test": {
+        "ios": "manual",
+        "androidPhone": "manual",
+        "androidTv": "ui"
+      },
       "reason": "idle timer has no UI"
     },
     {
       "id": "chord-tables",
       "title": "Chord tables for every major and minor key",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "chord-chips-rings",
       "title": "Chord cards under the board; tapping one rings its notes",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "note-edit-revert",
       "title": "Change one note of the board's scale in place and go back",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "transform-lessons",
       "title": "Transform tab: lessons, chord report, My Scales",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "no" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "no"
+      },
       "laterUntil": "wave 3",
       "reason": "no typing with a remote",
       "test": "ui"
@@ -97,39 +184,66 @@
     {
       "id": "keyboard",
       "title": "Keyboard instrument with one or two octaves",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "drum-trainer",
       "title": "Drum trainer: grooves, tempo, play and pause",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "accessibility-labels",
       "title": "Spoken labels for the board and the chord cards",
-      "platforms": { "ios": "required", "androidPhone": "later", "androidTv": "later" },
-      "laterUntil": { "androidPhone": "wave 3", "androidTv": "wave 4" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "later",
+        "androidTv": "later"
+      },
+      "laterUntil": {
+        "androidPhone": "wave 3",
+        "androidTv": "wave 4"
+      },
       "test": "ui"
     },
     {
       "id": "tv-routing",
-      "title": "A TV device opens the TV screen",
-      "platforms": { "ios": "no", "androidPhone": "no", "androidTv": "later" },
-      "laterUntil": "wave 1",
+      "title": "A TV device opens the TV screen, even from the phone launcher entry",
+      "platforms": {
+        "ios": "no",
+        "androidPhone": "required",
+        "androidTv": "required"
+      },
       "reason": {
-        "ios": "iOS has no TV launcher activity",
-        "androidPhone": "phones have no TV launcher"
+        "ios": "iOS has no TV launcher activity"
       },
       "test": "any"
     },
     {
       "id": "airplay-cast",
       "title": "AirPlay casting from the TV menu",
-      "platforms": { "ios": "required", "androidPhone": "no", "androidTv": "no" },
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "no",
+        "androidTv": "no"
+      },
       "reason": "AirPlay is Apple only; Android's own Cast mirrors the full-screen board",
       "test": "ui"
     }
