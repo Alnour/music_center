@@ -363,15 +363,14 @@ struct DiatonicChordTests {
     }
 
     // feature: chord-tables
-    @Test func minorRowsOfferHarmonicMinorStandIns() {
+    @Test func minorRowsUseNaturalMinorChordsOnly() {
         let aMinor = KeyChordTable.minorRows()[0]
         #expect(aMinor.keyName == "A minor")
-        #expect(aMinor.alternatives.count == 2)
-        #expect(aMinor.alternatives[4]?.numeral == "V")
-        #expect(aMinor.alternatives[4]?.triad.name == "E")
-        #expect(aMinor.alternatives[6]?.numeral == "vii°")
-        #expect(aMinor.alternatives[6]?.triad.name == "G♯°")
-        #expect(KeyChordTable.majorRows()[0].alternatives.isEmpty)
+        var names: [String] = []
+        for chord in aMinor.chords {
+            names.append(chord.triad.name)
+        }
+        #expect(names == ["Am", "B°", "C", "Dm", "Em", "F", "G"])
     }
 
     // feature: chord-tables

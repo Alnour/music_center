@@ -8,9 +8,6 @@ data class KeyChordRow(
     val key: Scale,
     /** The seven chords built from the key's own scale. */
     val chords: List<DiatonicChord>,
-    /** Chords from a related scale that can stand in for the chord at a given step, keyed by
-     *  step index (minor keys only, see [KeyChordTable.minorRows]). */
-    val alternatives: Map<Int, DiatonicChord>,
     /** "major" or "minor", the word musicians put after the key's root. */
     val familyName: String,
 ) {
@@ -32,12 +29,6 @@ data class KeyChordRow(
  * than C♯ major, G♯ minor rather than A♭ minor).
  */
 object KeyChordTable {
-    /** The step of the dominant chord (v in natural minor, V in harmonic minor). */
-    private const val DOMINANT_STEP = 4
-
-    /** The step of the chord on the seventh note (VII in natural minor, vii° in harmonic). */
-    private const val SEVENTH_STEP = 6
-
     val majorKeyRoots: List<NoteName> =
         listOf(
             NoteName(Letter.A, -1),
@@ -70,10 +61,6 @@ object KeyChordTable {
             NoteName(Letter.G, 1),
         )
 
-    /** Steps whose chord changes when the seventh note is raised (harmonic minor): the fifth
-     *  step (v becomes V) and the seventh (VII becomes vii°). */
-    val harmonicMinorSteps: List<Int> = listOf(DOMINANT_STEP, SEVENTH_STEP)
-
     fun majorRows(): List<KeyChordRow> {
         val rows = mutableListOf<KeyChordRow>()
         for (root in majorKeyRoots) {
@@ -82,7 +69,6 @@ object KeyChordTable {
                 KeyChordRow(
                     key = key,
                     chords = key.diatonicTriads(),
-                    alternatives = emptyMap(),
                     familyName = "major",
                 )
             rows.add(row)
@@ -91,25 +77,17 @@ object KeyChordTable {
     }
 
     /**
-     * Minor keys use the natural minor scale for their seven chords. Harmonic minor raises the
-     * seventh note, which turns the minor v into a major V, the chord most minor-key songs use
-     * to pull back home, and VII into vii°. Those two are offered as alternatives at the steps
-     * they replace.
+     * Minor keys use the natural minor scale for their seven chords, the standard listing
+     * (i ii° III iv v VI VII); harmonic-minor stand-ins are left out on purpose.
      */
     fun minorRows(): List<KeyChordRow> {
         val rows = mutableListOf<KeyChordRow>()
         for (root in minorKeyRoots) {
             val key = Scale(root, ScaleType.NATURAL_MINOR)
-            val harmonic = Scale(root, ScaleType.HARMONIC_MINOR).diatonicTriads()
-            val alternatives = mutableMapOf<Int, DiatonicChord>()
-            for (step in harmonicMinorSteps) {
-                alternatives[step] = harmonic[step]
-            }
             val row =
                 KeyChordRow(
                     key = key,
                     chords = key.diatonicTriads(),
-                    alternatives = alternatives,
                     familyName = "minor",
                 )
             rows.add(row)

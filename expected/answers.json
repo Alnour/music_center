@@ -79250,15 +79250,8 @@
     ]
   },
   "keyChordTable" : {
-    "harmonicMinorSteps" : [
-      4,
-      6
-    ],
     "major" : [
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "A♭",
@@ -79300,9 +79293,6 @@
         "keyName" : "A♭ major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "A",
@@ -79344,9 +79334,6 @@
         "keyName" : "A major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "B♭",
@@ -79388,9 +79375,6 @@
         "keyName" : "B♭ major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "B",
@@ -79432,9 +79416,6 @@
         "keyName" : "B major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "C",
@@ -79476,9 +79457,6 @@
         "keyName" : "C major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "D♭",
@@ -79520,9 +79498,6 @@
         "keyName" : "D♭ major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "D",
@@ -79564,9 +79539,6 @@
         "keyName" : "D major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "E♭",
@@ -79608,9 +79580,6 @@
         "keyName" : "E♭ major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "E",
@@ -79652,9 +79621,6 @@
         "keyName" : "E major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "F",
@@ -79696,9 +79662,6 @@
         "keyName" : "F major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "F♯",
@@ -79740,9 +79703,6 @@
         "keyName" : "F♯ major"
       },
       {
-        "alternatives" : [
-
-        ],
         "chords" : [
           {
             "name" : "G",
@@ -79786,24 +79746,6 @@
     ],
     "minor" : [
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "E",
-              "numeral" : "V",
-              "spokenName" : "E major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "G♯°",
-              "numeral" : "vii°",
-              "spokenName" : "G♯ diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "Am",
@@ -79845,24 +79787,6 @@
         "keyName" : "A minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "F",
-              "numeral" : "V",
-              "spokenName" : "F major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "A°",
-              "numeral" : "vii°",
-              "spokenName" : "A diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "B♭m",
@@ -79904,24 +79828,6 @@
         "keyName" : "B♭ minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "F♯",
-              "numeral" : "V",
-              "spokenName" : "F♯ major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "A♯°",
-              "numeral" : "vii°",
-              "spokenName" : "A♯ diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "Bm",
@@ -79963,24 +79869,6 @@
         "keyName" : "B minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "G",
-              "numeral" : "V",
-              "spokenName" : "G major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "B°",
-              "numeral" : "vii°",
-              "spokenName" : "B diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "Cm",
@@ -80022,24 +79910,6 @@
         "keyName" : "C minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "G♯",
-              "numeral" : "V",
-              "spokenName" : "G♯ major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "B♯°",
-              "numeral" : "vii°",
-              "spokenName" : "B♯ diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "C♯m",
@@ -80081,24 +79951,6 @@
         "keyName" : "C♯ minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "A",
-              "numeral" : "V",
-              "spokenName" : "A major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "C♯°",
-              "numeral" : "vii°",
-              "spokenName" : "C♯ diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "Dm",
@@ -80140,24 +79992,6 @@
         "keyName" : "D minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "A♯",
-              "numeral" : "V",
-              "spokenName" : "A♯ major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "C𝄪°",
-              "numeral" : "vii°",
-              "spokenName" : "C𝄪 diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "D♯m",
@@ -80199,24 +80033,6 @@
         "keyName" : "D♯ minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "B",
-              "numeral" : "V",
-              "spokenName" : "B major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "D♯°",
-              "numeral" : "vii°",
-              "spokenName" : "D♯ diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "Em",
@@ -80258,24 +80074,6 @@
         "keyName" : "E minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "C",
-              "numeral" : "V",
-              "spokenName" : "C major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "E°",
-              "numeral" : "vii°",
-              "spokenName" : "E diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "Fm",
@@ -80317,24 +80115,6 @@
         "keyName" : "F minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "C♯",
-              "numeral" : "V",
-              "spokenName" : "C♯ major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "E♯°",
-              "numeral" : "vii°",
-              "spokenName" : "E♯ diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "F♯m",
@@ -80376,24 +80156,6 @@
         "keyName" : "F♯ minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "D",
-              "numeral" : "V",
-              "spokenName" : "D major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "F♯°",
-              "numeral" : "vii°",
-              "spokenName" : "F♯ diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "Gm",
@@ -80435,24 +80197,6 @@
         "keyName" : "G minor"
       },
       {
-        "alternatives" : [
-          {
-            "chord" : {
-              "name" : "D♯",
-              "numeral" : "V",
-              "spokenName" : "D♯ major"
-            },
-            "step" : 4
-          },
-          {
-            "chord" : {
-              "name" : "F𝄪°",
-              "numeral" : "vii°",
-              "spokenName" : "F𝄪 diminished"
-            },
-            "step" : 6
-          }
-        ],
         "chords" : [
           {
             "name" : "G♯m",

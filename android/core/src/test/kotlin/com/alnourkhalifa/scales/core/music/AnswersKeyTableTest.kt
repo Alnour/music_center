@@ -25,17 +25,12 @@ class AnswersKeyTableTest {
     @Test
     fun keyTablesMatchSwift() {
         val section = Answers.section("keyChordTable").jsonObject
-        val expectedSteps = mutableListOf<Int>()
-        for (element in section.array("harmonicMinorSteps")) {
-            expectedSteps.add(element.jsonPrimitive.int)
-        }
-        assertSame("harmonicMinorSteps", expectedSteps, KeyChordTable.harmonicMinorSteps)
         checkRows("major", section.array("major"), KeyChordTable.majorRows())
         checkRows("minor", section.array("minor"), KeyChordTable.minorRows())
     }
 
-    /** Each row's identity, its seven chords, and its alternatives sorted by step, the order
-     *  the generator writes them in. */
+    /** Each row's identity, and its seven chords, in the order the generator
+     *  writes them. */
     private fun checkRows(
         table: String,
         expectedRows: JsonArray,
@@ -54,23 +49,6 @@ class AnswersKeyTableTest {
             for (chordIndex in row.chords.indices) {
                 val chordCase = "$case chord $chordIndex"
                 checkChord(chordCase, expectedChords[chordIndex].jsonObject, row.chords[chordIndex])
-            }
-
-            val expectedAlternatives = expected.array("alternatives")
-            val steps =
-                row.alternatives.keys
-                    .sorted()
-            assertEquals("$case alternative count", expectedAlternatives.size, steps.size)
-            for (alternativeIndex in steps.indices) {
-                val expectedAlternative = expectedAlternatives[alternativeIndex].jsonObject
-                val step = steps[alternativeIndex]
-                val alternativeCase = "$case alternative $alternativeIndex"
-                assertSame("$alternativeCase step", expectedAlternative.int("step"), step)
-                checkChord(
-                    alternativeCase,
-                    expectedAlternative.obj("chord"),
-                    row.alternatives[step]!!,
-                )
             }
         }
     }
@@ -123,33 +101,14 @@ class AnswersKeyTableTest {
 
     // feature: chord-tables
     @Test
-    fun minorRowsOfferHarmonicMinorStandIns() {
+    fun minorRowsUseNaturalMinorChordsOnly() {
         val aMinor = KeyChordTable.minorRows()[0]
         assertEquals("keyName", "A minor", aMinor.keyName)
-        assertEquals("alternative count", 2, aMinor.alternatives.size)
-        assertEquals("step 4 numeral", "V", aMinor.alternatives[4]?.numeral)
-        assertEquals(
-            "step 4 name",
-            "E",
-            aMinor.alternatives[4]
-                ?.triad
-                ?.name,
-        )
-        assertEquals("step 6 numeral", "vii°", aMinor.alternatives[6]?.numeral)
-        assertEquals(
-            "step 6 name",
-            "G♯°",
-            aMinor.alternatives[6]
-                ?.triad
-                ?.name,
-        )
-        assertTrue(
-            "major rows have none",
-            KeyChordTable
-                .majorRows()[0]
-                .alternatives
-                .isEmpty(),
-        )
+        val names = mutableListOf<String>()
+        for (chord in aMinor.chords) {
+            names.add(chord.triad.name)
+        }
+        assertEquals(listOf("Am", "B°", "C", "Dm", "Em", "F", "G"), names)
     }
 
     // feature: chord-tables

@@ -46,13 +46,8 @@ PENDING = {
     "Scales/Session/PracticeSession.swift",
     "Scales/Session/PracticeSettings.swift",
     "Scales/Session/ScaleLibrary.swift",
-    "Scales/Views/FretboardGeometry.swift",
-    "Scales/Views/KeyboardGeometry.swift",
-    "Scales/Views/DrumStaffLayout.swift",
     "Scales/Music/ScaleEditMenus.swift",
     "Scales/Views/BoardChordChips.swift",
-    "Scales/Views/ChordTableMetrics.swift",
-    "Scales/Views/TVLayoutMetrics.swift",
 }
 
 

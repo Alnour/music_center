@@ -62,9 +62,8 @@ struct ChordTablesView: View {
             "Each chord stacks every other note of the key's scale. Upper-case numerals are "
                 + "major chords, lower case minor, and ° diminished."
         case .minor:
-            "The seven chords come from the natural minor scale. The small chords under v "
-                + "and VII come from harmonic minor, which raises the seventh note: most "
-                + "minor-key songs swap in that major V to lead back to the home chord."
+            "The seven chords come from the natural minor scale. Upper-case numerals are "
+                + "major chords, lower case minor, and ° diminished."
         }
     }
 }
@@ -84,8 +83,7 @@ extension ChordTableTextStyle {
     }
 }
 
-/// The table itself: a header of Roman numerals, then one row per key. In minor keys the
-/// harmonic-minor alternatives sit in small type under the chord they replace.
+/// The table itself: a header of Roman numerals, then one row per key.
 private struct KeyChordGrid: View {
     let rows: [KeyChordRow]
     let metrics: ChordTableMetrics
@@ -113,14 +111,8 @@ private struct KeyChordGrid: View {
             Text("Key")
                 .frame(width: metrics.keyColumnWidth, alignment: .leading)
             ForEach(Array(row.chords.enumerated()), id: \.offset) { step, chord in
-                VStack(spacing: 0) {
-                    Text(chord.numeral)
-                    if let alternative = row.alternatives[step] {
-                        Text("or \(alternative.numeral)")
-                            .font(.system(metrics.smallStyle.textStyle, design: .serif))
-                    }
-                }
-                .frame(width: metrics.chordColumnWidth)
+                Text(chord.numeral)
+                    .frame(width: metrics.chordColumnWidth)
             }
         }
         .font(.system(metrics.headerStyle.textStyle, design: .serif).weight(.semibold))
@@ -142,7 +134,6 @@ private struct KeyChordGrid: View {
             ForEach(Array(row.chords.enumerated()), id: \.offset) { step, chord in
                 ChordCell(
                     triad: chord.triad,
-                    alternative: row.alternatives[step]?.triad,
                     isHome: step == 0,
                     metrics: metrics
                 )
@@ -152,37 +143,27 @@ private struct KeyChordGrid: View {
     }
 }
 
-/// One chord name, tinted by quality so major, minor and diminished read at a glance,
-/// with an optional stand-in chord in small type underneath.
+/// One chord name, tinted by quality so major, minor and diminished read at a glance.
 private struct ChordCell: View {
     let triad: Triad
-    let alternative: Triad?
     let isHome: Bool
     let metrics: ChordTableMetrics
 
     var body: some View {
-        VStack(spacing: 0) {
-            Text(triad.name)
-                .font(
-                    .system(metrics.chordStyle.textStyle, design: .rounded)
-                        .weight(isHome ? .heavy : .semibold)
-                )
-                .foregroundStyle(triad.quality.tint)
-                .accessibilityLabel(triad.spokenName)
-            if let alternative {
-                Text("or \(alternative.name)")
-                    .font(.system(metrics.smallStyle.textStyle, design: .rounded).weight(.semibold))
-                    .foregroundStyle(alternative.quality.tint)
-                    .accessibilityLabel("or \(alternative.spokenName)")
+        Text(triad.name)
+            .font(
+                .system(metrics.chordStyle.textStyle, design: .rounded)
+                    .weight(isHome ? .heavy : .semibold)
+            )
+            .foregroundStyle(triad.quality.tint)
+            .accessibilityLabel(triad.spokenName)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .frame(width: metrics.chordColumnWidth, height: metrics.cellHeight)
+            .background {
+                if isHome {
+                    RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.15))
+                }
             }
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
-        .frame(width: metrics.chordColumnWidth, height: metrics.cellHeight)
-        .background {
-            if isHome {
-                RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.15))
-            }
-        }
     }
 }

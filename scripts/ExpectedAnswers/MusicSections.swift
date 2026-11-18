@@ -329,22 +329,13 @@ struct TableChordAnswer: Encodable {
     }
 }
 
-struct AlternativeAnswer: Encodable {
-    /// Index into the row's chords that this chord can stand in for.
-    let step: Int
-    let chord: TableChordAnswer
-}
-
 struct KeyRowAnswer: Encodable {
     let keyName: String
     let id: String
     let chords: [TableChordAnswer]
-    /// Sorted by step.
-    let alternatives: [AlternativeAnswer]
 }
 
 struct KeyChordTableSection: Encodable {
-    let harmonicMinorSteps: [Int]
     let major: [KeyRowAnswer]
     let minor: [KeyRowAnswer]
 }
@@ -356,16 +347,10 @@ func keyRowAnswers(_ rows: [KeyChordRow]) -> [KeyRowAnswer] {
         for chord in row.chords {
             chords.append(TableChordAnswer(chord))
         }
-        var alternatives: [AlternativeAnswer] = []
-        for step in row.alternatives.keys.sorted() {
-            guard let chord = row.alternatives[step] else { continue }
-            alternatives.append(AlternativeAnswer(step: step, chord: TableChordAnswer(chord)))
-        }
         let answer = KeyRowAnswer(
             keyName: row.keyName,
             id: row.id,
-            chords: chords,
-            alternatives: alternatives
+            chords: chords
         )
         answers.append(answer)
     }
@@ -374,7 +359,6 @@ func keyRowAnswers(_ rows: [KeyChordRow]) -> [KeyRowAnswer] {
 
 func keyChordTableSection() -> KeyChordTableSection {
     KeyChordTableSection(
-        harmonicMinorSteps: KeyChordTable.harmonicMinorSteps,
         major: keyRowAnswers(KeyChordTable.majorRows()),
         minor: keyRowAnswers(KeyChordTable.minorRows())
     )
