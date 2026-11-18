@@ -1,5 +1,6 @@
 package com.alnourkhalifa.scales.core.board
 
+import com.alnourkhalifa.scales.core.music.KeyboardLayout
 import kotlin.math.max
 import kotlin.math.min
 
@@ -8,10 +9,10 @@ import kotlin.math.min
  * of `Scales/Views/KeyboardGeometry.swift`, with the same members; lengths are `Double` and
  * the proportions Swift writes inline are named constants.
  *
- * Swift's `keyRects(for keys: [KeyboardLayout.Key])` is [keyRects] over the keys' `isBlack`
- * flags here, because `core/music/KeyboardLayout.kt` was written in parallel with this file;
- * the overload taking `KeyboardLayout.Key`s is added by the ui wave and only maps each key to
- * its flag.
+ * Swift's `keyRects(for keys: [KeyboardLayout.Key])` is the overload taking the layout's
+ * keys. A second overload takes only the keys' `isBlack` flags, the form this file was first
+ * written in while `core/music/KeyboardLayout.kt` was being ported; the keys overload maps
+ * each key to its flag and hands them on.
  *
  * Kept free of drawing code so the numbers are plain arithmetic: the iPhone keyboard and this
  * one share them and `expected/answers.json` pins every key rect.
@@ -84,6 +85,20 @@ class KeyboardGeometry(
             }
         }
         return rects
+    }
+
+    /**
+     * Swift's `keyRects(for:)`: one rect per key of the layout, in its left-to-right order.
+     * The JVM name differs from the flags overload because both take a `List` and the JVM
+     * erases the element type, so the two would otherwise clash.
+     */
+    @JvmName("keyRectsForKeys")
+    fun keyRects(keys: List<KeyboardLayout.Key>): List<Rect> {
+        val isBlackFlags = mutableListOf<Boolean>()
+        for (key in keys) {
+            isBlackFlags.add(key.isBlack)
+        }
+        return keyRects(isBlackFlags)
     }
 
     /**
