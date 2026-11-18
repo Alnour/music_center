@@ -42,8 +42,7 @@ KOTLIN_ONLY = {
     f"{CORE}/session/NoteLabelStyle.kt",
 }
 # Not ported yet; wave 1 empties this.
-PENDING = {
-}
+PENDING: set[str] = set()
 
 
 def expected_pairs():
