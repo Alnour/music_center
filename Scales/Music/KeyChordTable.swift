@@ -10,9 +10,6 @@ struct KeyChordRow: Identifiable, Sendable {
     let key: Scale
     /// The seven chords built from the key's own scale.
     let chords: [DiatonicChord]
-    /// Chords from a related scale that can stand in for the chord at a given step,
-    /// keyed by step index (minor keys only, see `KeyChordTable.minorRows`).
-    let alternatives: [Int: DiatonicChord]
     /// "major" or "minor", the word musicians put after the key's root.
     let familyName: String
 
@@ -50,7 +47,6 @@ enum KeyChordTable {
             let row = KeyChordRow(
                 key: key,
                 chords: key.diatonicTriads(),
-                alternatives: [:],
                 familyName: "major"
             )
             rows.append(row)
@@ -58,27 +54,15 @@ enum KeyChordTable {
         return rows
     }
 
-    /// Steps whose chord changes when the seventh note is raised (harmonic minor): the
-    /// fifth step (v becomes V) and the seventh (VII becomes vii°).
-    static let harmonicMinorSteps = [4, 6]
-
-    /// Minor keys use the natural minor scale for their seven chords. Harmonic minor raises
-    /// the seventh note, which turns the minor v into a major V, the chord most minor-key
-    /// songs use to pull back home, and VII into vii°. Those two are offered as
-    /// alternatives at the steps they replace.
+    /// Minor keys use the natural minor scale for their seven chords, the standard listing
+    /// (i ii° III iv v VI VII); harmonic-minor stand-ins are left out on purpose.
     static func minorRows() -> [KeyChordRow] {
         var rows: [KeyChordRow] = []
         for root in minorKeyRoots {
             let key = Scale(root: root, type: .naturalMinor)
-            let harmonic = Scale(root: root, type: .harmonicMinor).diatonicTriads()
-            var alternatives: [Int: DiatonicChord] = [:]
-            for step in harmonicMinorSteps {
-                alternatives[step] = harmonic[step]
-            }
             let row = KeyChordRow(
                 key: key,
                 chords: key.diatonicTriads(),
-                alternatives: alternatives,
                 familyName: "minor"
             )
             rows.append(row)
