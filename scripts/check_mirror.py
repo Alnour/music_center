@@ -38,6 +38,8 @@ KOTLIN_ONLY = {
     f"{CORE}/session/ScaleLibraryJson.kt",
     # Size, Point and Rect stand in for CoreGraphics, which Kotlin lacks.
     f"{CORE}/board/Geometry.kt",
+    # Split out of PracticeSettings.swift so the painters do not depend on the session.
+    f"{CORE}/session/NoteLabelStyle.kt",
 }
 # Not ported yet; wave 1 empties this.
 PENDING = {

@@ -1,4 +1,4 @@
-package com.alnourkhalifa.scales.app
+package com.alnourkhalifa.scales.app.phone
 
 import android.graphics.Paint
 import androidx.compose.foundation.background
