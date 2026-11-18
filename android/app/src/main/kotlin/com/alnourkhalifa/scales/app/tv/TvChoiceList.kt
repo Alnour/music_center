@@ -102,6 +102,7 @@ fun TvChoiceList(
     ) {
         Text(
             text = title,
+            fontFamily = MusicFontFamily,
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = 12.dp),
