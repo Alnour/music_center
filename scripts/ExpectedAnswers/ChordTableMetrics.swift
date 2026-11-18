@@ -1,0 +1,1 @@
+../../Scales/Views/ChordTableMetrics.swift
