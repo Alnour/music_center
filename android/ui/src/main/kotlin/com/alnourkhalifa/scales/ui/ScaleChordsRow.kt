@@ -33,8 +33,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.FirstBaseline
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -48,6 +46,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -400,16 +399,14 @@ private fun NumeralLine(
     colors: ChordChipColors,
 ) {
     val numeralStyle =
-        TextStyle(
+        SUBHEADLINE.copy(
             color = colors.secondary,
-            fontSize = SUBHEADLINE.fontSize,
             fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.SemiBold,
         )
     val captionStyle =
-        TextStyle(
+        CAPTION2.copy(
             color = captionColor(chip.kind, colors),
-            fontSize = CAPTION2.fontSize,
             fontFamily = MusicFontFamily,
             fontWeight = FontWeight.SemiBold,
         )
@@ -422,10 +419,7 @@ private fun NumeralLine(
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .iosLine(SUBHEADLINE),
+            modifier = Modifier.weight(1f),
         )
         // The caption is a blank line for an unchanged chord, so every card is as tall.
         BasicText(
@@ -433,7 +427,6 @@ private fun NumeralLine(
             style = captionStyle,
             maxLines = 1,
             softWrap = false,
-            modifier = Modifier.iosLine(CAPTION2),
         )
     }
 }
@@ -459,9 +452,8 @@ private fun ChordName(
     }
     val fullSize = TITLE2.fontSize
     val style =
-        TextStyle(
+        TITLE2.copy(
             color = color,
-            fontSize = fullSize,
             fontFamily = MusicFontFamily,
             fontWeight = FontWeight.Bold,
             textDecoration = decoration,
@@ -479,10 +471,7 @@ private fun ChordName(
         softWrap = false,
         overflow = TextOverflow.Clip,
         autoSize = autoSize,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .iosLine(TITLE2),
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
@@ -497,9 +486,8 @@ private fun NotesLine(
         color = colors.tertiary
     }
     val style =
-        TextStyle(
+        SUBHEADLINE.copy(
             color = color,
-            fontSize = SUBHEADLINE.fontSize,
             fontFamily = MusicFontFamily,
         )
     BasicText(
@@ -507,7 +495,6 @@ private fun NotesLine(
         style = style,
         maxLines = 1,
         softWrap = false,
-        modifier = Modifier.iosLine(SUBHEADLINE),
     )
 }
 
@@ -546,40 +533,31 @@ private fun captionColor(
     }
 
 /**
- * One iOS text style at the default Dynamic Type setting: its font size and its line height.
- * In `sp`, so the cards grow with the system font size as the iOS cards follow Dynamic Type.
- */
-private class IosTextStyle(
-    val fontSize: TextUnit,
-    val lineHeight: TextUnit,
-)
-
-private val TITLE2 = IosTextStyle(fontSize = 22.sp, lineHeight = 28.sp)
-private val SUBHEADLINE = IosTextStyle(fontSize = 15.sp, lineHeight = 20.sp)
-private val CAPTION2 = IosTextStyle(fontSize = 11.sp, lineHeight = 13.sp)
-
-/** iOS fonts sit about a quarter of the font size of descent below the baseline. */
-private const val IOS_DESCENT_SHARE = 0.25f
-
-/**
- * Gives one line of text the iOS line height for [style], with its baseline where iOS puts it
- * (a descent's height above the bottom of the line).
+ * One iOS text style at the default Dynamic Type setting: its font size and its line height,
+ * with the glyphs centred in the line. In `sp`, so the cards grow with the system font size as
+ * the iOS cards follow Dynamic Type.
  *
- * Why: [MusicFontFamily] comes first in the text's font list, and the bundled font's tall line
- * metrics make every line about 1.8 times its font size, which `TextStyle.lineHeight` cannot
- * shrink. Without this each card is a third taller than on iOS and seven chords no longer fit
- * the third of the screen the Scales screen gives them. The glyphs keep their size and may
- * overhang the line box, which Compose does not clip. Same approach as the chord tables.
+ * Why the line height is set: each card stacks three lines (numeral, chord name, notes), and
+ * iOS gives each line its text style's full height. Roboto's own line is shorter, so without
+ * it the stack would sit closer together than on iOS. `Trim.None` keeps the extra space above
+ * and below every line, as iOS does, rather than trimming it from the first and last line.
  */
-private fun Modifier.iosLine(style: IosTextStyle): Modifier =
-    layout { measurable, constraints ->
-        val placeable = measurable.measure(constraints)
-        val lineHeight = style.lineHeight.roundToPx()
-        val descent = (style.fontSize * IOS_DESCENT_SHARE).roundToPx()
-        val targetBaseline = lineHeight - descent
-        val baseline = placeable[FirstBaseline]
-        val top = targetBaseline - baseline
-        layout(placeable.width, lineHeight) {
-            placeable.place(0, top)
-        }
-    }
+private fun iosTextStyle(
+    fontSize: TextUnit,
+    lineHeight: TextUnit,
+): TextStyle {
+    val centered =
+        LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Center,
+            trim = LineHeightStyle.Trim.None,
+        )
+    return TextStyle(
+        fontSize = fontSize,
+        lineHeight = lineHeight,
+        lineHeightStyle = centered,
+    )
+}
+
+private val TITLE2 = iosTextStyle(fontSize = 22.sp, lineHeight = 28.sp)
+private val SUBHEADLINE = iosTextStyle(fontSize = 15.sp, lineHeight = 20.sp)
+private val CAPTION2 = iosTextStyle(fontSize = 11.sp, lineHeight = 13.sp)
