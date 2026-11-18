@@ -24,14 +24,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.FirstBaseline
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -211,18 +210,23 @@ private fun KeyCell(
     metrics: ChordTableMetrics,
     colors: ChordTableColors,
 ) {
+    val rootLineHeight = metrics.keyStyle.fontSize * ROUNDED_LINE_SHARE
     val rootStyle =
         TextStyle(
             color = colors.onSurface,
             fontSize = metrics.keyStyle.fontSize,
             fontFamily = MusicFontFamily,
             fontWeight = FontWeight.Bold,
+            lineHeight = rootLineHeight,
+            lineHeightStyle = ROUNDED_LINE_HEIGHT_STYLE,
         )
     val signatureStyle =
         TextStyle(
             color = colors.secondary,
             fontSize = metrics.smallStyle.fontSize,
             fontFamily = MusicFontFamily,
+            lineHeight = metrics.smallStyle.lineHeight,
+            lineHeightStyle = IOS_LINE_HEIGHT_STYLE,
         )
     Column(
         modifier =
@@ -233,12 +237,10 @@ private fun KeyCell(
         BasicText(
             text = row.key.root.displayName,
             style = rootStyle,
-            modifier = Modifier.iosLine(metrics.keyStyle),
         )
         BasicText(
             text = row.key.keySignature,
             style = signatureStyle,
-            modifier = Modifier.iosLine(metrics.smallStyle),
         )
     }
 }
@@ -311,31 +313,41 @@ private fun TableDivider(colors: ChordTableColors) {
     )
 }
 
-/** iOS fonts sit about a quarter of the font size of descent below the baseline. */
-private const val IOS_DESCENT_SHARE = 0.25f
+/**
+ * How the key signature sits in its iOS line height: the glyphs centred, and the extra space
+ * kept above the first line and below the last one too.
+ *
+ * Why: the key cell stacks the root over the key signature, and iOS gives each line its text
+ * style's full height (13 pt for caption2). Compose's default trims the extra space from the
+ * top of the first line and the bottom of the last, which would pull the stack tighter than
+ * iOS draws it and make every row shorter.
+ */
+private val IOS_LINE_HEIGHT_STYLE =
+    LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.None,
+    )
 
 /**
- * Gives one line of text the iOS line height for [style], with its baseline where iOS puts
- * it (a descent's height above the bottom of the line).
+ * The key's root line is this many times its font size.
  *
- * Why: [MusicFontFamily] comes first in the text's font list, and the bundled font's tall
- * line metrics make every line about 1.8 times its font size; `TextStyle.lineHeight` cannot
- * shrink a line below its font's own extent. Without this the key column stacks the root and
- * the key signature far apart and every row is a third taller than on iOS. The glyphs keep
- * their size and may overhang the line box, which Compose does not clip.
+ * Why not the iOS table: iOS draws the root in SF Rounded, whose line is taller than the plain
+ * system font's. Measured on the iPhone, title3 (20 pt) in SF Rounded bold takes 27 pt where
+ * the table gives 25, and that extra height is what makes each key row 58 pt tall. Without it
+ * the twelve rows of the table end up 30 dp shorter than on iOS.
  */
-private fun Modifier.iosLine(style: ChordTableTextStyle): Modifier =
-    layout { measurable, constraints ->
-        val placeable = measurable.measure(constraints)
-        val lineHeight = style.lineHeight.roundToPx()
-        val descent = (style.fontSize * IOS_DESCENT_SHARE).roundToPx()
-        val targetBaseline = lineHeight - descent
-        val baseline = placeable[FirstBaseline]
-        val top = targetBaseline - baseline
-        layout(placeable.width, lineHeight) {
-            placeable.place(0, top)
-        }
-    }
+private const val ROUNDED_LINE_SHARE = 1.36f
+
+/**
+ * Where the root's glyphs sit in that taller line: a fifth of the spare space above them, the
+ * rest below, which puts the baseline where SF Rounded puts it (19 pt below the top for
+ * title3). Centring would push the root about a point lower than on iOS.
+ */
+private val ROUNDED_LINE_HEIGHT_STYLE =
+    LineHeightStyle(
+        alignment = LineHeightStyle.Alignment(topRatio = 0.2f),
+        trim = LineHeightStyle.Trim.None,
+    )
 
 /** Each iOS text style's line height at the default Dynamic Type setting. */
 private val ChordTableTextStyle.lineHeight: TextUnit
