@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The iOS app icon (one flat PNG) redrawn as vectors: a nut, three frets, six strings
+  (thicker towards the bass) and a G major shape with the roots in yellow. Drawn on the
+  iOS icon's 1024 grid, then scaled to 0.6296 and centred so it sits inside the adaptive
+  icon's 66 dp safe zone whatever mask the launcher applies.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <group
+        android:scaleX="0.6296"
+        android:scaleY="0.6296"
+        android:translateX="189.65"
+        android:translateY="189.65">
+        <!-- Nut -->
+        <path
+            android:fillColor="#D3D7E0"
+            android:pathData="M137,202h26v620h-26z" />
+        <!-- Frets -->
+        <path
+            android:fillColor="#5C6475"
+            android:pathData="M387,202h10v620h-10z M628,202h9v620h-9z M869,202h9v620h-9z" />
+        <!-- Strings, high to low -->
+        <path
+            android:fillColor="#7D8596"
+            android:pathData="M150,196h724v12h-724z M150,320h724v12h-724z M150,445h724v10h-724z M150,570h724v8h-724z M150,695h724v6h-724z M150,819h724v6h-724z" />
+        <!-- Scale notes -->
+        <path
+            android:fillColor="#9FABC2"
+            android:pathData="M217,202a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M458,326a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M699,326a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M699,450a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M217,574a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M699,574a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M458,698a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M217,822a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M699,822a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z" />
+        <!-- Roots -->
+        <path
+            android:fillColor="#F5CB60"
+            android:pathData="M699,202a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M217,450a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z M699,698a54,54 0 1,0 108,0a54,54 0 1,0 -108,0z" />
+    </group>
+</vector>

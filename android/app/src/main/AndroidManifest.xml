@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One APK for phones, tablets, Android TV and Fire OS.
+  - leanback not required: the app still installs on phones.
+  - touchscreen not required: this is what makes both stores treat it as a TV app.
+  - No permissions, so no permission can imply a hardware requirement.
+  - Two launcher activities: phones open PhoneActivity (LAUNCHER), TV launchers open
+    TvActivity (LEANBACK_LAUNCHER). PhoneActivity also forwards to TvActivity on TV hardware,
+    because some Fire OS surfaces list CATEGORY_LAUNCHER entries.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <!--
+      TvActivity's landscape orientation would otherwise imply a required landscape screen,
+      and stores would hide the app from devices that cannot rotate.
+    -->
+    <uses-feature
+        android:name="android.hardware.screen.landscape"
+        android:required="false" />
+
+    <application
+        android:name=".app.ScalesApplication"
+        android:allowBackup="true"
+        android:banner="@drawable/banner"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Scales"
+        tools:targetApi="33">
+
+        <activity
+            android:name=".app.phone.PhoneActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          Landscape matters on the Android 9 floor (Fire OS 7) and on a phone that opens this
+          activity directly; Android 16 ignores it on large screens, where TVs are landscape
+          anyway.
+        -->
+        <activity
+            android:name=".app.tv.TvActivity"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.Scales.TV"
+            tools:ignore="DiscouragedApi">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
