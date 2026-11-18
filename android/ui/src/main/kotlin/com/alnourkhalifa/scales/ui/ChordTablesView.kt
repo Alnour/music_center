@@ -184,7 +184,7 @@ private fun KeyRow(
     colors: ChordTableColors,
 ) {
     Row(
-        modifier = Modifier.padding(vertical = 8.dp),
+        modifier = Modifier.padding(vertical = metrics.rowPadding.dp),
         horizontalArrangement = Arrangement.spacedBy(ChordTableMetrics.columnSpacing.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -203,6 +203,9 @@ private fun KeyRow(
 /**
  * The key's root in bold with its key signature small beneath. TalkBack reads the pair as
  * one label, "B♭ major", rather than "B♭" and "2♭".
+ *
+ * The television set asks for the signature beside the root instead
+ * ([ChordTableMetrics.isSignatureBesideRoot]), so the key cell is no taller than a chord.
  */
 @Composable
 private fun KeyCell(
@@ -210,6 +213,10 @@ private fun KeyCell(
     metrics: ChordTableMetrics,
     colors: ChordTableColors,
 ) {
+    if (metrics.isSignatureBesideRoot) {
+        KeyCellOnOneLine(row = row, metrics = metrics, colors = colors)
+        return
+    }
     val rootLineHeight = metrics.keyStyle.fontSize * ROUNDED_LINE_SHARE
     val rootStyle =
         TextStyle(
@@ -244,6 +251,52 @@ private fun KeyCell(
         )
     }
 }
+
+/**
+ * The television's key cell: the root in bold, then the key signature small on the same
+ * baseline ("B♭ 2♭"), read as one label as in [KeyCell].
+ */
+@Composable
+private fun KeyCellOnOneLine(
+    row: KeyChordRow,
+    metrics: ChordTableMetrics,
+    colors: ChordTableColors,
+) {
+    val rootStyle =
+        TextStyle(
+            color = colors.onSurface,
+            fontSize = metrics.keyStyle.fontSize,
+            fontFamily = MusicFontFamily,
+            fontWeight = FontWeight.Bold,
+        )
+    val signatureStyle =
+        TextStyle(
+            color = colors.secondary,
+            fontSize = metrics.smallStyle.fontSize,
+            fontFamily = MusicFontFamily,
+        )
+    Row(
+        modifier =
+            Modifier
+                .width(metrics.keyColumnWidth.dp)
+                .clearAndSetSemantics { contentDescription = row.keyName },
+        horizontalArrangement = Arrangement.spacedBy(KEY_SIGNATURE_GAP),
+    ) {
+        BasicText(
+            text = row.key.root.displayName,
+            style = rootStyle,
+            modifier = Modifier.alignByBaseline(),
+        )
+        BasicText(
+            text = row.key.keySignature,
+            style = signatureStyle,
+            modifier = Modifier.alignByBaseline(),
+        )
+    }
+}
+
+/** The gap between a key's root and its signature when they share a line. */
+private val KEY_SIGNATURE_GAP = 6.dp
 
 /**
  * One chord name, tinted by quality so major, minor and diminished read at a glance. The home
