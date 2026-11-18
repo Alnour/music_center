@@ -2,6 +2,8 @@
 // run in seconds on any machine, Linux CI included.
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    // The settings and library JSON readers and writers (core/session/ScaleLibraryJson.kt).
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
     // Lets the app's lint run (checkDependencies) analyse this module too.
     alias(libs.plugins.android.lint)
@@ -20,6 +22,6 @@ ktlint {
 sourceSets["test"].resources.srcDir("../../expected")
 
 dependencies {
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.serialization.json)
 }
