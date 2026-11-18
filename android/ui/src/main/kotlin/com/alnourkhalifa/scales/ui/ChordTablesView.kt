@@ -24,6 +24,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -228,8 +230,16 @@ private fun KeyCell(
                 .width(metrics.keyColumnWidth.dp)
                 .clearAndSetSemantics { contentDescription = row.keyName },
     ) {
-        BasicText(text = row.key.root.displayName, style = rootStyle)
-        BasicText(text = row.key.keySignature, style = signatureStyle)
+        BasicText(
+            text = row.key.root.displayName,
+            style = rootStyle,
+            modifier = Modifier.iosLine(metrics.keyStyle),
+        )
+        BasicText(
+            text = row.key.keySignature,
+            style = signatureStyle,
+            modifier = Modifier.iosLine(metrics.smallStyle),
+        )
     }
 }
 
@@ -300,6 +310,45 @@ private fun TableDivider(colors: ChordTableColors) {
                 .background(line),
     )
 }
+
+/** iOS fonts sit about a quarter of the font size of descent below the baseline. */
+private const val IOS_DESCENT_SHARE = 0.25f
+
+/**
+ * Gives one line of text the iOS line height for [style], with its baseline where iOS puts
+ * it (a descent's height above the bottom of the line).
+ *
+ * Why: [MusicFontFamily] comes first in the text's font list, and the bundled font's tall
+ * line metrics make every line about 1.8 times its font size; `TextStyle.lineHeight` cannot
+ * shrink a line below its font's own extent. Without this the key column stacks the root and
+ * the key signature far apart and every row is a third taller than on iOS. The glyphs keep
+ * their size and may overhang the line box, which Compose does not clip.
+ */
+private fun Modifier.iosLine(style: ChordTableTextStyle): Modifier =
+    layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        val lineHeight = style.lineHeight.roundToPx()
+        val descent = (style.fontSize * IOS_DESCENT_SHARE).roundToPx()
+        val targetBaseline = lineHeight - descent
+        val baseline = placeable[FirstBaseline]
+        val top = targetBaseline - baseline
+        layout(placeable.width, lineHeight) {
+            placeable.place(0, top)
+        }
+    }
+
+/** Each iOS text style's line height at the default Dynamic Type setting. */
+private val ChordTableTextStyle.lineHeight: TextUnit
+    get() =
+        when (this) {
+            ChordTableTextStyle.TITLE -> 34.sp
+            ChordTableTextStyle.TITLE2 -> 28.sp
+            ChordTableTextStyle.TITLE3 -> 25.sp
+            ChordTableTextStyle.CALLOUT -> 21.sp
+            ChordTableTextStyle.SUBHEADLINE -> 20.sp
+            ChordTableTextStyle.FOOTNOTE -> 18.sp
+            ChordTableTextStyle.CAPTION2 -> 13.sp
+        }
 
 /**
  * The size of each iOS text style at the default Dynamic Type setting. These are `sp`, so
