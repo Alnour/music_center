@@ -93,9 +93,9 @@ struct ContentView: View {
                     .popover(isPresented: $isShowingTVMenu) {
                         TVMenu(
                             status: session.tvStatus,
-                            player: session.caster.player,
-                            resumeCasting: { session.caster.resume() },
-                            takeOverTV: { session.caster.takeOverTVIfChosen() },
+                            player: AirPlayCaster.shared.player,
+                            resumeCasting: { AirPlayCaster.shared.resume() },
+                            takeOverTV: { AirPlayCaster.shared.takeOverTVIfChosen() },
                             tvUsesDarkTheme: $session.settings.tvUsesDarkTheme,
                             showFullScreenBoard: {
                                 opensFullScreenBoardAfterTVMenu = true
@@ -222,7 +222,7 @@ struct ContentView: View {
     /// Hands the current settings to the caster, which draws the board only when it has
     /// no clip for them yet. The TV layout is drawn at full HD, the size AirPlay sends.
     private func castCurrentBoard() {
-        session.caster.cast(session.settings) {
+        AirPlayCaster.shared.cast(session.settings) {
             let renderer = ImageRenderer(
                 content: TVDisplayView()
                     .environment(session)

@@ -15,7 +15,7 @@ import Observation
 @MainActor
 @Observable
 final class PracticeSession {
-    static let shared = PracticeSession(defaults: .standard)
+    static let shared = PracticeSession(defaults: .standard, caster: AirPlayCaster.shared)
 
     var settings: PracticeSettings {
         didSet { save() }
@@ -29,8 +29,10 @@ final class PracticeSession {
     /// arrives, the TV is showing a plain copy of the phone.
     var isPhoneMirrored = false
 
-    /// Sends the board to a TV as AirPlay video when the player picks one in the app.
-    let caster = AirPlayCaster()
+    /// Sends the board to a TV when the player picks one in the app. The app passes
+    /// `AirPlayCaster.shared`; the session only reads what the TV shows from it, so tests and
+    /// the answers generator use `NoCaster` and never start AirPlay.
+    let caster: any BoardCaster
 
     /// The last note change made from the Scales screen. Kept only for this run, so the
     /// chords under the board can show what the change did until the player picks another
@@ -77,8 +79,9 @@ final class PracticeSession {
     @ObservationIgnored private let defaults: UserDefaults
     private static let settingsKey = "practiceSettings"
 
-    init(defaults: UserDefaults) {
+    init(defaults: UserDefaults, caster: any BoardCaster = NoCaster()) {
         self.defaults = defaults
+        self.caster = caster
         self.settings = PracticeSession.loadSettings(from: defaults)
     }
 
