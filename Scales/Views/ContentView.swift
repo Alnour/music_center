@@ -301,7 +301,7 @@ private struct PhoneKeyboard: View {
             ringedNotes: ringedNotes
         )
         .aspectRatio(
-            KeyboardView.widthToHeight(whiteKeyCount: layout.whiteKeys.count),
+            KeyboardGeometry.widthToHeight(whiteKeyCount: layout.whiteKeys.count),
             contentMode: .fit
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -15,7 +15,8 @@ import Observation
 @MainActor
 @Observable
 final class PracticeSession {
-    static let shared = PracticeSession(defaults: .standard, caster: AirPlayCaster.shared)
+    // The app's one session, `PracticeSession.shared`, is declared in
+    // `App/SharedSession.swift`: it needs the AirPlay caster, which this file must not see.
 
     var settings: PracticeSettings {
         didSet { save() }

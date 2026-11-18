@@ -45,7 +45,7 @@ struct ChordTablesView: View {
                     }
 
                     Text(footnote)
-                        .font(.system(metrics.footnoteStyle))
+                        .font(.system(metrics.footnoteStyle.textStyle))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: metrics.contentMaxWidth)
@@ -69,55 +69,18 @@ struct ChordTablesView: View {
     }
 }
 
-/// Column sizes and type styles for the chord table.
-///
-/// The compact set fits a key's seven chords across an iPhone held upright. On an iPad
-/// that set would leave the table in one corner of the screen, so a wide window gets the
-/// roomy set, sized to fill an iPad mini held upright and read from a music stand.
-private struct ChordTableMetrics {
-    let keyColumnWidth: CGFloat
-    let chordColumnWidth: CGFloat
-    let cellHeight: CGFloat
-    let keyStyle: Font.TextStyle
-    let chordStyle: Font.TextStyle
-    let smallStyle: Font.TextStyle
-    let headerStyle: Font.TextStyle
-    let footnoteStyle: Font.TextStyle
-    /// Caps the switch and footnote at the table's width so all three line up as one
-    /// column; the iPhone has no cap because there the table already fills the screen.
-    let contentMaxWidth: CGFloat?
-
-    static let columnSpacing: CGFloat = 2
-
-    static let compact = ChordTableMetrics(
-        keyColumnWidth: 46,
-        chordColumnWidth: 42,
-        cellHeight: 36,
-        keyStyle: .title3,
-        chordStyle: .callout,
-        smallStyle: .caption2,
-        headerStyle: .footnote,
-        footnoteStyle: .footnote,
-        contentMaxWidth: nil
-    )
-
-    static let roomy = ChordTableMetrics(
-        keyColumnWidth: 76,
-        chordColumnWidth: 86,
-        cellHeight: 56,
-        keyStyle: .title,
-        chordStyle: .title2,
-        smallStyle: .subheadline,
-        headerStyle: .title3,
-        footnoteStyle: .callout,
-        contentMaxWidth: tableWidth(keyColumn: 76, chordColumn: 86)
-    )
-
-    /// Width of the key column plus seven chord columns and the gaps between them.
-    private static func tableWidth(keyColumn: CGFloat, chordColumn: CGFloat) -> CGFloat {
-        let chordColumns = 7 * chordColumn
-        let gaps = 7 * columnSpacing
-        return keyColumn + chordColumns + gaps
+extension ChordTableTextStyle {
+    /// The SwiftUI text style of the same name, so the table follows Dynamic Type.
+    var textStyle: Font.TextStyle {
+        switch self {
+        case .title: .title
+        case .title2: .title2
+        case .title3: .title3
+        case .callout: .callout
+        case .subheadline: .subheadline
+        case .footnote: .footnote
+        case .caption2: .caption2
+        }
     }
 }
 
@@ -154,13 +117,13 @@ private struct KeyChordGrid: View {
                     Text(chord.numeral)
                     if let alternative = row.alternatives[step] {
                         Text("or \(alternative.numeral)")
-                            .font(.system(metrics.smallStyle, design: .serif))
+                            .font(.system(metrics.smallStyle.textStyle, design: .serif))
                     }
                 }
                 .frame(width: metrics.chordColumnWidth)
             }
         }
-        .font(.system(metrics.headerStyle, design: .serif).weight(.semibold))
+        .font(.system(metrics.headerStyle.textStyle, design: .serif).weight(.semibold))
         .foregroundStyle(.secondary)
     }
 
@@ -168,9 +131,9 @@ private struct KeyChordGrid: View {
         GridRow {
             VStack(alignment: .leading, spacing: 0) {
                 Text(row.key.root.displayName)
-                    .font(.system(metrics.keyStyle, design: .rounded).weight(.bold))
+                    .font(.system(metrics.keyStyle.textStyle, design: .rounded).weight(.bold))
                 Text(row.key.keySignature)
-                    .font(.system(metrics.smallStyle))
+                    .font(.system(metrics.smallStyle.textStyle))
                     .foregroundStyle(.secondary)
             }
             .frame(width: metrics.keyColumnWidth, alignment: .leading)
@@ -201,14 +164,14 @@ private struct ChordCell: View {
         VStack(spacing: 0) {
             Text(triad.name)
                 .font(
-                    .system(metrics.chordStyle, design: .rounded)
+                    .system(metrics.chordStyle.textStyle, design: .rounded)
                         .weight(isHome ? .heavy : .semibold)
                 )
                 .foregroundStyle(triad.quality.tint)
                 .accessibilityLabel(triad.spokenName)
             if let alternative {
                 Text("or \(alternative.name)")
-                    .font(.system(metrics.smallStyle, design: .rounded).weight(.semibold))
+                    .font(.system(metrics.smallStyle.textStyle, design: .rounded).weight(.semibold))
                     .foregroundStyle(alternative.quality.tint)
                     .accessibilityLabel("or \(alternative.spokenName)")
             }

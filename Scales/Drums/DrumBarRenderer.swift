@@ -96,9 +96,11 @@ struct DrumBarRenderer {
 }
 
 /// White noise in -1...1 from a fixed seed (a linear congruential generator), so the
-/// drum sounds are the same every time they are rendered.
-private struct NoiseSource {
-    private var state: UInt32
+/// drum sounds are the same every time they are rendered. Internal, with a readable
+/// state, so `expected/answers.json` can pin the raw sequence the Android twin must match
+/// bit for bit.
+struct NoiseSource {
+    private(set) var state: UInt32
 
     init(seed: UInt32) {
         state = seed

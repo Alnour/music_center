@@ -93,3 +93,82 @@ struct FretboardGeometry {
         isLeftHanded ? size.width - x : x
     }
 }
+
+// MARK: - Drawing sizes
+
+/// The sizes the board is drawn with, kept beside the positions rather than inside the view
+/// so they are plain numbers: the Android board mirrors them and `expected/answers.json`
+/// pins them, which only works if they can be computed without SwiftUI.
+extension FretboardGeometry {
+    /// Frets marked with one inlay dot below the strings, as on most guitars.
+    static let singleInlayFrets: Set<Int> = [3, 5, 7, 9, 15, 17, 19, 21]
+    /// Octave frets, marked with two dots side by side.
+    static let doubleInlayFrets: Set<Int> = [12, 24]
+
+    /// Which string sits on a given row. `FretboardLayout` lists the thickest string first,
+    /// so the order flips when the thin string should be on top, as in tab.
+    static func stringIndex(forRow row: Int, stringCount: Int, thinStringOnTop: Bool) -> Int {
+        let lastIndex = stringCount - 1
+        if thinStringOnTop {
+            return lastIndex - row
+        }
+        return row
+    }
+
+    /// Line width of one string. Strings get slightly thicker toward the bass side, so the
+    /// board reads like a real neck at a glance; `stringIndex` is the layout's index, where
+    /// 0 is the thickest string.
+    func stringStrokeWidth(stringIndex: Int, stringCount: Int) -> CGFloat {
+        let baseWidth = max(1, rowHeight * 0.025)
+        let bassRank = CGFloat(stringCount - 1 - stringIndex)
+        return baseWidth * (1 + 0.2 * bassRank)
+    }
+
+    /// Radius of an inlay dot: a small fraction of a note circle, never vanishing on a
+    /// small board.
+    var inlayRadius: CGFloat {
+        max(2, noteRadius * 0.16)
+    }
+
+    /// Gap between the two dots of a double inlay and the fret's centre.
+    var doubleInlayOffset: CGFloat {
+        inlayRadius * 1.8
+    }
+
+    var fretWireWidth: CGFloat {
+        max(1, cellWidth * 0.02)
+    }
+
+    /// The nut is drawn thicker than a fret wire, as on a guitar.
+    var nutWidth: CGFloat {
+        max(3, cellWidth * 0.06)
+    }
+
+    /// The fret numbers above the board.
+    var fretNumberFontSize: CGFloat {
+        min(rowHeight, cellWidth) * 0.38
+    }
+
+    /// The open-string names left of the nut.
+    var openStringLabelFontSize: CGFloat {
+        min(rowHeight, cellWidth) * 0.32
+    }
+
+    /// The label inside a note circle. Two-character labels ("F♯", "♭3") get a smaller size
+    /// than one-character ones so both fit inside the same circle; shared with the keyboard.
+    static func noteLabelFontSize(noteRadius: CGFloat, labelLength: Int) -> CGFloat {
+        let fontScale: CGFloat = labelLength > 1 ? 0.78 : 0.95
+        return noteRadius * fontScale
+    }
+
+    /// Line width of the ring around a note of the picked chord, on the fretboard and on the
+    /// keyboard alike: a tenth of the circle's diameter, never thinner than a hairline.
+    static func chordRingLineWidth(circleDiameter: CGFloat) -> CGFloat {
+        max(1.5, circleDiameter * 0.1)
+    }
+
+    /// How far outside the note's circle the ring is drawn, so the label stays clear.
+    static func chordRingOutset(circleDiameter: CGFloat) -> CGFloat {
+        chordRingLineWidth(circleDiameter: circleDiameter) * 0.9
+    }
+}

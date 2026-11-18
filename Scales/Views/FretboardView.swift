@@ -18,9 +18,6 @@ struct FretboardView: View {
     /// Notes to ring on the board, the notes of the chord the player picked.
     var ringedNotes: Set<NoteName> = []
 
-    private static let singleInlayFrets: Set<Int> = [3, 5, 7, 9, 15, 17, 19, 21]
-    private static let doubleInlayFrets: Set<Int> = [12, 24]
-
     var body: some View {
         Canvas { context, size in
             let geometry = FretboardGeometry(
@@ -37,15 +34,17 @@ struct FretboardView: View {
         }
     }
 
-    /// Which string sits on a given row. The layout lists the thickest string first, so
-    /// the order flips when the thin string should be on top, as in tab.
+    /// Which string sits on a given row; see `FretboardGeometry.stringIndex`.
     private func stringIndex(forRow row: Int) -> Int {
-        let lastIndex = layout.strings.count - 1
-        return thinStringOnTop ? lastIndex - row : row
+        FretboardGeometry.stringIndex(
+            forRow: row,
+            stringCount: layout.strings.count,
+            thinStringOnTop: thinStringOnTop
+        )
     }
 
     private func drawFretNumbers(_ context: GraphicsContext, _ geometry: FretboardGeometry) {
-        let fontSize = min(geometry.rowHeight, geometry.cellWidth) * 0.38
+        let fontSize = geometry.fretNumberFontSize
         for fret in 1...layout.fretCount {
             let label = Text(String(fret))
                 .font(.system(size: fontSize, weight: .medium, design: .rounded))
@@ -56,14 +55,14 @@ struct FretboardView: View {
     }
 
     private func drawInlays(_ context: GraphicsContext, _ geometry: FretboardGeometry) {
-        let radius = max(2, geometry.noteRadius * 0.16)
+        let radius = geometry.inlayRadius
         let y = geometry.inlayY(stringCount: layout.strings.count)
         for fret in 1...layout.fretCount {
             let centerX = geometry.noteX(fret: fret)
-            if Self.singleInlayFrets.contains(fret) {
+            if FretboardGeometry.singleInlayFrets.contains(fret) {
                 fillDot(context, center: CGPoint(x: centerX, y: y), radius: radius)
-            } else if Self.doubleInlayFrets.contains(fret) {
-                let offset = radius * 1.8
+            } else if FretboardGeometry.doubleInlayFrets.contains(fret) {
+                let offset = geometry.doubleInlayOffset
                 fillDot(context, center: CGPoint(x: centerX - offset, y: y), radius: radius)
                 fillDot(context, center: CGPoint(x: centerX + offset, y: y), radius: radius)
             }
@@ -84,14 +83,14 @@ struct FretboardView: View {
         let lastRow = layout.strings.count - 1
         let top = geometry.stringY(row: 0)
         let bottom = geometry.stringY(row: lastRow)
-        let wireWidth = max(1, geometry.cellWidth * 0.02)
+        let wireWidth = geometry.fretWireWidth
         for fret in 1...layout.fretCount {
             let x = geometry.fretWireX(fret: fret)
             let wire = verticalLine(x: x, from: top, to: bottom)
             context.stroke(wire, with: .color(palette.fretWire), lineWidth: wireWidth)
         }
         let nut = verticalLine(x: geometry.nutX, from: top, to: bottom)
-        let nutWidth = max(3, geometry.cellWidth * 0.06)
+        let nutWidth = geometry.nutWidth
         context.stroke(nut, with: .color(palette.nut), lineWidth: nutWidth)
     }
 
@@ -107,17 +106,15 @@ struct FretboardView: View {
     private func drawStrings(_ context: GraphicsContext, _ geometry: FretboardGeometry) {
         let startX = geometry.nutX
         let endX = geometry.fretWireX(fret: layout.fretCount)
-        let baseWidth = max(1, geometry.rowHeight * 0.025)
-        let labelSize = min(geometry.rowHeight, geometry.cellWidth) * 0.32
+        let labelSize = geometry.openStringLabelFontSize
         let stringCount = layout.strings.count
         for row in 0..<stringCount {
             let index = stringIndex(forRow: row)
             let y = geometry.stringY(row: row)
-            let bassRank = CGFloat(stringCount - 1 - index)
             var line = Path()
             line.move(to: CGPoint(x: startX, y: y))
             line.addLine(to: CGPoint(x: endX, y: y))
-            let lineWidth = baseWidth * (1 + 0.2 * bassRank)
+            let lineWidth = geometry.stringStrokeWidth(stringIndex: index, stringCount: stringCount)
             context.stroke(line, with: .color(palette.string), lineWidth: lineWidth)
 
             let openNoteName = layout.strings[index].openNote.displayName
@@ -161,10 +158,13 @@ struct FretboardView: View {
         }
 
         guard let labelText = label(for: tone) else { return }
-        let fontScale: CGFloat = labelText.count > 1 ? 0.78 : 0.95
+        let fontSize = FretboardGeometry.noteLabelFontSize(
+            noteRadius: radius,
+            labelLength: labelText.count
+        )
         let textColor = colors.text
         let label = Text(labelText)
-            .font(.system(size: radius * fontScale, weight: .bold, design: .rounded))
+            .font(.system(size: fontSize, weight: .bold, design: .rounded))
             .foregroundStyle(textColor)
         context.draw(label, at: center, anchor: .center)
     }
@@ -182,8 +182,9 @@ struct FretboardView: View {
 /// palette's chord colour, just outside the note's circle so the label stays clear.
 enum ChordRing {
     static func draw(around circle: CGRect, color: Color, in context: GraphicsContext) {
-        let lineWidth = max(1.5, circle.width * 0.1)
-        let ring = circle.insetBy(dx: -lineWidth * 0.9, dy: -lineWidth * 0.9)
+        let lineWidth = FretboardGeometry.chordRingLineWidth(circleDiameter: circle.width)
+        let outset = FretboardGeometry.chordRingOutset(circleDiameter: circle.width)
+        let ring = circle.insetBy(dx: -outset, dy: -outset)
         context.stroke(Path(ellipseIn: ring), with: .color(color), lineWidth: lineWidth)
     }
 }

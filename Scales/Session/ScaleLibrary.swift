@@ -156,10 +156,22 @@ final class ScaleLibrary {
     // MARK: - Storage
 
     /// The shape of the file. The version is there so a later format can tell old files apart.
-    private struct LibraryDocument: Codable {
+    /// Internal rather than private so the answers generator (`scripts/ExpectedAnswers`) can
+    /// write one, pinning the exact bytes the Android library must read and write.
+    struct LibraryDocument: Codable {
         var version = 1
         var scales: [CustomScale] = []
         var lessons: [TransformationLesson] = []
+    }
+
+    /// The file's bytes for a document: compact, dates as seconds since 2001, UUIDs in upper
+    /// case. Keys are sorted because Foundation otherwise writes them in a different order
+    /// on each run, and a file that only changes when its content does is easier to back up
+    /// and compare. One function, so the answers generator writes exactly these bytes.
+    nonisolated static func encoded(_ document: LibraryDocument) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(document)
     }
 
     private static func validName(_ name: String) throws(ScaleLibraryError) -> String {
@@ -175,7 +187,7 @@ final class ScaleLibrary {
     {
         let document = LibraryDocument(scales: newScales, lessons: newLessons)
         do {
-            let data = try JSONEncoder().encode(document)
+            let data = try Self.encoded(document)
             let folder = fileURL.deletingLastPathComponent()
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             try data.write(to: fileURL, options: .atomic)
