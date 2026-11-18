@@ -22,40 +22,49 @@ struct ScaleSpellingTests {
         return names
     }
 
+    // feature: roots-scales
     @Test func gMajorUsesFSharp() {
         #expect(spelledNames(NoteName(.g), .major) == ["G", "A", "B", "C", "D", "E", "F♯"])
     }
 
+    // feature: roots-scales
     @Test func fMajorUsesBFlat() {
         #expect(spelledNames(NoteName(.f), .major) == ["F", "G", "A", "B♭", "C", "D", "E"])
     }
 
+    // feature: roots-scales
     @Test func eFlatMajorIsAllFlats() {
         let expected = ["E♭", "F", "G", "A♭", "B♭", "C", "D"]
         #expect(spelledNames(NoteName(.e, -1), .major) == expected)
     }
 
+    // feature: roots-scales
     @Test func cSharpMinorKeepsSharps() {
         let expected = ["C♯", "D♯", "E", "F♯", "G♯", "A", "B"]
         #expect(spelledNames(NoteName(.c, 1), .naturalMinor) == expected)
     }
 
+    // feature: roots-scales
     @Test func aBluesHasFlatFive() {
         #expect(spelledNames(NoteName(.a), .blues) == ["A", "C", "D", "E♭", "E", "G"])
     }
 
+    // feature: roots-scales
     @Test func eMinorPentatonic() {
         #expect(spelledNames(NoteName(.e), .minorPentatonic) == ["E", "G", "A", "B", "D"])
     }
 
+    // feature: roots-scales
     @Test func dLydianRaisesTheFourth() {
         #expect(spelledNames(NoteName(.d), .lydian).contains("G♯"))
     }
 
+    // feature: roots-scales
     @Test func gSharpHarmonicMinorNeedsDoubleSharp() {
         #expect(spelledNames(NoteName(.g, 1), .harmonicMinor).last == "F𝄪")
     }
 
+    // feature: roots-scales
     @Test func degreeLabelsFollowTheFormula() {
         var labels: [String] = []
         for tone in Scale(root: NoteName(.c), type: .dorian).tones {
@@ -64,6 +73,7 @@ struct ScaleSpellingTests {
         #expect(labels == ["1", "2", "♭3", "4", "5", "6", "♭7"])
     }
 
+    // feature: roots-scales
     @Test func everyFormulaReadsBackAsWritten() {
         for type in ScaleType.allCases {
             var labels: [String] = []
@@ -74,6 +84,7 @@ struct ScaleSpellingTests {
         }
     }
 
+    // feature: roots-scales
     @Test func everyScaleHasDistinctPitches() {
         for type in ScaleType.allCases {
             let tones = Scale(root: NoteName(.c), type: type).tones
@@ -85,6 +96,7 @@ struct ScaleSpellingTests {
         }
     }
 
+    // feature: roots-scales
     @Test func everyScaleTypeAppearsInExactlyOneFamily() {
         var listed: [ScaleType] = []
         for family in ScaleFamily.allCases {
@@ -104,6 +116,7 @@ struct FretboardLayoutTests {
     )
 
     /// Strings are listed thickest first: 0 is low E, 5 is high E.
+    // feature: board
     @Test func gMajorMatchesReferenceChart() {
         #expect(gMajor.frets(withToneOnString: 5) == [0, 2, 3, 5, 7, 8, 10, 12, 14, 15])
         #expect(gMajor.frets(withToneOnString: 4) == [0, 1, 3, 5, 7, 8, 10, 12, 13, 15])
@@ -113,6 +126,7 @@ struct FretboardLayoutTests {
         #expect(gMajor.frets(withToneOnString: 0) == [0, 2, 3, 5, 7, 8, 10, 12, 14, 15])
     }
 
+    // feature: board
     @Test func gMajorRootsMatchReferenceChart() {
         var rootFretsByString: [[Int]] = []
         for guitarString in gMajor.strings {
@@ -125,6 +139,7 @@ struct FretboardLayoutTests {
         #expect(rootFretsByString == [[3, 15], [10], [5], [0, 12], [8], [3, 15]])
     }
 
+    // feature: tunings-frets
     @Test func dropDLowStringIsTheFifthOfG() {
         let layout = FretboardLayout(
             scale: Scale(root: NoteName(.g), type: .major),
@@ -135,6 +150,7 @@ struct FretboardLayoutTests {
         #expect(openTone?.degree.label == "5")
     }
 
+    // feature: tunings-frets
     @Test func layoutCoversOpenStringPlusEveryFret() {
         for guitarString in gMajor.strings {
             #expect(guitarString.tonesByFret.count == 16)
@@ -143,11 +159,13 @@ struct FretboardLayoutTests {
 }
 
 struct PitchMathTests {
+    // feature: roots-scales
     @Test func wrapHandlesNegatives() {
         #expect(PitchMath.wrap(-1) == 11)
         #expect(PitchMath.wrap(25) == 1)
     }
 
+    // feature: roots-scales
     @Test func signedDistanceChoosesShortestWay() {
         #expect(PitchMath.signedDistance(from: 11, to: 0) == 1)
         #expect(PitchMath.signedDistance(from: 0, to: 11) == -1)
@@ -156,6 +174,7 @@ struct PitchMathTests {
 
 @MainActor
 struct PracticeSessionTests {
+    // feature: settings-persist
     @Test func settingsSurviveARelaunch() throws {
         let suiteName = "ScalesTests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -171,6 +190,7 @@ struct PracticeSessionTests {
         #expect(secondLaunch.scale.title == "B♭ Dorian")
     }
 
+    // feature: airplay-cast
     @Test func tvStatusFollowsMirroringAndTVScreen() throws {
         let suiteName = "ScalesTests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -186,6 +206,7 @@ struct PracticeSessionTests {
         #expect(session.tvStatus == .showingBoard, "owning the TV screen outranks mirroring")
     }
 
+    // feature: airplay-cast
     @Test func boardClipIsWrittenAsPlayableVideo() async throws {
         let width = 192
         let height = 108
@@ -220,6 +241,7 @@ struct PracticeSessionTests {
         #expect(Int(size.height) == height)
     }
 
+    // feature: settings-persist
     @Test func freshInstallOpensOnGMajor() throws {
         let suiteName = "ScalesTests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -232,6 +254,7 @@ struct PracticeSessionTests {
 }
 
 struct HTTPRequestTests {
+    // feature: airplay-cast
     @Test func parsesMethodPathAndRange() {
         let request = HTTPRequest("GET /board-3.mp4 HTTP/1.1\r\nHost: x\r\nRange: bytes=100-199")
         #expect(request.method == "GET")
@@ -239,6 +262,7 @@ struct HTTPRequestTests {
         #expect(request.byteRange(totalLength: 1000) == 100..<200)
     }
 
+    // feature: airplay-cast
     @Test func openEndedAndSuffixRanges() {
         let openEnded = HTTPRequest("GET /a HTTP/1.1\r\nRange: bytes=900-")
         #expect(openEnded.byteRange(totalLength: 1000) == 900..<1000)
@@ -251,6 +275,7 @@ struct HTTPRequestTests {
 }
 
 struct ClipCacheTests {
+    // feature: airplay-cast
     @Test func sameSettingsGiveSameKeyAndChangesGiveNewOne() {
         let defaults = PracticeSettings()
         var dorian = PracticeSettings()
@@ -260,6 +285,7 @@ struct ClipCacheTests {
         #expect(ClipCache.key(for: defaults).count == 16)
     }
 
+    // feature: airplay-cast
     @Test func onlyDefaultSettingsHaveABundledShortClip() {
         #expect(ClipCache.bundledShortClip(for: PracticeSettings()) != nil)
         var dorian = PracticeSettings()
@@ -267,6 +293,7 @@ struct ClipCacheTests {
         #expect(ClipCache.bundledShortClip(for: dorian) == nil)
     }
 
+    // feature: airplay-cast
     @Test func extendedClipRepeatsTheShortOne() async throws {
         let short = try #require(ClipCache.bundledShortClip(for: PracticeSettings()))
         let long = FileManager.default.temporaryDirectory.appendingPathComponent("long-test.mp4")
@@ -282,6 +309,7 @@ struct ClipCacheTests {
         #expect(audioTracks.count == 1)
     }
 
+    // feature: airplay-cast
     @Test func storedClipsComeBack() {
         var settings = PracticeSettings()
         settings.root = NoteName(.d, -1)
@@ -302,10 +330,12 @@ struct DiatonicChordTests {
         return names
     }
 
+    // feature: chord-tables
     @Test func cMajorChords() {
         #expect(chordNames(NoteName(.c), .major) == ["C", "Dm", "Em", "F", "G", "Am", "B°"])
     }
 
+    // feature: chord-tables
     @Test func majorNumerals() {
         var numerals: [String] = []
         for chord in Scale(root: NoteName(.g), type: .major).diatonicTriads() {
@@ -314,6 +344,7 @@ struct DiatonicChordTests {
         #expect(numerals == ["I", "ii", "iii", "IV", "V", "vi", "vii°"])
     }
 
+    // feature: chord-tables
     @Test func sharpAndFlatKeysAreSpelledFromTheirScale() {
         let fSharp = ["F♯", "G♯m", "A♯m", "B", "C♯", "D♯m", "E♯°"]
         #expect(chordNames(NoteName(.f, 1), .major) == fSharp)
@@ -321,6 +352,7 @@ struct DiatonicChordTests {
         #expect(chordNames(NoteName(.d, -1), .major) == dFlat)
     }
 
+    // feature: chord-tables
     @Test func aMinorChordsAndNumerals() {
         #expect(chordNames(NoteName(.a), .naturalMinor) == ["Am", "B°", "C", "Dm", "Em", "F", "G"])
         var numerals: [String] = []
@@ -330,6 +362,7 @@ struct DiatonicChordTests {
         #expect(numerals == ["i", "ii°", "III", "iv", "v", "VI", "VII"])
     }
 
+    // feature: chord-tables
     @Test func minorRowsOfferHarmonicMinorStandIns() {
         let aMinor = KeyChordTable.minorRows()[0]
         #expect(aMinor.keyName == "A minor")
@@ -341,6 +374,7 @@ struct DiatonicChordTests {
         #expect(KeyChordTable.majorRows()[0].alternatives.isEmpty)
     }
 
+    // feature: chord-tables
     @Test func tablesCoverTwelveKeysWithMatchingRelatives() {
         let majors = KeyChordTable.majorRows()
         let minors = KeyChordTable.minorRows()
@@ -360,6 +394,7 @@ struct DiatonicChordTests {
         #expect(majorSignatures == minorSignatures)
     }
 
+    // feature: chord-tables
     @Test func tableRowsAreSortedByKeyName() {
         var majorNames: [String] = []
         for row in KeyChordTable.majorRows() {
@@ -373,12 +408,14 @@ struct DiatonicChordTests {
         #expect(minorNames == ["A", "B♭", "B", "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯"])
     }
 
+    // feature: roots-scales
     @Test func keySignatures() {
         #expect(Scale(root: NoteName(.c), type: .major).keySignature == "—")
         #expect(Scale(root: NoteName(.e), type: .major).keySignature == "4♯")
         #expect(Scale(root: NoteName(.b, -1), type: .major).keySignature == "2♭")
     }
 
+    // feature: chord-tables
     @Test func nonHeptatonicScalesHaveNoTriadTable() {
         #expect(Scale(root: NoteName(.a), type: .minorPentatonic).diatonicTriads().isEmpty)
     }

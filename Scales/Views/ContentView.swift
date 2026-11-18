@@ -61,6 +61,7 @@ struct ContentView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .frame(maxHeight: .infinity)
                         .accessibilityLabel(boardAccessibilityLabel)
+                        .accessibilityValue(session.settings.labelStyle.accessibilityDescription)
                     if let change = session.currentBoardChange {
                         BoardChangeRow(change: change) {
                             session.revertBoardChange(from: library)

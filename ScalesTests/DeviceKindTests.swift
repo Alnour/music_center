@@ -12,6 +12,7 @@ import Testing
 /// The app names the device in its sentences and changes a few behaviours on the Mac.
 @MainActor
 struct DeviceKindTests {
+    // feature: tv-board
     @Test func theMacBuildKnowsItIsOnAMac() {
         #if targetEnvironment(macCatalyst)
             #expect(DeviceKind.current == .mac)
@@ -21,6 +22,7 @@ struct DeviceKindTests {
         #endif
     }
 
+    // feature: tv-board
     @Test func devicesAreNamedTheWayPlayersSayThem() {
         #expect(DeviceKind.phone.name == "phone")
         #expect(DeviceKind.pad.name == "iPad")
