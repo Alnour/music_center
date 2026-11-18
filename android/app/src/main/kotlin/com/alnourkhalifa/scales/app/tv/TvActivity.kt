@@ -3,37 +3,37 @@ package com.alnourkhalifa.scales.app.tv
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Surface
-import androidx.tv.material3.Text
-import androidx.tv.material3.darkColorScheme
-import com.alnourkhalifa.scales.ui.MusicFontFamily
+import com.alnourkhalifa.scales.core.music.Letter
+import com.alnourkhalifa.scales.core.music.NoteName
+import com.alnourkhalifa.scales.core.music.Scale
+import com.alnourkhalifa.scales.core.music.ScaleType
+import com.alnourkhalifa.scales.ui.FretboardPalette
+import com.alnourkhalifa.scales.ui.TVDisplayView
+
+/** Margins on every side, as a share of the screen: clear of the overscan some TVs crop. */
+private const val TV_MARGIN_SHARE = 0.05
 
 /**
  * The television screen (TV Material, D-pad only), opened by Android TV, Google TV and Fire OS
- * launchers and by PhoneActivity on TV hardware. For now it shows one line of text set in the
- * music font, which proves the bundled double sharp renders on a TV system image.
+ * launchers and by PhoneActivity on TV hardware. Until the TV screens are ported it shows the
+ * default board (G Major, standard tuning, 15 frets, note names) in the dark TV layout, full
+ * screen with 5% margins.
  */
 class TvActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // TV Material defaults to a light scheme; TV launchers and the window theme are dark.
-            MaterialTheme(colorScheme = darkColorScheme()) {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Scales — TV: C𝄪 Lydian ♭7",
-                            fontFamily = MusicFontFamily,
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                    }
-                }
-            }
+            val scale = remember { Scale(NoteName(Letter.G), ScaleType.MAJOR) }
+            TVDisplayView(
+                scale = scale,
+                palette = FretboardPalette.dark,
+                modifier = Modifier.fillMaxSize(),
+                horizontalMarginShare = TV_MARGIN_SHARE,
+                verticalMarginShare = TV_MARGIN_SHARE,
+            )
         }
     }
 }
