@@ -16,13 +16,16 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 
 /**
- * The Chord tables route's slot in `TvApp`: the major and minor key tables, full screen.
- * `TvApp` calls this by name, so the real screen (`TvChordsScreen`) replaces the body here
- * and nothing else changes. Back is `TvApp`'s and returns to the panel.
+ * The Chord tables route's slot in `TvApp`: the major and minor key tables, full screen. The
+ * screen catches the Back key itself and reports it through [onBack], which `TvApp` turns
+ * into one step back to the panel.
  */
 @Composable
-fun TvChordsTab(modifier: Modifier = Modifier) {
-    TvPlaceholderScreen(title = "Chord tables", tag = "tvChords", modifier = modifier)
+fun TvChordsTab(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TvChordsScreen(onBack = onBack, modifier = modifier)
 }
 
 /**

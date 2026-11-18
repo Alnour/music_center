@@ -48,11 +48,11 @@ fun TvApp() {
     MaterialTheme(colorScheme = colorScheme) {
         when (route) {
             TvRoute.Chords -> {
-                TvChordsTab()
+                TvChordsTab(onBack = { navigation.pop() })
             }
 
             TvRoute.Drums -> {
-                TvDrumsTab()
+                TvDrumsTab(onBack = { navigation.pop() })
             }
 
             else -> {
