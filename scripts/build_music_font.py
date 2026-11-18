@@ -14,7 +14,11 @@ Both source fonts are SIL Open Font License 1.1; the licence text ships beside t
 assets. Needs fontTools (`pip install fonttools` in a venv). Usage:
 
     python3 -I scripts/build_music_font.py <NotoSansSymbols[wght].ttf> <NotoMusic-Regular.ttf> \
-        android/ui/src/main/res/font/noto_music_accidentals.ttf
+        android/ui/src/main/res/font
+
+Two files come out, `accidentals_regular.ttf` (weight 400) and `accidentals_bold.ttf`
+(weight 700), because Android picks the fallback font for the surrounding letters by the
+declared weight of the font it was asked for: one bold file would turn every "G B D" bold.
 """
 
 import sys
@@ -28,7 +32,7 @@ from fontTools.varLib import instancer
 ROBOTO_ASCENT_PER_EM = 1900 / 2048
 ROBOTO_DESCENT_PER_EM = 500 / 2048
 USE_TYPO_METRICS_BIT = 1 << 7
-BOLD_WEIGHT = 700
+WEIGHTS = {"regular": 400, "bold": 700}
 
 # Code point, source ("symbols" or "music"), uniform scale, and vertical lift in units at
 # 1000 per em.
@@ -51,10 +55,10 @@ def subset_to(font, code_points):
     subsetter.subset(font)
 
 
-def bold_symbols(path):
-    """Noto Sans Symbols is a variable font; a weight-700 instance matches Roboto Bold."""
+def symbols_at(path, weight):
+    """Noto Sans Symbols is a variable font; its 400 and 700 instances match Roboto's."""
     font = TTFont(path)
-    instancer.instantiateVariableFont(font, {"wght": BOLD_WEIGHT}, inplace=True)
+    instancer.instantiateVariableFont(font, {"wght": weight}, inplace=True)
     return font
 
 
@@ -85,9 +89,9 @@ def apply_roboto_metrics(font):
     os2.fsSelection = os2.fsSelection | USE_TYPO_METRICS_BIT
 
 
-def main(symbols_path, music_path, output_path):
-    output = bold_symbols(symbols_path)
-    symbols = bold_symbols(symbols_path)
+def build(symbols_path, music_path, output_path, weight):
+    output = symbols_at(symbols_path, weight)
+    symbols = symbols_at(symbols_path, weight)
     music = TTFont(music_path)
     for font in (output, music):
         if font["head"].unitsPerEm != 1000:
@@ -117,10 +121,16 @@ def main(symbols_path, music_path, output_path):
             del output[tag]
     subset_to(output, [code for code, _, _, _ in GLYPHS])
     apply_roboto_metrics(output)
+    output["OS/2"].usWeightClass = weight
     output["name"].setName("Scales Accidentals", 1, 3, 1, 0x409)
     output["name"].setName("Scales Accidentals", 4, 3, 1, 0x409)
     output.save(output_path)
-    print(f"wrote {output_path}: {len(output.getGlyphOrder())} glyphs")
+    print(f"wrote {output_path}: {len(output.getGlyphOrder())} glyphs at weight {weight}")
+
+
+def main(symbols_path, music_path, output_folder):
+    for suffix, weight in WEIGHTS.items():
+        build(symbols_path, music_path, f"{output_folder}/accidentals_{suffix}.ttf", weight)
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ class GlyphTest {
     @Test
     fun bundledTypefaceHasEveryAccidental() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val typeface = context.resources.getFont(UiR.font.noto_music_accidentals)
+        val typeface = context.resources.getFont(UiR.font.accidentals_bold)
         val paint = Paint()
         paint.typeface = typeface
         for (accidental in accidentals) {
