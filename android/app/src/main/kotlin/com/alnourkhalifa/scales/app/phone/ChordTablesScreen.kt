@@ -14,10 +14,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonColors
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -31,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -83,13 +78,6 @@ private val SecondaryLabelLight = Color(0x993C3C43)
 /** iOS's `secondaryLabel` (60 % of a pale grey) in dark mode. */
 private val SecondaryLabelDark = Color(0x99EBEBF5)
 
-/** The segmented control's track, iOS's `tertiarySystemFill` laid on white and on black. */
-private val SegmentTrackLight = Color(0xFFEEEEEF)
-private val SegmentTrackDark = Color(0xFF1C1C1F)
-
-/** The picked segment in dark mode, the raised grey iOS draws on the dark track. */
-private val SegmentPickedDark = Color(0xFF636366)
-
 /**
  * A window counts as wide, the iPad's regular horizontal size class, from this width. The
  * height floor keeps a phone turned sideways on the compact set: it is wide but too short
@@ -140,7 +128,6 @@ fun ChordTablesScreen(modifier: Modifier = Modifier) {
             rows = rows,
             metrics = metrics,
             colors = colors,
-            isDark = isDark,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -158,7 +145,6 @@ private fun ChordTablesContent(
     rows: List<KeyChordRow>,
     metrics: ChordTableMetrics,
     colors: ChordTableColors,
-    isDark: Boolean,
     modifier: Modifier,
 ) {
     val maxWidth = metrics.contentMaxWidth?.dp ?: Dp.Unspecified
@@ -181,7 +167,6 @@ private fun ChordTablesContent(
             KeyFamilySwitch(
                 family = family,
                 onFamilyChange = onFamilyChange,
-                isDark = isDark,
             )
             ChordTablesView(rows = rows, metrics = metrics, colors = colors)
             Text(
@@ -195,50 +180,21 @@ private fun ChordTablesContent(
 }
 
 /**
- * Swift's segmented `Picker`: one button per key family. It is painted the iOS way, the
- * picked segment a raised pill on a grey track with no check mark, rather than Material's
- * tinted fill, so the switch reads the same as on the iPhone beside the same table.
+ * Swift's segmented `Picker`: one segment per key family, painted the iOS way by the shared
+ * [IosSegmentedControl] so it matches the switches on the Scales screen.
  */
 @Composable
 private fun KeyFamilySwitch(
     family: KeyFamily,
     onFamilyChange: (KeyFamily) -> Unit,
-    isDark: Boolean,
 ) {
-    val families = KeyFamily.entries
-    val colors = segmentColors(isDark)
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        for ((index, option) in families.withIndex()) {
-            val shape = SegmentedButtonDefaults.itemShape(index = index, count = families.size)
-            SegmentedButton(
-                selected = option == family,
-                onClick = { onFamilyChange(option) },
-                shape = shape,
-                colors = colors,
-                icon = {},
-                modifier = Modifier.testTag(option.testTag),
-                label = { Text(option.label) },
-            )
-        }
-    }
-}
-
-/**
- * The iOS segmented control's colours: a grey track, the picked segment white in light mode
- * (a lighter grey in dark mode), and plain text in both.
- */
-@Composable
-private fun segmentColors(isDark: Boolean): SegmentedButtonColors {
-    val track = if (isDark) SegmentTrackDark else SegmentTrackLight
-    val picked = if (isDark) SegmentPickedDark else Color.White
-    val text = MaterialTheme.colorScheme.onSurface
-    return SegmentedButtonDefaults.colors(
-        activeContainerColor = picked,
-        activeContentColor = text,
-        activeBorderColor = track,
-        inactiveContainerColor = track,
-        inactiveContentColor = text,
-        inactiveBorderColor = track,
+    IosSegmentedControl(
+        options = KeyFamily.entries,
+        selected = family,
+        label = { option -> option.label },
+        onSelect = onFamilyChange,
+        modifier = Modifier.fillMaxWidth(),
+        optionTag = { option -> option.testTag },
     )
 }
 

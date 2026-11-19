@@ -414,7 +414,7 @@ private fun NumeralLine(
     // a long numeral (IIsus4) is cut short with an ellipsis rather than the "was Am" caption.
     Row(verticalAlignment = Alignment.CenterVertically) {
         BasicText(
-            text = chip.chord.formulaNumeral,
+            text = accidentalsInMusicFont(chip.chord.formulaNumeral),
             style = numeralStyle,
             maxLines = 1,
             softWrap = false,

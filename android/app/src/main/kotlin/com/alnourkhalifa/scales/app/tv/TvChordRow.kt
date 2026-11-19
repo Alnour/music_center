@@ -72,6 +72,7 @@ import com.alnourkhalifa.scales.core.session.SessionState
 import com.alnourkhalifa.scales.ui.ChordChipColors
 import com.alnourkhalifa.scales.ui.FretboardPalette
 import com.alnourkhalifa.scales.ui.MusicFontFamily
+import com.alnourkhalifa.scales.ui.accidentalsInMusicFont
 import com.alnourkhalifa.scales.ui.tint
 
 /** At most this many chips share the row's width; a longer scale scrolls the rest in. */
@@ -553,9 +554,9 @@ private fun NumeralLine(
             fontFamily = MusicFontFamily,
             fontWeight = FontWeight.SemiBold,
         )
-    // A flat in the numeral (♭VII) comes from a fallback font with taller metrics, which
-    // would make that chip's line, and the chip, taller than its neighbours; a fixed height
-    // keeps every chip's lines level.
+    // A fixed height keeps every chip's lines level whatever glyphs a line holds: the flat
+    // in a numeral (♭VII) is drawn from the music font, whose metrics differ from the
+    // serif letters' beside it.
     val lineHeight = unit * (NUMERAL_UNITS * LINE_HEIGHT_SHARE)
     // The numeral takes what the caption leaves, so a long numeral is cut, not "was Am".
     Row(
@@ -563,7 +564,7 @@ private fun NumeralLine(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicText(
-            text = chip.chord.formulaNumeral,
+            text = accidentalsInMusicFont(chip.chord.formulaNumeral),
             style = numeralStyle,
             maxLines = 1,
             softWrap = false,

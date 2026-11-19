@@ -111,10 +111,10 @@ private fun GuitarOptions(
 ) {
     FormCard {
         FormLabeledRow(title = "Frets") {
-            SegmentedPill(
+            IosSegmentedControl(
                 options = PracticeSettings.fretCountChoices,
                 selected = settings.fretCount,
-                title = { count -> "$count frets" },
+                label = { count -> "$count frets" },
                 onSelect = { count -> onChange { it.copy(fretCount = count) } },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -143,10 +143,10 @@ private fun KeyboardOptions(
 ) {
     FormCard {
         FormLabeledRow(title = "Octaves") {
-            SegmentedPill(
+            IosSegmentedControl(
                 options = PracticeSettings.keyboardOctaveChoices,
                 selected = settings.selectedKeyboardOctaves,
-                title = { count -> octavesTitle(count) },
+                label = { count -> octavesTitle(count) },
                 onSelect = { count -> onChange { it.withSelectedKeyboardOctaves(count) } },
                 modifier = Modifier.fillMaxWidth(),
             )

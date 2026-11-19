@@ -31,7 +31,7 @@ class TvDrumsTest {
     // feature: drum-trainer
     @Test
     fun okAndThePlayPauseKeyStartAndStopTheDrums() {
-        compose.setContent { TvDrumsScreen() }
+        compose.setContent { InDarkTvTheme { TvDrumsScreen() } }
 
         compose.onNodeWithTag("playPause").assertIsFocused()
         compose.onNodeWithText("Play").assertIsDisplayed()
@@ -46,7 +46,7 @@ class TvDrumsTest {
     // feature: drum-trainer
     @Test
     fun theMinusButtonLowersTheTempoByOne() {
-        compose.setContent { TvDrumsScreen() }
+        compose.setContent { InDarkTvTheme { TvDrumsScreen() } }
         compose.onNodeWithTag("tempoLabel").assertTextEquals("Tempo: 90 BPM")
 
         // Right twice from Play passes Groove and lands on "−", so OK lowers 90 to 89.
@@ -61,7 +61,7 @@ class TvDrumsTest {
     // feature: drum-trainer
     @Test
     fun okOnTheSwitchTurnsTheDrumSoundsOff() {
-        compose.setContent { TvDrumsScreen() }
+        compose.setContent { InDarkTvTheme { TvDrumsScreen() } }
         compose.onNodeWithTag("drumSounds").assertIsOn()
 
         repeat(times = 4) {
@@ -76,7 +76,7 @@ class TvDrumsTest {
     // feature: drum-trainer
     @Test
     fun theGrooveListPicksWithOkAndClosesWithBack() {
-        compose.setContent { TvDrumsScreen() }
+        compose.setContent { InDarkTvTheme { TvDrumsScreen() } }
 
         press(Key.DirectionRight)
         press(Key.DirectionCenter)

@@ -168,7 +168,7 @@ private fun HeaderRow(
         )
         for (chord in row.chords) {
             BasicText(
-                text = chord.numeral,
+                text = accidentalsInMusicFont(chord.numeral),
                 style = centered,
                 modifier = Modifier.width(metrics.chordColumnWidth.dp),
             )
