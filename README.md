@@ -13,9 +13,11 @@ the TV, so a player can read the shape from across the room while practising.
 
 - **Any scale, any key.** Pick a root and a scale; the notes appear on every string and
   fret, or on one or two piano octaves. Labels show note names, scale degrees, or nothing.
-- **Chords of the scale.** The chords the scale makes sit under the board. Tap one and its
-  notes are ringed on the board, the notes row and the TV while the rest of the scale stays
-  in view.
+- **Chords of the scale.** The chords the scale makes sit under the board. A pentatonic or
+  blues scale shows the chords it is played over instead: the chords of its major or minor
+  key, or the I7, IV7 and V7 of a twelve-bar blues, with the notes the scale lacks shown
+  faint. Tap one and its notes are ringed on the board, the notes row and the TV while the
+  rest of the scale stays in view.
 - **Change one note.** Lower, raise, add or remove a note straight from the Scales screen.
   The chords update in place and show what each one was, which note is new, and which
   chords the scale lost. The Transform tab explains the same change as a lesson.

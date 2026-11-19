@@ -164,4 +164,22 @@ struct BoardTransformTests {
         session.toggleRing(for: dominant)
         #expect(session.ringedChord == nil)
     }
+
+    @Test func aBorrowedChordRingsOnlyTheNotesTheScaleHolds() throws {
+        let file = TemporaryLibraryFile()
+        defer { file.remove() }
+        let library = ScaleLibrary(fileURL: file.url)
+        let session = freshSession()
+        session.choose(.builtIn(.blues), root: NoteName(.a), from: library)
+        let tonicSeventh = try #require(session.scale.boardChords().first)
+        #expect(tonicSeventh.name == "A7")
+
+        session.toggleRing(for: tonicSeventh)
+        // C♯ is the chord's major third; the blues scale has C instead, so it stays unringed.
+        #expect(session.ringedNotes == [NoteName(.a), NoteName(.e), NoteName(.g)])
+
+        // Another scale's chord is not one of the cards, so it rings nothing.
+        session.choose(.builtIn(.minorPentatonic), from: library)
+        #expect(session.ringedNotes.isEmpty)
+    }
 }

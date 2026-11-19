@@ -308,6 +308,60 @@ struct LetterTriadTests {
     }
 }
 
+/// Where the chords under the board come from: a scale's own notes, or the key a
+/// pentatonic or blues scale is picked from.
+struct HarmonicHomeTests {
+    @Test func sevenNoteAndSavedScalesAreHarmonisedOnTheirOwnNotes() {
+        let gMajor = Scale(root: NoteName(.g), type: .major)
+        #expect(chordNames(gMajor.boardChords()) == chordNames(gMajor.letterTriads()))
+        #expect(gMajor.harmonyNote == nil)
+        // A saved copy of the minor pentatonic keeps its own stacked chords, since the
+        // edit lessons talk about those.
+        let saved = ScaleDefinition(
+            name: "My Pentatonic",
+            degrees: ScaleType.minorPentatonic.degrees
+        )
+        let savedScale = Scale(root: NoteName(.a), definition: saved)
+        #expect(savedScale.builtInType == nil)
+        #expect(chordNames(savedScale.boardChords()) == ["Am", "C", "Dsus4", "Gsus4"])
+    }
+
+    @Test func pentatonicScalesBorrowTheirKeysChords() {
+        let aMinorPentatonic = Scale(root: NoteName(.a), type: .minorPentatonic)
+        #expect(
+            chordNames(aMinorPentatonic.boardChords()) == ["Am", "B°", "C", "Dm", "Em", "F", "G"]
+        )
+        #expect(
+            aMinorPentatonic.harmonyNote
+                == "Minor Pentatonic is A minor without its 2 and ♭6, so it is played over A minor's chords."
+        )
+        let gMajorPentatonic = Scale(root: NoteName(.g), type: .majorPentatonic)
+        #expect(
+            chordNames(gMajorPentatonic.boardChords()) == ["G", "Am", "Bm", "C", "D", "Em", "F♯°"]
+        )
+    }
+
+    @Test func bluesScalesTakeTheTwelveBarSeventhChords() throws {
+        let aBlues = Scale(root: NoteName(.a), type: .blues)
+        let chords = aBlues.boardChords()
+        #expect(chordNames(chords) == ["A", "D", "E"])
+        var names: [String] = []
+        var numerals: [String] = []
+        for chord in chords {
+            names.append(chord.name)
+            numerals.append(chord.formulaNumeral)
+        }
+        #expect(names == ["A7", "D7", "E7"])
+        #expect(numerals == ["I7", "IV7", "V7"])
+        let tonic = try #require(chords.first)
+        #expect(tonic.notes == [NoteName(.a), NoteName(.c, 1), NoteName(.e), NoteName(.g)])
+        #expect(tonic.spokenTitle == "I7, A major seventh")
+        let eMajorBlues = Scale(root: NoteName(.e), type: .majorBlues)
+        #expect(chordNames(eMajorBlues.boardChords()) == ["E", "A", "B"])
+        #expect(eMajorBlues.harmonyNote?.hasPrefix("Major Blues is played over") == true)
+    }
+}
+
 /// The chord-by-chord story of an edit.
 struct ChordChangeReportTests {
     private func report(_ root: NoteName, _ type: ScaleType, _ edit: ScaleEdit) throws

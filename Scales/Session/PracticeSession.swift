@@ -38,21 +38,34 @@ final class PracticeSession {
     var boardChange: BoardChange?
 
     /// The chord whose notes are ringed on the board, picked from the chords under it.
-    /// Kept for this run only; `ringedNotes` ignores it once the scale no longer holds
-    /// all its notes, so the rings vanish with the chord instead of pointing at nothing.
+    /// Kept for this run only; `ringedNotes` ignores it once it is no longer one of the
+    /// chords under the board, so the rings vanish with the chord instead of pointing at
+    /// nothing.
     var ringedChord: ScaleChord?
 
-    /// The notes to ring on the board: the picked chord's notes, while every one of them
-    /// is in the scale as spelled now.
+    /// The notes to ring on the board: the picked chord's notes that the scale holds, while
+    /// the chord is still one of the chords under the board. A borrowed chord (the E7 of
+    /// A blues) rings the notes the scale has and leaves out the rest.
     var ringedNotes: Set<NoteName> {
-        guard let ringedChord else { return [] }
+        guard let ringedChord, chordsUnderBoard.contains(ringedChord) else { return [] }
         var scaleNotes = Set<NoteName>()
         for tone in scale.tones {
             scaleNotes.insert(tone.name)
         }
-        let chordNotes = Set(ringedChord.notes)
-        guard chordNotes.isSubset(of: scaleNotes) else { return [] }
-        return chordNotes
+        return Set(ringedChord.notes).intersection(scaleNotes)
+    }
+
+    /// The chords the cards under the board show: the result of the last note change while
+    /// it is still on the board, otherwise the scale's own (`Scale.boardChords`).
+    private var chordsUnderBoard: [ScaleChord] {
+        guard let change = currentBoardChange else { return scale.boardChords() }
+        var chords: [ScaleChord] = []
+        for chordChange in change.transformation.chordChanges.changes {
+            if let after = chordChange.after {
+                chords.append(after)
+            }
+        }
+        return chords
     }
 
     /// Rings a chord's notes on the board, or clears the rings when the same chord is

@@ -7,7 +7,10 @@
 
 import SwiftUI
 
-/// The chords the scale on the board makes, as cards under the board on the Scales screen.
+/// The chords under the board on the Scales screen: the chords the scale makes, or, for
+/// a pentatonic or blues scale, the chords it is played over (`Scale.boardChords`), with
+/// the notes of a chord the scale doesn't hold shown faint and a line saying where the
+/// chords come from.
 ///
 /// After a note change, every chord is shown as it is now, and the chords that used the
 /// changed note are marked: what each one was, the note it gained in green, and the chords
@@ -32,22 +35,51 @@ struct ScaleChordsRow: View {
             // Cards wrap into as many rows as the width needs, so a Mac window shows them
             // in one row and a phone in two or three, each card large enough to read from
             // playing distance.
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: cardMinimumWidth, maximum: 200), spacing: 8)],
-                spacing: 8
-            ) {
-                ForEach(Array(chips.enumerated()), id: \.offset) { _, chip in
-                    Button {
-                        onTap(chip.chord)
-                    } label: {
-                        BoardChordChip(chip: chip, isRinged: chip.chord == ringedChord)
+            VStack(alignment: .leading, spacing: 6) {
+                LazyVGrid(
+                    columns: [
+                        GridItem(.adaptive(minimum: cardMinimumWidth, maximum: 200), spacing: 8)
+                    ],
+                    spacing: 8
+                ) {
+                    ForEach(Array(chips.enumerated()), id: \.offset) { _, chip in
+                        Button {
+                            onTap(chip.chord)
+                        } label: {
+                            BoardChordChip(chip: chip, isRinged: chip.chord == ringedChord)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 2)
+                .accessibilityIdentifier("boardChords")
+                if change == nil, let note = scale.harmonyNote {
+                    Text(note)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("harmonyNote")
                 }
             }
-            .padding(.vertical, 2)
-            .accessibilityIdentifier("boardChords")
         }
+    }
+
+    /// The scale's notes as spelled, to tell which notes of a borrowed chord it lacks.
+    private var scaleNotes: Set<NoteName> {
+        var notes = Set<NoteName>()
+        for tone in scale.tones {
+            notes.insert(tone.name)
+        }
+        return notes
+    }
+
+    /// The notes of a chord the scale doesn't hold: a borrowed chord's 4 or 7, or the
+    /// major third of a blues seventh chord.
+    private func outsideNotes(of chord: ScaleChord) -> [NoteName] {
+        var outside: [NoteName] = []
+        for note in chord.notes where !scaleNotes.contains(note) {
+            outside.append(note)
+        }
+        return outside
     }
 
     /// One chip per chord: the scale's chords as they stand, or, after a change, every
@@ -55,12 +87,13 @@ struct ScaleChordsRow: View {
     private var chips: [BoardChordChip.Content] {
         var chips: [BoardChordChip.Content] = []
         guard let change else {
-            for chord in scale.letterTriads() {
+            for chord in scale.boardChords() {
                 let chip = BoardChordChip.Content(
                     chord: chord,
                     before: nil,
                     kind: .unchanged,
-                    newNotes: []
+                    newNotes: [],
+                    outsideNotes: outsideNotes(of: chord)
                 )
                 chips.append(chip)
             }
@@ -74,7 +107,8 @@ struct ScaleChordsRow: View {
                     chord: shown,
                     before: chordChange.kind == .changed ? chordChange.before : nil,
                     kind: chordChange.kind,
-                    newNotes: chordChange.notesNew
+                    newNotes: chordChange.notesNew,
+                    outsideNotes: []
                 )
             )
         }
@@ -104,8 +138,9 @@ struct BoardChangeRow: View {
     }
 }
 
-/// A chord card: numeral, name and notes. After a change, a line above says what the chord
-/// was, a gained note is green, and a chord the scale lost is crossed out. The chord whose
+/// A chord card: numeral, name and notes. A note the scale doesn't hold is faint. After a
+/// change, a line above says what the chord was, a gained note is green, and a chord the
+/// scale lost is crossed out. The chord whose
 /// notes are ringed on the board sits on a tinted card edged in the board's chord colour.
 private struct BoardChordChip: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -116,6 +151,8 @@ private struct BoardChordChip: View {
         let before: ScaleChord?
         let kind: ChordChange.Kind
         let newNotes: [NoteName]
+        /// Notes of a borrowed chord that the scale on the board doesn't hold.
+        let outsideNotes: [NoteName]
     }
 
     let chip: Content
@@ -132,7 +169,7 @@ private struct BoardChordChip: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(captionColor)
             }
-            Text(chip.chord.triad.name)
+            Text(chip.chord.name)
                 .font(.system(.title2, design: .rounded).weight(.bold))
                 .foregroundStyle(nameColor)
                 .strikethrough(chip.kind == .removed)
@@ -169,7 +206,7 @@ private struct BoardChordChip: View {
     private var caption: String {
         switch chip.kind {
         case .unchanged: " "
-        case .changed: "was \(chip.before?.triad.name ?? "")"
+        case .changed: "was \(chip.before?.name ?? "")"
         case .added: "new"
         case .removed: "gone"
         }
@@ -198,6 +235,8 @@ private struct BoardChordChip: View {
             if chip.newNotes.contains(note) {
                 piece.foregroundColor = .green
                 piece.font = .subheadline.bold()
+            } else if chip.outsideNotes.contains(note) {
+                piece.foregroundColor = .secondary
             }
             text += piece
         }
@@ -207,13 +246,17 @@ private struct BoardChordChip: View {
     private var accessibilityLabel: String {
         var names: [String] = []
         for note in chip.chord.notes {
-            names.append(note.displayName)
+            if chip.outsideNotes.contains(note) {
+                names.append("\(note.displayName) (not in the scale)")
+            } else {
+                names.append(note.displayName)
+            }
         }
         let notes = names.joined(separator: ", ")
-        let chord = "\(chip.chord.formulaNumeral), \(chip.chord.triad.spokenName): \(notes)"
+        let chord = "\(chip.chord.formulaNumeral), \(chip.chord.spokenName): \(notes)"
         switch chip.kind {
         case .unchanged: return chord
-        case .changed: return "\(chord). Was \(chip.before?.triad.spokenName ?? "")."
+        case .changed: return "\(chord). Was \(chip.before?.spokenName ?? "")."
         case .added: return "\(chord). New."
         case .removed: return "\(chord). Gone."
         }

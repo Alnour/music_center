@@ -148,6 +148,32 @@ final class ScalesUITests: XCTestCase {
         attachScreenshot(named: "Major key chords")
     }
 
+    /// A blues scale shows the three seventh chords it is played over, with the chord note
+    /// the scale lacks marked, and ringing one rings only the notes the scale has.
+    @MainActor
+    func testBluesScaleShowsTheTwelveBarChords() throws {
+        app.menuButton(labelled: "Root").tap()
+        app.buttons["A"].firstMatch.tap()
+        app.menuButton(labelled: "Scale").tap()
+        app.buttons["Blues"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["A Blues"].waitForExistence(timeout: 3))
+
+        let tonicSeventh = app.buttons["I7, A major seventh: A, C♯ (not in the scale), E, G"]
+        XCTAssertTrue(tonicSeventh.waitForExistence(timeout: 3), "the blues seventh chords are listed")
+        XCTAssertTrue(app.buttons["IV7, D major seventh: D, F♯ (not in the scale), A, C"].exists)
+        XCTAssertTrue(app.buttons["V7, E major seventh: E, G♯ (not in the scale), B (not in the scale), D"].exists)
+        XCTAssertTrue(app.element(identified: "harmonyNote").exists, "the cards say where the chords come from")
+        tonicSeventh.tap()
+        XCTAssertTrue(tonicSeventh.isSelected, "the picked chord is marked")
+        attachScreenshot(named: "A7 ringed over A blues")
+
+        app.menuButton(labelled: "Scale").tap()
+        app.buttons["Minor Pentatonic"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["A Minor Pentatonic"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["iv, D minor: D, F (not in the scale), A"].waitForExistence(timeout: 3))
+        attachScreenshot(named: "Minor pentatonic chords")
+    }
+
     /// The Scales screen shows the chords as cards under the board and changes one note in
     /// place: the chords that used it change with it.
     @MainActor

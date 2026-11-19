@@ -37,13 +37,20 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   Keyboard is chosen; the Octaves picker is hidden for the guitar.
 - Layout: `Scales/Music` is pure theory (spelling, formulas, tunings, fret positions) with no UI;
   `Scales/Session` holds the saved settings shared by both screens; `Scales/Views` draws them.
-- Chords on the Scales screen (`ScaleChordsRow`): the scale's `letterTriads()` as chips
-  under the board, all on one screen with the notes row, the board and a single row holding
+- Chords on the Scales screen (`ScaleChordsRow`): the scale's `boardChords()` as chips
+  under the board. A seven-note or saved scale shows its own `letterTriads()`; the
+  built-in pentatonic and blues scales are melody scales the books do not harmonise on
+  their own notes, so they show the chords they are played over (`HarmonicHome` in
+  `ScaleHarmony.swift`): the pentatonics the seven chords of the major or minor key on
+  the same root, the blues scales the I7, IV7, V7 of a twelve-bar blues
+  (`ScaleChord.isDominantSeventh`, the only seventh chords in the app). A chord note the
+  scale lacks is faint on the card and never ringed, and `harmonyNote` under the cards
+  says where the chords come from. The chips are all on one screen with the notes row, the board and a single row holding
   the Root and Scale menus plus `CompactScaleEditMenu` (nested menus; the Transform tab
   keeps the row-per-note `ScaleEditMenus`) to change one note in place. Tapping a chip
   rings the chord's notes on the board, the notes row, the TV scene and the full-screen
-  board (`PracticeSession.ringedChord`, this run only; `ringedNotes` is empty once the
-  scale lacks one of the notes; `ChordRing` draws the ring; chord notes take the palette's
+  board (`PracticeSession.ringedChord`, this run only; `ringedNotes` holds only the
+  notes the scale has and is empty once the chord is no longer one of the cards; `ChordRing` draws the ring; chord notes take the palette's
   green `chordFill`, the root keeps its own colour, the ring is `chordRing`). The cast AirPlay clip is keyed
   by settings and does not carry the rings. `PracticeSession.transform` saves the change as a lesson (a new scale is kept
   under its working name, "Major ♭7"), puts the result on the board and keeps a

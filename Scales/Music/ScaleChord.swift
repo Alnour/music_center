@@ -11,8 +11,11 @@ struct ScaleChord: Hashable, Sendable {
     let degree: ScaleDegree
     let triad: Triad
     /// Root, middle note (the third, or the fourth or second of a suspended chord) and
-    /// fifth, spelled as the scale spells them.
+    /// fifth, spelled as the scale spells them, then the seventh of a seventh chord.
     let notes: [NoteName]
+    /// True for a dominant seventh chord (A7): the triad with a minor seventh on top, the
+    /// chord of a twelve-bar blues. Triads are the rule everywhere else.
+    let isDominantSeventh: Bool
     /// The numeral counted from the scale's own steps, as key tables print it: the chord
     /// on C in A minor is III.
     let numeral: String
@@ -22,9 +25,10 @@ struct ScaleChord: Hashable, Sendable {
 
     private static let romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII"]
 
-    init(degree: ScaleDegree, triad: Triad, notes: [NoteName]) {
+    init(degree: ScaleDegree, triad: Triad, notes: [NoteName], isDominantSeventh: Bool = false) {
         let base = Self.romanNumerals[degree.number - 1]
-        let numeral = triad.quality.numeral(base)
+        let seventhSuffix = isDominantSeventh ? "7" : ""
+        let numeral = triad.quality.numeral(base) + seventhSuffix
         let accidental: String
         switch degree.alteration {
         case ..<0: accidental = "♭"
@@ -34,13 +38,24 @@ struct ScaleChord: Hashable, Sendable {
         self.degree = degree
         self.triad = triad
         self.notes = notes
+        self.isDominantSeventh = isDominantSeventh
         self.numeral = numeral
         self.formulaNumeral = accidental + numeral
     }
 
+    /// The name as chord charts print it: Dm, Gsus4, A7.
+    var name: String {
+        triad.name + (isDominantSeventh ? "7" : "")
+    }
+
+    /// "D minor", "A dominant seventh", for sentences and VoiceOver.
+    var spokenName: String {
+        triad.spokenName + (isDominantSeventh ? " seventh" : "")
+    }
+
     /// "V, G major", for the sentences of a lesson.
     var spokenTitle: String {
-        "\(formulaNumeral), \(triad.spokenName)"
+        "\(formulaNumeral), \(spokenName)"
     }
 }
 
