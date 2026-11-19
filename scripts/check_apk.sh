@@ -9,7 +9,9 @@
 #   - 16 KB page alignment of native libraries (Play requirement, zipalign -P 16);
 #   - manifest: a phone launcher and a TV launcher activity, leanback and touchscreen not
 #     required, no required feature at all, no permissions beyond the one AndroidX adds for
-#     itself, and a TV banner.
+#     itself, and a TV banner;
+#   - versionCode equal to android/version.properties, targetSdk at or above Play's floor.
+# The sizes of both files are printed at the end, for the release notes.
 # Every failure is listed before the script exits, so one run shows everything to fix.
 set -eu
 
@@ -87,6 +89,19 @@ if [ -n "$unexpected_permissions" ]; then
     fail "$apk: unexpected permissions: $unexpected_permissions"
 fi
 
+# The stores read the versionCode from the APK, and refuse one they have already seen; a
+# stale build after `make android-bump` would be refused at upload, so it is caught here.
+expected_code=$(grep '^versionCode=' android/version.properties | cut -d= -f2)
+expect_badging "versionCode='$expected_code'"
+
+# Play refuses new apps and updates that target an API level below its yearly floor (35 since
+# August 2025); Amazon's floor for Fire OS 8 is 30, below this one.
+minimum_target=35
+target_sdk=$(echo "$badging" | sed -n "s/^targetSdkVersion:'\([0-9]*\)'.*/\1/p")
+if [ -z "$target_sdk" ] || [ "$target_sdk" -lt "$minimum_target" ]; then
+    fail "$apk: targetSdkVersion '$target_sdk' is below Play's floor of $minimum_target"
+fi
+
 # R8 renames resource files in release builds, so the banner is checked through the
 # manifest's attribute rather than by file name.
 manifest_tree=$("$build_tools/aapt2" dump xmltree --file AndroidManifest.xml "$apk")
@@ -105,4 +120,8 @@ if [ "$failures" -gt 0 ]; then
     echo "$failures check(s) failed" >&2
     exit 1
 fi
-echo "APK and bundle checks passed"
+# Sizes in kilobytes, the unit both consoles show; the download a player sees is smaller,
+# because Play splits the bundle per device.
+apk_kb=$(( $(wc -c < "$apk") / 1024 ))
+aab_kb=$(( $(wc -c < "$aab") / 1024 ))
+echo "APK and bundle checks passed (APK $apk_kb KB, bundle $aab_kb KB)"
