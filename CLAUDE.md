@@ -142,6 +142,16 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   every commit and in `.githooks/pre-push` (enable once: `git config core.hooksPath
   .githooks`); `make verify-all` adds the interface tests on iPhone, iPad and the Android
   emulators and runs before each owner gate and store upload.
+- Android release: `make bundle-android` runs `parity --release`, builds the R8 release AAB
+  (Play) and APK (Amazon; `app-release-unsigned.apk` without the owner's upload key, whose
+  details live only in `~/.gradle/gradle.properties`) and runs `scripts/check_apk.sh`
+  (native allow-list, both ARM ABIs, 16 KB alignment, leanback/touchscreen not required, no
+  extra permissions, banner, versionCode, targetSdk floor). `make android-bump`
+  (`scripts/bump_android_version.sh`) raises `versionCode` in `android/version.properties`
+  before each upload. `make screenshots-android` (`ANDROID_SHOTS=phone|tablet|tv`) runs
+  `StoreScreenshots` / `TvStoreScreenshots` with `am instrument` and pulls the PNGs into
+  `Store/android/screenshots/`. Listing text, assets and the owner's steps are in
+  `Store/android/listing.md`. Agents never upload to Play or Amazon.
 
 ## Adding a feature (every platform, every time)
 
