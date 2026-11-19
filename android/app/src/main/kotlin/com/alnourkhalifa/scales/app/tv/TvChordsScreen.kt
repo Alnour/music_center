@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -38,10 +40,10 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Tab
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.Text
-import androidx.tv.material3.darkColorScheme
 import com.alnourkhalifa.scales.core.board.ChordTableMetrics
 import com.alnourkhalifa.scales.core.music.KeyChordTable
 import com.alnourkhalifa.scales.core.music.TriadQuality
+import com.alnourkhalifa.scales.ui.ChordColors
 import com.alnourkhalifa.scales.ui.ChordTableColors
 import com.alnourkhalifa.scales.ui.ChordTablesView
 import com.alnourkhalifa.scales.ui.tint
@@ -87,9 +89,6 @@ private val SectionSpacing: Dp = 6.dp
  */
 private val FootnoteSize = 13.sp
 
-/** iOS's system blue in dark mode: the home chord's tile, as on the iPhone in dark mode. */
-private val HomeChordAccent = Color(0xFF0A84FF)
-
 /**
  * Every major and minor key with the chords that belong to it, on the television: a "Major
  * keys" / "Minor keys" tab row that Left and Right switch, the table, and its footnote. The TV
@@ -112,9 +111,7 @@ fun TvChordsScreen(modifier: Modifier = Modifier) {
         val designHeight = ChordTableMetrics.tvDesignHeight.toFloat()
         val tvDensity = Density(density = screenHeightPixels / designHeight, fontScale = 1f)
         CompositionLocalProvider(LocalDensity provides tvDensity) {
-            TvDarkTheme {
-                TvChordsContent()
-            }
+            TvChordsContent()
         }
     }
 }
@@ -214,21 +211,24 @@ private fun KeyFamilyTabs(
 
 /**
  * The table's colours from the TV theme: the theme's text colour for key names and major
- * chords, its quieter variant for numerals and signatures, iOS's dark-mode blue for the home
- * chord's tile, and the chord-quality tints the phone uses in dark mode.
+ * chords, its quieter variant for numerals and signatures, iOS's system blue for the home
+ * chord's tile, and the chord-quality tints the phone uses, in the dark or light shades that
+ * match the board theme.
  */
 @Composable
 private fun tvChordTableColors(): ChordTableColors {
     val scheme = MaterialTheme.colorScheme
+    val isDark = isTvThemeDark()
     val onSurface = scheme.onBackground
     val tints = mutableMapOf<TriadQuality, Color>()
     for (quality in TriadQuality.entries) {
-        tints[quality] = quality.tint(primary = onSurface, isDark = true)
+        tints[quality] = quality.tint(primary = onSurface, isDark = isDark)
     }
+    val accent = if (isDark) ChordColors.blueDark else ChordColors.blueLight
     return ChordTableColors(
         onSurface = onSurface,
         secondary = scheme.onSurfaceVariant,
-        accent = HomeChordAccent,
+        accent = accent,
         chordTints = tints,
     )
 }
@@ -257,19 +257,17 @@ internal fun handleBackKey(
 }
 
 /**
- * tv-material's dark colours around [content], keeping the type and shapes of whatever theme
- * hosts the screen.
- *
- * Why force dark: a television is watched in a dim room, where a white screen glares, and
- * tv-material's own default scheme is light. The chord tints and the drum staff are drawn
- * in their dark-mode colours to match.
+ * Whether the screen is drawn in the dark board theme, read from the hosting theme's
+ * background. `TvApp` picks the theme from the player's "Dark TV theme" setting; reading it
+ * back from the colours lets the chord tints and the drum staff follow the theme they sit in,
+ * in the app and in a test that hosts the screen in a theme of its own.
  */
 @Composable
-internal fun TvDarkTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(),
-        shapes = MaterialTheme.shapes,
-        typography = MaterialTheme.typography,
-        content = content,
-    )
+@ReadOnlyComposable
+internal fun isTvThemeDark(): Boolean {
+    val background = MaterialTheme.colorScheme.background
+    return background.luminance() < HALF_LUMINANCE
 }
+
+/** The luminance between a dark and a light background. */
+private const val HALF_LUMINANCE = 0.5f

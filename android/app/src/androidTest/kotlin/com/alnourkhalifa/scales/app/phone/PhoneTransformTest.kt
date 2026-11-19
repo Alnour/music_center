@@ -8,12 +8,12 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.alnourkhalifa.scales.core.music.ScaleReference
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -71,18 +71,17 @@ class PhoneTransformTest {
         val scaleRow = hasTestTag("myScale-$name")
         scrollTransformListTo(scaleRow)
 
-        // The Scales screen's own Scale menu belongs to another screen's port; until it is
-        // here, the scale is put on the board the way that menu does, through the session.
-        val saved =
-            phone.app.library.scales
-                .first { scale -> scale.definition.name == name }
-        phone.onMainThread {
-            phone.app.session
-                .choose(ScaleReference.Custom(saved.id))
-        }
+        // My Scales comes after the built-in scales, below the menu's first screenful, so
+        // the item is scrolled into view before it is tapped.
         phone.openTab("scales")
-        val boardTitle = phone.app.sessionState.value.scale.title
-        assertTrue("the fretboard shows it: $boardTitle", boardTitle.endsWith(name))
+        compose.onNodeWithTag("scaleMenu").performClick()
+        val pickerChoice = compose.onNodeWithTag("scale-$name")
+        pickerChoice.performScrollTo()
+        pickerChoice.performClick()
+        val boardTitle = hasTestTag("scaleTitle") and hasText(name, substring = true)
+        compose.waitUntil(3_000) { exists(boardTitle) }
+        val title = phone.app.sessionState.value.scale.title
+        assertTrue("the fretboard shows it: $title", title.endsWith(name))
 
         phone.openTab("transform")
         scrollTransformListTo(scaleRow)

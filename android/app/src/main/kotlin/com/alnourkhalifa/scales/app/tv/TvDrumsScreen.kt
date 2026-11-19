@@ -90,14 +90,12 @@ private const val MEDIA_TEMPO_STEP = 5
  * The player comes from [rememberDrumPlayer], which keeps the screen on while the drums play
  * and stops them when the screen leaves. Back closes the groove list when it is open; any
  * other Back is left to `TvApp`'s one BackHandler, which steps back to the panel (handling
- * it here as well made the TV pop two levels at once). The screen is always dark
- * ([TvDarkTheme]).
+ * it here as well made the TV pop two levels at once). The screen takes `TvApp`'s theme, so
+ * it is dark or light with the player's "Dark TV theme" setting, as the board is.
  */
 @Composable
 fun TvDrumsScreen(modifier: Modifier = Modifier) {
-    TvDarkTheme {
-        TvDrumsContent(modifier = modifier)
-    }
+    TvDrumsContent(modifier = modifier)
 }
 
 /** The staff, the control row and the groove list when open, with the remote's keys. */
@@ -188,7 +186,7 @@ private fun TvDrumStaff(player: DrumPlayer) {
         groove = player.groove,
         isPlaying = isPlaying,
         ball = { player.ballPosition(nowNanos) },
-        isDark = true,
+        isDark = isTvThemeDark(),
         modifier =
             Modifier
                 .fillMaxWidth()

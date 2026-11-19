@@ -34,7 +34,7 @@ class TvChordsTest {
     // feature: chord-tables
     @Test
     fun majorKeysFitOnOneScreen() {
-        compose.setContent { TvChordsScreen() }
+        compose.setContent { InDarkTvTheme { TvChordsScreen() } }
 
         compose.onNodeWithTag("majorKeys").assertIsFocused()
         assertEveryNodeDisplayed("C major")
@@ -47,7 +47,7 @@ class TvChordsTest {
     // feature: chord-tables
     @Test
     fun rightSwitchesToMinorKeys() {
-        compose.setContent { TvChordsScreen() }
+        compose.setContent { InDarkTvTheme { TvChordsScreen() } }
 
         compose.onRoot().performKeyInput { pressKey(Key.DirectionRight) }
 

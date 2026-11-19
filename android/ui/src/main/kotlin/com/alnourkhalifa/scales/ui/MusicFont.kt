@@ -1,5 +1,7 @@
 package com.alnourkhalifa.scales.ui
 
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -29,3 +31,43 @@ val MusicFontFamily =
         Font(R.font.accidentals_regular, FontWeight.Normal),
         Font(R.font.accidentals_bold, FontWeight.Bold),
     )
+
+/**
+ * The accidentals [MusicFontFamily] holds, as Unicode code points: ♭ ♮ ♯, and 𝄪 𝄫, which sit
+ * outside the Basic Multilingual Plane and so take two `Char`s each in a Kotlin string.
+ */
+private val ACCIDENTAL_CODE_POINTS: Set<Int> =
+    setOf(
+        0x266D,
+        0x266E,
+        0x266F,
+        0x1D12A,
+        0x1D12B,
+    )
+
+/** The accidentals' span: only the font changes, so size, weight and colour follow the text. */
+private val ACCIDENTAL_SPAN = SpanStyle(fontFamily = MusicFontFamily)
+
+/**
+ * [text] with every accidental set in [MusicFontFamily] and every other character left in
+ * the text's own font, for text drawn in a font other than [MusicFontFamily], such as the
+ * serif Roman numerals on the chord cards and table headers ("♭VII").
+ *
+ * Why: a serif numeral cannot simply switch to [MusicFontFamily], because its letters would
+ * then fall back to the sans-serif system font. Left alone, the ♭ falls back to whichever
+ * system font has it, where it sits small and below the letters; the span puts it in the
+ * bundled font, lifted to stand beside a capital as on the iPhone.
+ */
+fun accidentalsInMusicFont(text: String): AnnotatedString {
+    val builder = AnnotatedString.Builder(text)
+    var index = 0
+    while (index < text.length) {
+        val codePoint = text.codePointAt(index)
+        val length = Character.charCount(codePoint)
+        if (codePoint in ACCIDENTAL_CODE_POINTS) {
+            builder.addStyle(ACCIDENTAL_SPAN, start = index, end = index + length)
+        }
+        index += length
+    }
+    return builder.toAnnotatedString()
+}
