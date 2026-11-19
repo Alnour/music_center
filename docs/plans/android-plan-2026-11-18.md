@@ -496,3 +496,89 @@ Left for Alnour: merge `android-int` into `android` once the harmony work is com
 `make answers` to carry `boardChords()` into the answers file and port it to Kotlin per the
 CLAUDE.md recipe); the upload keystore and store uploads (`Store/android/listing.md`); a real
 Fire TV stick check; the Amazon background image.
+
+---
+
+## Status on 19 November 2026: one checkout, both apps, ready to submit
+
+`android-int` is merged into `android` (merge commit `1b114fe`); the integration worktree and
+branch are gone. Both apps now live in the one checkout, and a feature is one change that
+touches `Scales/` and `android/` together: `make mirror` fails on a Swift logic file without
+its Kotlin twin, `make answers-check` fails when the Kotlin output drifts from Swift, and
+`make parity` fails on a feature without a tagged test on every required platform.
+
+Done today:
+
+- The pentatonic and blues chord harmony has its Kotlin twin (`ScaleHarmony.kt`, commit
+  `165e3fc`); `features.json` registers it as `chord-harmony`, 19 features in all. The seventh
+  chord is read aloud as "A dominant seventh" on both platforms ("A major seventh" is Amaj7).
+  `make verify` passes; the phone and TV instrumented suites pass on the emulators.
+- Upload key created (`~/.keystores/scales-upload.jks`, properties in
+  `~/.gradle/gradle.properties`); `make bundle-android` produces a signed AAB and APK.
+- Store kit complete in `Store/android/`: listing text, icon, feature graphic, TV banner,
+  phone (04 cropped to 2:1), tablet and TV screenshots, Fire TV background, release notes,
+  tester invitation, and `release-steps.md` with every console link.
+- Privacy policy: https://alnouralharin.com/apps/scales/#privacy is live; the page in
+  `personal_website/client/public/apps/scales/index.html` is rewritten for Scales and Android
+  and waits for a commit and a Replit publish.
+
+### Release steps (owner only; agents never upload)
+
+**Accounts**
+
+1. Two-step verification on the Google account:
+   https://myaccount.google.com/signinoptions/two-step-verification
+2. Play developer account, Personal, 25 USD once: https://play.google.com/console/signup
+3. Identity verification when asked (ID photo and selfie), 1 to 7 days:
+   https://play.google.com/console/ › Account details
+4. Amazon developer account, free, plus tax interview and payment profile:
+   https://developer.amazon.com/apps-and-games
+5. Recruit 15 or more Android testers; collect Gmail addresses.
+
+**Build**
+
+6. `make verify`, commit.
+7. `make bundle-android` → `android/app/build/outputs/bundle/release/app-release.aab` (Play),
+   `android/app/build/outputs/apk/release/app-release.apk` (Amazon).
+8. Back up the keystore and its four properties to the password manager.
+
+**Google Play, first session**
+
+9. https://play.google.com/console/ › All apps › Create app: Scales, English, App, Free.
+10. Dashboard › Set up your app, one row each: App access (all available); Ads (No);
+    Content rating (Reference, News or Educational, all No); Target audience (13+, not a
+    news app); Data safety (No data collected); Government No, Financial none, Health none;
+    Privacy policy https://alnouralharin.com/apps/scales/#privacy; Store settings (Music &
+    Audio; tags music education, guitar; contact email).
+11. Main store listing: text from `Store/android/listing.md`, `icon-512.png`,
+    `feature-graphic.png`, phone screenshots 01–07, tablet screenshots 01–07 in both slots.
+12. Setup › Advanced settings › Form factors › Add form factor › Android TV; then TV
+    screenshots 01–04 and `tv-banner-1280.png`.
+13. Setup › App signing: Play App Signing on (default).
+14. Testing › Closed testing › Create track › Create release › upload the AAB › notes from
+    `release-notes-1.0.txt` › Review › Start rollout.
+15. Testers tab: email list, copy the opt-in link, send `tester-invite.md`. Note the date.
+16. 12 or more testers opted in for 14 unbroken days. New builds meanwhile:
+    `make android-bump`, `make bundle-android`, upload to the same track.
+
+**Amazon Appstore, same day, no test period**
+
+17. https://developer.amazon.com/apps-and-games/console/apps/new › Android app: Scales, Music.
+18. Upload the APK; device support Fire TV only.
+19. Amazon description and bullets from `listing.md`; keywords guitar, scales, piano,
+    music theory.
+20. Images: `icon-114.png`, `icon-512.png`, `tv-banner-1280.png`,
+    `fire-tv-background-1920.png`, TV screenshots 01–04.
+21. Content rating all No, privacy URL, Submit.
+
+**Google production, after the 14 days**
+
+22. Dashboard › Apply for production access; answer the questions about the test.
+23. Production › Create release › Add from library › the tested bundle › rollout 100 %.
+    Review up to 7 days. The Android TV review shows separately under Publishing overview.
+
+**Every later release**: `make android-bump`, `make bundle-android`, commit, upload the AAB
+to Play and the APK to Amazon.
+
+Still open: a real Fire TV stick check of the release APK before the Amazon upload
+(`make run-fire FIRE=<ip>` for the debug build, `adb install` for the release APK).
