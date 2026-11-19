@@ -74,8 +74,8 @@ review looks for before it accepts the TV release.
 
 **Category**: Music & Audio. **Tags**: music education, guitar.
 
-**Contact email**: alnour.ahmed@gmail.com. **Privacy policy URL**: needed (see the steps at the
-end).
+**Contact email**: alnour.ahmed@gmail.com. **Privacy policy URL**:
+https://alnouralharin.com/apps/scales/#privacy (the page is in the personal_website repo).
 
 ### Data safety
 
@@ -107,14 +107,15 @@ collecting data.
 | --- | --- | --- | --- |
 | App icon | 512×512, 32-bit PNG, at most 1 MB | `icon-512.png` (from `icon-512.svg`) | ready |
 | Feature graphic | 1024×500, JPEG or 24-bit PNG, no alpha | `feature-graphic.png` (from `feature-graphic.svg`) | ready |
-| Phone screenshots | 2 to 8; 4 or more at 1080 px or more; long side at most twice the short | `screenshots/phone/01…07` (1080×2400) | needs `make screenshots-android ANDROID_SHOTS=phone` |
+| Phone screenshots | 2 to 8; 4 or more at 1080 px or more; long side at most twice the short | `screenshots/phone/01…07` (1080×2400; 04 cropped to 2160×1080) | ready |
 | Tablet screenshots | 4 or more, 1080 to 7680 px | `screenshots/tablet/01…07` (2560×1600) | ready |
-| TV screenshots | at least 1; plan on 4 at 1920×1080 | `screenshots/tv/01…04` | needs `make screenshots-android ANDROID_SHOTS=tv` |
+| TV screenshots | at least 1; plan on 4 at 1920×1080 | `screenshots/tv/01…04` | ready |
 | TV banner (listing) | 1280×720, no alpha | `tv-banner-1280.png` (from `Store/Icon/android-tv-banner.svg`) | ready |
 | TV banner (in the app) | 320×180, xhdpi, with the name | `android/app/src/main/res/drawable-xhdpi/banner.png` | in the APK |
 
-The phone screenshot `04-tv-board-landscape.png` is landscape (2400×1080, long side 2.2× the
-short side); Play allows at most 2×, so leave it out of the phone set or crop it to 2160×1080.
+The phone screenshot `04-tv-board-landscape.png` is cropped to 2160×1080 because Play allows
+a long side of at most twice the short; `make screenshots-android` writes it at 2400×1080 again,
+so crop it after a rerun (`ffmpeg -i in.png -vf crop=2160:1080:120:0 out.png`).
 
 ### Closed test before production
 
@@ -167,7 +168,7 @@ Drum trainer · Made for the Fire TV remote.
 | Large icon | 512×512 PNG, transparency allowed | `icon-512.png` |
 | Fire TV icon | 1280×720 PNG, no transparency | `tv-banner-1280.png` |
 | Screenshots | 3 to 10 at 1920×1080 | `screenshots/tv/01…04` |
-| Fire TV background | 1920×1080, no text | not made yet: `screenshots/tv/01-board.png` with the title cropped, or a plain fretboard |
+| Fire TV background | 1920×1080, no text | `fire-tv-background-1920.png` (the fretboard band of `screenshots/tv/01-board.png`, padded) |
 
 There is no closed-test requirement on Amazon.
 
@@ -178,11 +179,11 @@ There is no closed-test requirement on Amazon.
    passwords up in the password manager. Add to `~/.gradle/gradle.properties`:
    `scalesUploadStoreFile`, `scalesUploadStorePassword`, `scalesUploadKeyAlias`,
    `scalesUploadKeyPassword`. `make bundle-android` then writes a signed
-   `app-release.apk`.
+   `app-release.apk`. Done on this Mac.
 2. **Play Console**: create the app (name Scales, free, app not game), accept Play App
    Signing, finish developer verification, the data safety form, content rating, target
-   audience and ads forms as above, and host a privacy policy (a short page stating that
-   the app collects nothing is enough) and paste its URL.
+   audience and ads forms as above, and paste the privacy policy URL above. The step-by-step list with links is in
+   `release-steps.md`.
 3. **Closed test**: upload `app-release.aab` to a closed track, invite 15 or more testers,
    keep 12 opted in for 14 days, then apply for production.
 4. **Android TV**: add the TV release type, TV screenshots and TV banner (above).

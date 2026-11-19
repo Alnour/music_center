@@ -1,0 +1,6 @@
+First release.
+
+Any scale in any key on the guitar neck or a piano keyboard, with the chords of the
+scale underneath. Change one note and see what each chord becomes. Chord tables for
+every key, a drum trainer, and a screen made for the TV remote on Android TV,
+Google TV and Fire TV.
