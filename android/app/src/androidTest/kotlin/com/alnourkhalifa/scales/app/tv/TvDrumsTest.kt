@@ -31,7 +31,7 @@ class TvDrumsTest {
     // feature: drum-trainer
     @Test
     fun okAndThePlayPauseKeyStartAndStopTheDrums() {
-        compose.setContent { TvDrumsScreen(onBack = {}) }
+        compose.setContent { TvDrumsScreen() }
 
         compose.onNodeWithTag("playPause").assertIsFocused()
         compose.onNodeWithText("Play").assertIsDisplayed()
@@ -46,7 +46,7 @@ class TvDrumsTest {
     // feature: drum-trainer
     @Test
     fun theMinusButtonLowersTheTempoByOne() {
-        compose.setContent { TvDrumsScreen(onBack = {}) }
+        compose.setContent { TvDrumsScreen() }
         compose.onNodeWithTag("tempoLabel").assertTextEquals("Tempo: 90 BPM")
 
         // Right twice from Play passes Groove and lands on "−", so OK lowers 90 to 89.
@@ -61,7 +61,7 @@ class TvDrumsTest {
     // feature: drum-trainer
     @Test
     fun okOnTheSwitchTurnsTheDrumSoundsOff() {
-        compose.setContent { TvDrumsScreen(onBack = {}) }
+        compose.setContent { TvDrumsScreen() }
         compose.onNodeWithTag("drumSounds").assertIsOn()
 
         repeat(times = 4) {
@@ -76,8 +76,7 @@ class TvDrumsTest {
     // feature: drum-trainer
     @Test
     fun theGrooveListPicksWithOkAndClosesWithBack() {
-        var backCount = 0
-        compose.setContent { TvDrumsScreen(onBack = { backCount += 1 }) }
+        compose.setContent { TvDrumsScreen() }
 
         press(Key.DirectionRight)
         press(Key.DirectionCenter)
@@ -86,7 +85,6 @@ class TvDrumsTest {
         // Back closes the list and stays on the screen.
         press(Key.Back)
         compose.onNodeWithTag("grooveList").assertDoesNotExist()
-        assertEquals("Back from the list stays on the screen", 0, backCount)
 
         // Focus is back on the groove button; the list opens on Basic Rock, Down picks the next.
         press(Key.DirectionCenter)
@@ -94,17 +92,6 @@ class TvDrumsTest {
         press(Key.DirectionCenter)
         compose.onNodeWithTag("grooveList").assertDoesNotExist()
         compose.onNodeWithText("Groove: Four on the Floor").assertIsFocused()
-    }
-
-    // feature: drum-trainer
-    @Test
-    fun backLeavesTheScreen() {
-        var backCount = 0
-        compose.setContent { TvDrumsScreen(onBack = { backCount += 1 }) }
-
-        press(Key.Back)
-
-        assertEquals("Back calls onBack once", 1, backCount)
     }
 
     /** One press and release of [key] on the remote, sent to whatever has focus. */

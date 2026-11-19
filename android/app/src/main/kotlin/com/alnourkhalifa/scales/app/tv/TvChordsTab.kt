@@ -16,16 +16,12 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 
 /**
- * The Chord tables route's slot in `TvApp`: the major and minor key tables, full screen. The
- * screen catches the Back key itself and reports it through [onBack], which `TvApp` turns
- * into one step back to the panel.
+ * The Chord tables route's slot in `TvApp`: the major and minor key tables, full screen. Back is
+ * `TvApp`'s and returns to the panel.
  */
 @Composable
-fun TvChordsTab(
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    TvChordsScreen(onBack = onBack, modifier = modifier)
+fun TvChordsTab(modifier: Modifier = Modifier) {
+    TvChordsScreen(modifier = modifier)
 }
 
 /**

@@ -88,25 +88,21 @@ private const val MEDIA_TEMPO_STEP = 5
  *   only starts and Pause only stops them, and Fast-forward and Rewind move the tempo by 5.
  *
  * The player comes from [rememberDrumPlayer], which keeps the screen on while the drums play
- * and stops them when the screen leaves. Back closes the groove list when it is open, and
- * otherwise calls [onBack]. The screen is always dark ([TvDarkTheme]).
+ * and stops them when the screen leaves. Back closes the groove list when it is open; any
+ * other Back is left to `TvApp`'s one BackHandler, which steps back to the panel (handling
+ * it here as well made the TV pop two levels at once). The screen is always dark
+ * ([TvDarkTheme]).
  */
 @Composable
-fun TvDrumsScreen(
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun TvDrumsScreen(modifier: Modifier = Modifier) {
     TvDarkTheme {
-        TvDrumsContent(onBack = onBack, modifier = modifier)
+        TvDrumsContent(modifier = modifier)
     }
 }
 
 /** The staff, the control row and the groove list when open, with the remote's keys. */
 @Composable
-private fun TvDrumsContent(
-    onBack: () -> Unit,
-    modifier: Modifier,
-) {
+private fun TvDrumsContent(modifier: Modifier) {
     val player = rememberDrumPlayer()
     var isGrooveListOpen by remember { mutableStateOf(false) }
     val playFocus = remember { FocusRequester() }
@@ -121,19 +117,12 @@ private fun TvDrumsContent(
         grooveButtonFocus.requestFocus()
         isGrooveListOpen = false
     }
-    val onBackKey = {
-        if (isGrooveListOpen) {
-            closeGrooveList()
-        } else {
-            onBack()
-        }
-    }
-
     val background = MaterialTheme.colorScheme.background
     val keyHandler =
         Modifier.onPreviewKeyEvent { event ->
-            val isBack = handleBackKey(event.key, event.type, onBackKey)
-            isBack || handleMediaKey(event, player)
+            val closesGrooveList =
+                isGrooveListOpen && handleBackKey(event.key, event.type, closeGrooveList)
+            closesGrooveList || handleMediaKey(event, player)
         }
     OverscanColumn(background = background, modifier = modifier.then(keyHandler)) {
         TvDrumStaff(player = player)

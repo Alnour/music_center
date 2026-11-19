@@ -4,14 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
- * The Drums route's slot in `TvApp`: the drum trainer, full screen. The screen catches the
- * Back key itself (so a remote's Back closes its groove list first) and reports it through
- * [onBack], which `TvApp` turns into one step back to the panel.
+ * The Drums route's slot in `TvApp`: the drum trainer, full screen. Back is `TvApp`'s and
+ * returns to the panel; the screen only closes its groove list itself.
  */
 @Composable
-fun TvDrumsTab(
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    TvDrumsScreen(onBack = onBack, modifier = modifier)
+fun TvDrumsTab(modifier: Modifier = Modifier) {
+    TvDrumsScreen(modifier = modifier)
 }

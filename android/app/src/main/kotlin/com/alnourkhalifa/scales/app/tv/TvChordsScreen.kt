@@ -103,20 +103,17 @@ private val HomeChordAccent = Color(0xFF0A84FF)
  * scale is pinned to 1 for the same reason: a larger system font would push the last keys off
  * the screen with no way to scroll to them.
  *
- * Focus starts on the selected tab. Back calls [onBack], the caller's way out of the screen.
+ * Focus starts on the selected tab. Back is `TvApp`'s and returns to the panel.
  */
 @Composable
-fun TvChordsScreen(
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun TvChordsScreen(modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val screenHeightPixels = constraints.maxHeight.toFloat()
         val designHeight = ChordTableMetrics.tvDesignHeight.toFloat()
         val tvDensity = Density(density = screenHeightPixels / designHeight, fontScale = 1f)
         CompositionLocalProvider(LocalDensity provides tvDensity) {
             TvDarkTheme {
-                TvChordsContent(onBack = onBack)
+                TvChordsContent()
             }
         }
     }
@@ -127,7 +124,7 @@ fun TvChordsScreen(
  * so the three line up, centred on the screen.
  */
 @Composable
-private fun TvChordsContent(onBack: () -> Unit) {
+private fun TvChordsContent() {
     var family by rememberSaveable { mutableStateOf(TvKeyFamily.MAJOR) }
     val majorRows = remember { KeyChordTable.majorRows() }
     val minorRows = remember { KeyChordTable.minorRows() }
@@ -141,8 +138,7 @@ private fun TvChordsContent(onBack: () -> Unit) {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(background)
-                .onPreviewKeyEvent { event -> handleBackKey(event.key, event.type, onBack) },
+                .background(background),
     ) {
         val horizontalMargin = maxWidth * OVERSCAN_SHARE
         val verticalMargin = maxHeight * OVERSCAN_SHARE

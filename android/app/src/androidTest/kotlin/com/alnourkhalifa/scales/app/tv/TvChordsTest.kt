@@ -34,8 +34,7 @@ class TvChordsTest {
     // feature: chord-tables
     @Test
     fun majorKeysFitOnOneScreen() {
-        var backCount = 0
-        compose.setContent { TvChordsScreen(onBack = { backCount += 1 }) }
+        compose.setContent { TvChordsScreen() }
 
         compose.onNodeWithTag("majorKeys").assertIsFocused()
         assertEveryNodeDisplayed("C major")
@@ -43,15 +42,12 @@ class TvChordsTest {
         // G is the last of the twelve major keys; its row on screen means none was cut off.
         assertEveryNodeDisplayed("G major")
         compose.onNodeWithText("Each chord stacks", substring = true).assertIsDisplayed()
-
-        compose.onRoot().performKeyInput { pressKey(Key.Back) }
-        assertTrue("Back leaves the screen once", backCount == 1)
     }
 
     // feature: chord-tables
     @Test
     fun rightSwitchesToMinorKeys() {
-        compose.setContent { TvChordsScreen(onBack = {}) }
+        compose.setContent { TvChordsScreen() }
 
         compose.onRoot().performKeyInput { pressKey(Key.DirectionRight) }
 
