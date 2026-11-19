@@ -234,6 +234,95 @@ class ScaleEditTest {
     }
 }
 
+/** Twin of `HarmonicHomeTests`: where the chords under the board come from, a scale's own
+ *  notes or the key a pentatonic or blues scale is picked from. */
+class HarmonicHomeTest {
+    private fun chordNames(chords: List<ScaleChord>): List<String> {
+        val names = mutableListOf<String>()
+        for (chord in chords) {
+            names.add(chord.triad.name)
+        }
+        return names
+    }
+
+    // feature: chord-harmony
+    @Test
+    fun sevenNoteAndSavedScalesAreHarmonisedOnTheirOwnNotes() {
+        val gMajor = Scale(NoteName(Letter.G), ScaleType.MAJOR)
+        assertEquals(chordNames(gMajor.letterTriads()), chordNames(gMajor.boardChords()))
+        assertNull(gMajor.harmonyNote)
+        // A saved copy of the minor pentatonic keeps its own stacked chords, since the edit
+        // lessons talk about those.
+        val saved = ScaleDefinition("My Pentatonic", ScaleType.MINOR_PENTATONIC.degrees)
+        val savedScale = Scale(NoteName(Letter.A), saved)
+        assertNull(savedScale.builtInType)
+        assertEquals(listOf("Am", "C", "Dsus4", "Gsus4"), chordNames(savedScale.boardChords()))
+    }
+
+    // feature: chord-harmony
+    @Test
+    fun pentatonicScalesBorrowTheirKeysChords() {
+        val aMinorPentatonic = Scale(NoteName(Letter.A), ScaleType.MINOR_PENTATONIC)
+        assertEquals(
+            listOf("Am", "B°", "C", "Dm", "Em", "F", "G"),
+            chordNames(aMinorPentatonic.boardChords()),
+        )
+        assertEquals(
+            "Minor Pentatonic is A minor without its 2 and ♭6, so it is played over A minor's " +
+                "chords.",
+            aMinorPentatonic.harmonyNote,
+        )
+        val gMajorPentatonic = Scale(NoteName(Letter.G), ScaleType.MAJOR_PENTATONIC)
+        assertEquals(
+            listOf("G", "Am", "Bm", "C", "D", "Em", "F♯°"),
+            chordNames(gMajorPentatonic.boardChords()),
+        )
+    }
+
+    // feature: chord-harmony
+    @Test
+    fun bluesScalesTakeTheTwelveBarSeventhChords() {
+        val aBlues = Scale(NoteName(Letter.A), ScaleType.BLUES)
+        val chords = aBlues.boardChords()
+        assertEquals(listOf("A", "D", "E"), chordNames(chords))
+        val names = mutableListOf<String>()
+        val numerals = mutableListOf<String>()
+        for (chord in chords) {
+            names.add(chord.name)
+            numerals.add(chord.formulaNumeral)
+        }
+        assertEquals(listOf("A7", "D7", "E7"), names)
+        assertEquals(listOf("I7", "IV7", "V7"), numerals)
+        val tonic = chords.first()
+        val expectedNotes =
+            listOf(
+                NoteName(Letter.A),
+                NoteName(Letter.C, 1),
+                NoteName(Letter.E),
+                NoteName(Letter.G),
+            )
+        assertEquals(expectedNotes, tonic.notes)
+        assertEquals("I7, A dominant seventh", tonic.spokenTitle)
+        val eMajorBlues = Scale(NoteName(Letter.E), ScaleType.MAJOR_BLUES)
+        assertEquals(listOf("E", "A", "B"), chordNames(eMajorBlues.boardChords()))
+        val note = eMajorBlues.harmonyNote
+        assertTrue(note != null && note.startsWith("Major Blues is played over"))
+    }
+
+    // Kotlin's own: the seventh is part of a chord's identity, as in Swift's Hashable, so A7
+    // is never mistaken for the A major triad when a card is ringed.
+    // feature: chord-harmony
+    @Test
+    fun aSeventhChordIsNotEqualToItsTriad() {
+        val seventh = Scale(NoteName(Letter.A), ScaleType.BLUES).boardChords().first()
+        val triad =
+            ScaleChord(seventh.degree, seventh.triad, seventh.notes, isDominantSeventh = false)
+        assertFalse(seventh == triad)
+        assertEquals("I", triad.formulaNumeral)
+        assertEquals("A major", triad.spokenName)
+    }
+}
+
 /** Twin of `ChordChangeReportTests`: the chord-by-chord story of an edit. */
 class ChordChangeReportTest {
     // feature: transform-lessons, note-edit-revert

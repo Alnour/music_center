@@ -7,6 +7,7 @@ import com.alnourkhalifa.scales.core.music.ScaleDegree
 import com.alnourkhalifa.scales.core.music.ScaleEdit
 import com.alnourkhalifa.scales.core.music.ScaleReference
 import com.alnourkhalifa.scales.core.music.ScaleType
+import com.alnourkhalifa.scales.core.music.boardChords
 import com.alnourkhalifa.scales.core.music.letterTriads
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -171,6 +172,30 @@ class PracticeSessionTest {
 
         session.toggleRing(dominant)
         assertNull(session.state.ringedChord)
+    }
+
+    // feature: chord-harmony, chord-chips-rings
+    @Test
+    fun aBorrowedChordRingsOnlyTheNotesTheScaleHolds() {
+        val session = freshSession()
+        session.choose(ScaleReference.BuiltIn(ScaleType.BLUES), NoteName(Letter.A))
+        val tonicSeventh =
+            session.state.scale
+                .boardChords()
+                .first()
+        assertEquals("A7", tonicSeventh.name)
+
+        session.toggleRing(tonicSeventh)
+        // C♯ is the chord's major third; the blues scale has C instead, so it stays unringed.
+        val expected = setOf(NoteName(Letter.A), NoteName(Letter.E), NoteName(Letter.G))
+        assertEquals(expected, session.state.ringedNotes)
+
+        // Another scale's chord is not one of the cards, so it rings nothing.
+        session.choose(ScaleReference.BuiltIn(ScaleType.MINOR_PENTATONIC))
+        assertTrue(
+            session.state.ringedNotes
+                .isEmpty(),
+        )
     }
 
     // Kotlin's own: the listener and the saving that replace Swift's observation and didSet.

@@ -13,6 +13,7 @@ import com.alnourkhalifa.scales.core.music.ScaleDegree
 import com.alnourkhalifa.scales.core.music.ScaleEdit
 import com.alnourkhalifa.scales.core.music.ScaleReference
 import com.alnourkhalifa.scales.core.music.ScaleType
+import com.alnourkhalifa.scales.core.music.boardChords
 import com.alnourkhalifa.scales.core.music.letterTriads
 import com.alnourkhalifa.scales.core.obj
 import com.alnourkhalifa.scales.core.optionalString
@@ -38,8 +39,9 @@ import java.util.UUID
  * (`scripts/ExpectedAnswers/SessionSections.swift`), and every field is compared.
  *
  * Two of Swift's quirks are pinned on purpose: the ringed chord stays picked when the scale
- * changes (step 2, no card marked), and a board change shows again when the player picks its
- * scale in its key again (step 7).
+ * changes (step 2, no card marked and nothing ringed, since the chord is no longer one of the
+ * cards), and a board change shows again when the player picks its scale in its key again
+ * (step 7). The last three steps ring a blues scale's borrowed A7, whose C♯ stays unringed.
  */
 class AnswersSessionTest {
     @get:Rule
@@ -63,14 +65,20 @@ class AnswersSessionTest {
 
     private val unknownId = UUID.fromString("00000000-0000-0000-0000-0000000000FF")
 
-    private fun steps(): List<Step> {
+    /** Every step in the generator's order: the G major walk, then the blues scale's. */
+    private fun steps(): List<Step> = noteChangeSteps() + borrowedChordSteps()
+
+    /** G major's chords ringed, a note changed and undone, and the I chord rung and cleared. */
+    private fun noteChangeSteps(): List<Step> {
         var tonic: ScaleChord? = null
         return listOf(
             Step("fresh session") { },
             Step(
                 "ring the V chord of G Major",
             ) { session -> session.toggleRing(chord(5, session)) },
-            Step("choose D Major: the rings stay, no card is marked") { session ->
+            Step(
+                "choose D Major: G's V chord is not a card here, so nothing is ringed",
+            ) { session ->
                 session.choose(ScaleReference.BuiltIn(ScaleType.MAJOR), NoteName(Letter.D))
             },
             Step("choose G Major again") { session ->
@@ -106,7 +114,27 @@ class AnswersSessionTest {
         )
     }
 
-    // feature: chord-chips-rings, note-edit-revert
+    /** A blues scale's borrowed A7 rung, then a scale whose cards no longer hold it. */
+    private fun borrowedChordSteps(): List<Step> =
+        listOf(
+            Step("choose A Blues: the cards are the twelve-bar seventh chords") { session ->
+                session.choose(ScaleReference.BuiltIn(ScaleType.BLUES), NoteName(Letter.A))
+            },
+            Step("ring A7: only the notes the blues scale holds") { session ->
+                val tonicSeventh =
+                    session.state.scale
+                        .boardChords()
+                        .first()
+                session.toggleRing(tonicSeventh)
+            },
+            Step(
+                "choose A Minor Pentatonic: A7 is not a card here, so nothing is ringed",
+            ) { session ->
+                session.choose(ScaleReference.BuiltIn(ScaleType.MINOR_PENTATONIC))
+            },
+        )
+
+    // feature: chord-chips-rings, note-edit-revert, chord-harmony
     @Test
     fun aScriptedSessionShowsWhatSwiftShows() {
         val answers = Answers.section("session").jsonArray
@@ -253,16 +281,13 @@ internal fun assertChipWords(
     chip: BoardChordChipContent,
 ) {
     assertSame("$case formulaNumeral", answer.string("formulaNumeral"), chip.chord.formulaNumeral)
-    assertSame("$case name", answer.string("name"), chip.chord.triad.name)
-    val notes = mutableListOf<String>()
-    for (note in chip.chord.notes) {
-        notes.add(note.displayName)
-    }
-    val expectedNotes = mutableListOf<String>()
-    for (element in answer.array("notes")) {
-        expectedNotes.add(element.jsonPrimitive.content)
-    }
-    assertSame("$case notes", expectedNotes, notes)
+    assertSame("$case name", answer.string("name"), chip.chord.name)
+    assertSame("$case notes", jsonStrings(answer.array("notes")), noteNames(chip.chord.notes))
+    assertSame(
+        "$case outsideNotes",
+        jsonStrings(answer.array("outsideNotes")),
+        noteNames(chip.outsideNotes),
+    )
     assertSame("$case kind", answer.string("kind"), chip.kind.swiftName)
     assertSame("$case caption", answer.string("caption"), chip.caption)
     assertSame(
@@ -270,4 +295,20 @@ internal fun assertChipWords(
         answer.string("accessibilityLabel"),
         chip.accessibilityLabel,
     )
+}
+
+private fun noteNames(notes: List<NoteName>): List<String> {
+    val names = mutableListOf<String>()
+    for (note in notes) {
+        names.add(note.displayName)
+    }
+    return names
+}
+
+private fun jsonStrings(array: JsonArray): List<String> {
+    val values = mutableListOf<String>()
+    for (element in array) {
+        values.add(element.jsonPrimitive.content)
+    }
+    return values
 }

@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.alnourkhalifa.scales.core.board.BoardChordChipContent
 import com.alnourkhalifa.scales.core.music.ScaleChord
+import com.alnourkhalifa.scales.core.music.harmonyNote
 import com.alnourkhalifa.scales.core.session.SessionState
 import com.alnourkhalifa.scales.ui.ChordChipColors
 import com.alnourkhalifa.scales.ui.FretboardPalette
@@ -24,7 +25,8 @@ import com.alnourkhalifa.scales.ui.ScaleChordsRow
 const val CHORDS_HEIGHT_SHARE: Float = 0.34f
 
 /**
- * The chord cards under the board on the Scales screen. Twin of the `ScrollView` holding
+ * The chord cards under the board on the Scales screen, and the line under them saying where a
+ * pentatonic or blues scale's chords come from. Twin of the `ScrollView` holding
  * `ScaleChordsRow` in `Scales/Views/ContentView.swift`.
  *
  * The grid is as tall as its cards up to [CHORDS_HEIGHT_SHARE] of [screenHeight], and
@@ -50,6 +52,12 @@ fun BoardChordGrid(
     val root = state.settings.root
     val definition = state.settings.scaleDefinition
     val chips = remember(root, definition, change) { BoardChordChipContent.chips(scale, change) }
+    // The line saying where borrowed chords come from shows only while no change is marked
+    // on the cards, as on iOS.
+    var harmonyNote: String? = null
+    if (change == null) {
+        harmonyNote = scale.harmonyNote
+    }
     val palette = FretboardPalette.matching(isSystemInDarkTheme())
     val colors = phoneChordChipColors(palette)
     val cardMinimumWidth = if (isWide) 120.dp else 84.dp
@@ -64,6 +72,7 @@ fun BoardChordGrid(
                 .fillMaxWidth()
                 .heightIn(max = maximumHeight),
         cardMinimumWidth = cardMinimumWidth,
+        harmonyNote = harmonyNote,
     )
 }
 

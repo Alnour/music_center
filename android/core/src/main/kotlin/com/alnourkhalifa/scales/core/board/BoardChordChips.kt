@@ -7,7 +7,7 @@ import com.alnourkhalifa.scales.core.music.ChordChange
 import com.alnourkhalifa.scales.core.music.NoteName
 import com.alnourkhalifa.scales.core.music.Scale
 import com.alnourkhalifa.scales.core.music.ScaleChord
-import com.alnourkhalifa.scales.core.music.letterTriads
+import com.alnourkhalifa.scales.core.music.boardChords
 import com.alnourkhalifa.scales.core.session.BoardChange
 
 /**
@@ -25,13 +25,16 @@ data class BoardChordChipContent(
     val kind: ChordChange.Kind,
     /** Notes the chord gained with the change, shown in green. */
     val newNotes: List<NoteName>,
+    /** Notes of a borrowed chord that the scale on the board doesn't hold: a pentatonic's 4
+     *  or 7, or the major third of a blues seventh chord. Shown faint and never ringed. */
+    val outsideNotes: List<NoteName>,
 ) {
     /** "was Gm", "new", "gone", or a blank line that keeps every card the same height. */
     val caption: String
         get() =
             when (kind) {
                 ChordChange.Kind.UNCHANGED -> " "
-                ChordChange.Kind.CHANGED -> "was ${before?.triad?.name ?: ""}"
+                ChordChange.Kind.CHANGED -> "was ${before?.name ?: ""}"
                 ChordChange.Kind.ADDED -> "new"
                 ChordChange.Kind.REMOVED -> "gone"
             }
@@ -42,13 +45,17 @@ data class BoardChordChipContent(
         get() {
             val names = mutableListOf<String>()
             for (note in chord.notes) {
-                names.add(note.displayName)
+                if (note in outsideNotes) {
+                    names.add("${note.displayName} (not in the scale)")
+                } else {
+                    names.add(note.displayName)
+                }
             }
             val notes = names.joinToString(", ")
-            val spokenChord = "${chord.formulaNumeral}, ${chord.triad.spokenName}: $notes"
+            val spokenChord = "${chord.formulaNumeral}, ${chord.spokenName}: $notes"
             return when (kind) {
                 ChordChange.Kind.UNCHANGED -> spokenChord
-                ChordChange.Kind.CHANGED -> "$spokenChord. Was ${before?.triad?.spokenName ?: ""}."
+                ChordChange.Kind.CHANGED -> "$spokenChord. Was ${before?.spokenName ?: ""}."
                 ChordChange.Kind.ADDED -> "$spokenChord. New."
                 ChordChange.Kind.REMOVED -> "$spokenChord. Gone."
             }
@@ -77,17 +84,41 @@ data class BoardChordChipContent(
                         null
                     }
                 val chip =
-                    BoardChordChipContent(shown, before, chordChange.kind, chordChange.notesNew)
+                    BoardChordChipContent(
+                        chord = shown,
+                        before = before,
+                        kind = chordChange.kind,
+                        newNotes = chordChange.notesNew,
+                        outsideNotes = emptyList(),
+                    )
                 chips.add(chip)
             }
             return chips
         }
 
+        /** The scale's chords as they stand (`Scale.boardChords`), each with the notes the
+         *  scale lacks, which only a borrowed chord has. */
         private fun unchangedChips(scale: Scale): List<BoardChordChipContent> {
+            val scaleNotes = mutableSetOf<NoteName>()
+            for (tone in scale.tones) {
+                scaleNotes.add(tone.name)
+            }
             val chips = mutableListOf<BoardChordChipContent>()
-            for (chord in scale.letterTriads()) {
+            for (chord in scale.boardChords()) {
+                val outsideNotes = mutableListOf<NoteName>()
+                for (note in chord.notes) {
+                    if (note !in scaleNotes) {
+                        outsideNotes.add(note)
+                    }
+                }
                 val chip =
-                    BoardChordChipContent(chord, null, ChordChange.Kind.UNCHANGED, emptyList())
+                    BoardChordChipContent(
+                        chord = chord,
+                        before = null,
+                        kind = ChordChange.Kind.UNCHANGED,
+                        newNotes = emptyList(),
+                        outsideNotes = outsideNotes,
+                    )
                 chips.add(chip)
             }
             return chips

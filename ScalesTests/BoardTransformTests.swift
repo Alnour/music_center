@@ -172,6 +172,7 @@ struct BoardTransformTests {
         #expect(session.ringedChord == nil)
     }
 
+    // feature: chord-harmony, chord-chips-rings
     @Test func aBorrowedChordRingsOnlyTheNotesTheScaleHolds() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }

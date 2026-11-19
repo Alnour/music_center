@@ -121,6 +121,16 @@
       "test": "ui"
     },
     {
+      "id": "chord-harmony",
+      "title": "Pentatonic and blues scales show the chords they are played over",
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "required",
+        "androidTv": "required"
+      },
+      "test": "ui"
+    },
+    {
       "id": "note-edit-revert",
       "title": "Change one note of the board's scale in place and go back",
       "platforms": {

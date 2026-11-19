@@ -48,9 +48,13 @@ struct ScaleChord: Hashable, Sendable {
         triad.name + (isDominantSeventh ? "7" : "")
     }
 
-    /// "D minor", "A dominant seventh", for sentences and VoiceOver.
+    /// "D minor", "A dominant seventh", for sentences and VoiceOver. The seventh chord is
+    /// named in full because "A major seventh" is a different chord (Amaj7).
     var spokenName: String {
-        triad.spokenName + (isDominantSeventh ? " seventh" : "")
+        if isDominantSeventh {
+            return "\(triad.root.displayName) dominant seventh"
+        }
+        return triad.spokenName
     }
 
     /// "V, G major", for the sentences of a lesson.

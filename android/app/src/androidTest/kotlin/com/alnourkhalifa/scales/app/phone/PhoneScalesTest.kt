@@ -126,6 +126,40 @@ class PhoneScalesTest {
         closeSheet()
     }
 
+    // A blues scale shows the three seventh chords it is played over, with the chord note the
+    // scale lacks marked, and ringing one rings only the notes the scale has.
+    // feature: chord-harmony
+    @Test
+    fun bluesScaleShowsTheTwelveBarChords() {
+        chooseRoot("A")
+        chooseScale("Blues")
+        waitForTitle("A Blues")
+
+        val tonicSeventh =
+            compose.onNodeWithContentDescription(
+                "I7, A dominant seventh: A, C♯ (not in the scale), E, G",
+            )
+        tonicSeventh.assertExists("the blues seventh chords are listed")
+        compose
+            .onNodeWithContentDescription("IV7, D dominant seventh: D, F♯ (not in the scale), A, C")
+            .assertExists()
+        compose
+            .onNodeWithContentDescription(
+                "V7, E dominant seventh: E, G♯ (not in the scale), B (not in the scale), D",
+            ).assertExists()
+        compose
+            .onNodeWithTag("harmonyNote")
+            .assertExists("the cards say where the chords come from")
+        tonicSeventh.performClick()
+        tonicSeventh.assertIsSelected()
+
+        chooseScale("Minor Pentatonic")
+        waitForTitle("A Minor Pentatonic")
+        val subdominant = hasContentDescription("iv, D minor: D, F (not in the scale), A")
+        compose.onNodeWithTag("boardChords").performScrollToNode(subdominant)
+        compose.onNode(subdominant).assertExists()
+    }
+
     // The chords sit under the board as cards, and a note changes in place: the chords that
     // used it change with it, and the way back restores the scale.
     // feature: chord-chips-rings, note-edit-revert

@@ -67,6 +67,7 @@ import androidx.tv.material3.Text
 import com.alnourkhalifa.scales.core.board.BoardChordChipContent
 import com.alnourkhalifa.scales.core.music.ChordChange
 import com.alnourkhalifa.scales.core.music.ScaleChord
+import com.alnourkhalifa.scales.core.music.harmonyNote
 import com.alnourkhalifa.scales.core.session.BoardChange
 import com.alnourkhalifa.scales.core.session.SessionState
 import com.alnourkhalifa.scales.ui.ChordChipColors
@@ -102,9 +103,11 @@ private const val BUTTON_HEIGHT_UNITS = 4.4f
 private const val EMPTY_FOOTNOTE = "This scale's notes don't stack into three-note chords."
 
 /**
- * The chords of the scale on the board, as a row of chips under the TV board, with the last
- * note change and its "Back to …" button above them while that change is showing. The TV twin
- * of the phone's `ScaleChordsRow` and `BoardChangeRow`.
+ * The chords under the TV board, as a row of chips, with the last note change and its "Back
+ * to …" button above them while that change is showing. The TV twin of the phone's
+ * `ScaleChordsRow` and `BoardChangeRow`. A pentatonic or blues scale shows the chords it is
+ * played over (`Scale.boardChords`): a chord note the scale lacks is faint, and a line under
+ * the chips says where the chords come from while no change is showing.
  *
  * Why its own composable rather than the phone's grid: the phone's cards are touch targets in
  * a grid that wraps; a remote moves focus one step at a time, so the TV puts every chord on
@@ -161,6 +164,23 @@ fun TvChordRow(
             EmptyFootnote(colors, unit, focus, hasChangeLine = change != null)
         } else {
             ChipRow(chips, state.ringedChord, colors, unit, focus, change != null, onTap)
+        }
+        // "Blues is played over the three seventh chords of a twelve-bar blues in A; …", in
+        // the footnote's size and colour. It takes no focus, so D-pad moves are unchanged.
+        val harmonyNote = state.scale.harmonyNote
+        if (change == null && harmonyNote != null) {
+            val noteStyle =
+                unitStyle(unit, SMALL_TEXT_UNITS).copy(
+                    color = colors.secondary,
+                    fontFamily = MusicFontFamily,
+                )
+            BasicText(
+                text = harmonyNote,
+                style = noteStyle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = unit * 0.8f).testTag("harmonyNote"),
+            )
         }
     }
 }
@@ -367,7 +387,7 @@ private fun ChipRow(
         ) {
             itemsIndexed(
                 chips,
-                key = { index, chip -> "$index-${chip.chord.triad.name}-${chip.kind}" },
+                key = { index, chip -> "$index-${chip.chord.name}-${chip.kind}" },
             ) { index, chip ->
                 val chipModifier =
                     Modifier
@@ -616,7 +636,7 @@ private fun ChordName(
             stepSize = 0.5.sp,
         )
     BasicText(
-        text = chip.chord.triad.name,
+        text = chip.chord.name,
         style = style,
         maxLines = 1,
         softWrap = false,
@@ -626,7 +646,8 @@ private fun ChordName(
     )
 }
 
-/** The chord's notes, "D F♯ A", any note it gained in bold green. */
+/** The chord's notes, "D F♯ A", any note it gained in bold green, any note the scale lacks
+ *  faint. */
 @Composable
 private fun NotesLine(
     chip: BoardChordChipContent,
@@ -639,7 +660,7 @@ private fun NotesLine(
     }
     val style = unitStyle(unit, NOTES_UNITS).copy(color = color, fontFamily = MusicFontFamily)
     BasicText(
-        text = notesText(chip, colors.green),
+        text = notesText(chip, colors),
         style = style,
         maxLines = 1,
         softWrap = false,
@@ -647,12 +668,14 @@ private fun NotesLine(
     )
 }
 
-/** The notes separated by spaces; a note the change added is bold and green. */
+/** The notes separated by spaces; a note the change added is bold and green, and a note of
+ *  a borrowed chord that the scale lacks is in the secondary colour. */
 private fun notesText(
     chip: BoardChordChipContent,
-    green: Color,
+    colors: ChordChipColors,
 ): AnnotatedString {
-    val newNoteStyle = SpanStyle(color = green, fontWeight = FontWeight.Bold)
+    val newNoteStyle = SpanStyle(color = colors.green, fontWeight = FontWeight.Bold)
+    val outsideNoteStyle = SpanStyle(color = colors.secondary)
     return buildAnnotatedString {
         for ((index, note) in chip.chord.notes
             .withIndex()) {
@@ -660,8 +683,11 @@ private fun notesText(
                 append(" ")
             }
             val isNew = note in chip.newNotes
+            val isOutside = note in chip.outsideNotes
             if (isNew) {
                 withStyle(newNoteStyle) { append(note.displayName) }
+            } else if (isOutside) {
+                withStyle(outsideNoteStyle) { append(note.displayName) }
             } else {
                 append(note.displayName)
             }

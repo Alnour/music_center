@@ -6,31 +6,53 @@ import kotlin.math.abs
  * Twin of `ScaleChord` in `Scales/Music/ScaleChord.swift`: a chord built from a scale's own
  * notes on one of its tones, with the notes it uses.
  *
- * Differs from Swift: a data class over the three stored fields; the two numerals are
- * derived from them, as Swift's initializer derives them, so equality is unchanged.
+ * Differs from Swift: a data class over the four stored fields; the two numerals are
+ * derived from them, as Swift's initializer derives them, so equality is unchanged (Swift's
+ * synthesized `Hashable` also covers [isDominantSeventh], so A7 and A are different chords).
  */
 data class ScaleChord(
     /** The degree the chord is built on. */
     val degree: ScaleDegree,
     val triad: Triad,
     /** Root, middle note (the third, or the fourth or second of a suspended chord) and fifth,
-     *  spelled as the scale spells them. */
+     *  spelled as the scale spells them, then the seventh of a seventh chord. */
     val notes: List<NoteName>,
+    /** True for a dominant seventh chord (A7): the triad with a minor seventh on top, the
+     *  chord of a twelve-bar blues. Triads are the rule everywhere else. */
+    val isDominantSeventh: Boolean = false,
 ) {
     /** The numeral counted from the scale's own steps, as key tables print it: the chord on C
-     *  in A minor is III. */
-    val numeral: String = triad.quality.numeral(romanNumerals[degree.number - 1])
+     *  in A minor is III. A seventh chord carries a 7 (IV7). */
+    val numeral: String =
+        triad.quality.numeral(romanNumerals[degree.number - 1]) + seventhSuffix(isDominantSeventh)
 
     /** The numeral with the degree's flat or sharp, read against the major scale the way
      *  formulas are: the chord on C in A minor is ♭III, the chord on ♭2 in Phrygian is ♭II. */
     val formulaNumeral: String = accidentalPrefix(degree.alteration) + numeral
 
+    /** The name as chord charts print it: Dm, Gsus4, A7. */
+    val name: String
+        get() = triad.name + seventhSuffix(isDominantSeventh)
+
+    /** "D minor", "A dominant seventh", for sentences and TalkBack. The seventh chord is
+     *  named in full because "A major seventh" is a different chord (Amaj7). */
+    val spokenName: String
+        get() {
+            if (isDominantSeventh) {
+                return "${triad.root.displayName} dominant seventh"
+            }
+            return triad.spokenName
+        }
+
     /** "V, G major", for the sentences of a lesson. */
     val spokenTitle: String
-        get() = "$formulaNumeral, ${triad.spokenName}"
+        get() = "$formulaNumeral, $spokenName"
 
     private companion object {
         val romanNumerals = listOf("I", "II", "III", "IV", "V", "VI", "VII")
+
+        /** The "7" a dominant seventh chord's name and numeral end with (A7, IV7). */
+        fun seventhSuffix(isDominantSeventh: Boolean): String = if (isDominantSeventh) "7" else ""
 
         /** One sign whatever the size of the alteration, as Swift writes it. */
         fun accidentalPrefix(alteration: Int): String =

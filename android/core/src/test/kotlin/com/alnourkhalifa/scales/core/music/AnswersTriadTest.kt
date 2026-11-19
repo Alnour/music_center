@@ -3,7 +3,9 @@ package com.alnourkhalifa.scales.core.music
 import com.alnourkhalifa.scales.core.Answers
 import com.alnourkhalifa.scales.core.array
 import com.alnourkhalifa.scales.core.assertSame
+import com.alnourkhalifa.scales.core.bool
 import com.alnourkhalifa.scales.core.int
+import com.alnourkhalifa.scales.core.optionalString
 import com.alnourkhalifa.scales.core.string
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -18,12 +20,13 @@ import org.junit.Test
 
 /**
  * Reads the chord fields of the `spellings` section Swift wrote (`keySignature`,
- * `diatonicTriadCount`, `letterTriads`) for every root and scale type, and carries the
+ * `diatonicTriadCount`, `letterTriads`, `boardChords`, `harmonyNote`) for every root and scale
+ * type, and carries the
  * `LetterTriadTests` of `ScalesTests/TransformationTests.swift` plus the key-signature check
  * of `DiatonicChordTests` in `ScalesTests/MusicTheoryTests.swift`.
  */
 class AnswersTriadTest {
-    // feature: roots-scales, chord-chips-rings
+    // feature: roots-scales, chord-chips-rings, chord-harmony
     @Test
     fun everyRootAndScaleStacksTheChordsSwiftStacks() {
         val answers = Answers.section("spellings").jsonArray
@@ -40,7 +43,8 @@ class AnswersTriadTest {
     }
 
     /** One root and scale: its identity first, so a misordered file fails loudly, then the
-     *  key signature, the key-table size and every chord field by field. */
+     *  key signature, the key-table size, every chord field by field, and the chords under the
+     *  board with the line saying where they come from. */
     private fun checkChords(
         expected: JsonObject,
         scale: Scale,
@@ -54,9 +58,17 @@ class AnswersTriadTest {
             scale.diatonicTriads().size,
         )
 
-        val expectedChords = expected.array("letterTriads")
-        val chords = scale.letterTriads()
-        assertEquals("$case letterTriads count", expectedChords.size, chords.size)
+        checkChordList("$case letterTriads", expected.array("letterTriads"), scale.letterTriads())
+        checkChordList("$case boardChords", expected.array("boardChords"), scale.boardChords())
+        assertSame("$case harmonyNote", expected.optionalString("harmonyNote"), scale.harmonyNote)
+    }
+
+    private fun checkChordList(
+        case: String,
+        expectedChords: JsonArray,
+        chords: List<ScaleChord>,
+    ) {
+        assertEquals("$case count", expectedChords.size, chords.size)
         for (chordIndex in chords.indices) {
             val expectedChord = expectedChords[chordIndex].jsonObject
             val chordCase = "$case chord $chordIndex (${expectedChord.string("name")})"
@@ -73,10 +85,15 @@ class AnswersTriadTest {
         assertSame("$case numeral", expected.string("numeral"), chord.numeral)
         assertSame("$case formulaNumeral", expected.string("formulaNumeral"), chord.formulaNumeral)
         assertSame("$case quality", expected.string("quality"), chord.triad.quality.swiftName)
-        assertSame("$case name", expected.string("name"), chord.triad.name)
-        assertSame("$case spokenName", expected.string("spokenName"), chord.triad.spokenName)
+        assertSame("$case name", expected.string("name"), chord.name)
+        assertSame("$case spokenName", expected.string("spokenName"), chord.spokenName)
         assertSame("$case spokenTitle", expected.string("spokenTitle"), chord.spokenTitle)
         assertSame("$case notes", strings(expected.array("notes")), displayNames(chord.notes))
+        assertSame(
+            "$case isDominantSeventh",
+            expected.bool("isDominantSeventh"),
+            chord.isDominantSeventh,
+        )
     }
 
     // feature: roots-scales, chord-chips-rings

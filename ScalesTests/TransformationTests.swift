@@ -340,6 +340,7 @@ struct LetterTriadTests {
 /// Where the chords under the board come from: a scale's own notes, or the key a
 /// pentatonic or blues scale is picked from.
 struct HarmonicHomeTests {
+    // feature: chord-harmony
     @Test func sevenNoteAndSavedScalesAreHarmonisedOnTheirOwnNotes() {
         let gMajor = Scale(root: NoteName(.g), type: .major)
         #expect(chordNames(gMajor.boardChords()) == chordNames(gMajor.letterTriads()))
@@ -355,6 +356,7 @@ struct HarmonicHomeTests {
         #expect(chordNames(savedScale.boardChords()) == ["Am", "C", "Dsus4", "Gsus4"])
     }
 
+    // feature: chord-harmony
     @Test func pentatonicScalesBorrowTheirKeysChords() {
         let aMinorPentatonic = Scale(root: NoteName(.a), type: .minorPentatonic)
         #expect(
@@ -370,6 +372,7 @@ struct HarmonicHomeTests {
         )
     }
 
+    // feature: chord-harmony
     @Test func bluesScalesTakeTheTwelveBarSeventhChords() throws {
         let aBlues = Scale(root: NoteName(.a), type: .blues)
         let chords = aBlues.boardChords()
@@ -384,7 +387,7 @@ struct HarmonicHomeTests {
         #expect(numerals == ["I7", "IV7", "V7"])
         let tonic = try #require(chords.first)
         #expect(tonic.notes == [NoteName(.a), NoteName(.c, 1), NoteName(.e), NoteName(.g)])
-        #expect(tonic.spokenTitle == "I7, A major seventh")
+        #expect(tonic.spokenTitle == "I7, A dominant seventh")
         let eMajorBlues = Scale(root: NoteName(.e), type: .majorBlues)
         #expect(chordNames(eMajorBlues.boardChords()) == ["E", "A", "B"])
         #expect(eMajorBlues.harmonyNote?.hasPrefix("Major Blues is played over") == true)

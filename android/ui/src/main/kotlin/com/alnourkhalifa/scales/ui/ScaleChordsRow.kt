@@ -164,8 +164,10 @@ private val CARD_SPACING = 8.dp
 private const val CARD_TAP_LABEL = "Ring the chord's notes on the board"
 
 /**
- * The chords the scale on the board makes, as cards under the board on the Scales screen. Twin
- * of `ScaleChordsRow` in `Scales/Views/ScaleChordsRow.swift`.
+ * The chords under the board on the Scales screen: the chords the scale makes, or, for a
+ * pentatonic or blues scale, the chords it is played over (`Scale.boardChords`), with the
+ * notes of a chord the scale doesn't hold shown faint and a line saying where the chords come
+ * from. Twin of `ScaleChordsRow` in `Scales/Views/ScaleChordsRow.swift`.
  *
  * After a note change, every chord is shown as it is now, and the chords that used the
  * changed note are marked: what each one was, the note it gained in green, and the chords the
@@ -176,13 +178,17 @@ private const val CARD_TAP_LABEL = "Ring the chord's notes on the board"
  *
  * What differs from Swift: the caller builds [chips] with `BoardChordChipContent.chips(scale,
  * change)` (Swift's view takes the scale and the change and builds them itself), and passes
- * the [colors] because this module has no theme. The grid is a `LazyVerticalGrid`, so the
- * caller gives it a bounded height, as the Scales screen does by capping it at a third.
+ * the [colors] because this module has no theme, and gives the [harmonyNote] only while no
+ * change is showing (Swift checks `change == nil` itself). The grid is a `LazyVerticalGrid`,
+ * so the caller gives it a bounded height, as the Scales screen does by capping it at a
+ * third; the note under it is measured first, so the cards scroll before the note is cut.
  *
  * @param ringedChord the chord whose notes are ringed on the board, if any.
  * @param onTap called with the chord the player tapped.
  * @param cardMinimumWidth the narrowest a card may be. A phone uses narrow cards so seven
  *   chords make two rows; a wide window has room for roomier ones.
+ * @param harmonyNote the line under the cards saying where borrowed chords come from
+ *   (`Scale.harmonyNote`), or null for none.
  */
 @Composable
 fun ScaleChordsRow(
@@ -192,6 +198,7 @@ fun ScaleChordsRow(
     colors: ChordChipColors,
     modifier: Modifier = Modifier,
     cardMinimumWidth: Dp = 84.dp,
+    harmonyNote: String? = null,
 ) {
     if (chips.isEmpty()) {
         val emptyStyle = TextStyle(color = colors.secondary, fontSize = 13.sp)
@@ -206,20 +213,37 @@ fun ScaleChordsRow(
     // SwiftUI centres grid columns that do not fill the width; spacedBy alone would push
     // them to the start.
     val across = Arrangement.spacedBy(CARD_SPACING, Alignment.CenterHorizontally)
-    LazyVerticalGrid(
-        columns = columns,
-        modifier = modifier.testTag("boardChords"),
-        contentPadding = PaddingValues(vertical = 2.dp),
-        horizontalArrangement = across,
-        verticalArrangement = Arrangement.spacedBy(CARD_SPACING),
-    ) {
-        items(chips, key = { chip -> "${chip.chord.triad.name}-${chip.kind}" }) { chip ->
-            val isRinged = chip.chord == ringedChord
-            BoardChordChip(
-                chip = chip,
-                isRinged = isRinged,
-                colors = colors,
-                onTap = { onTap(chip.chord) },
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Weighted without filling: as tall as its cards, but never pushing the note out.
+        val gridModifier =
+            Modifier
+                .weight(1f, fill = false)
+                .fillMaxWidth()
+                .testTag("boardChords")
+        LazyVerticalGrid(
+            columns = columns,
+            modifier = gridModifier,
+            contentPadding = PaddingValues(vertical = 2.dp),
+            horizontalArrangement = across,
+            verticalArrangement = Arrangement.spacedBy(CARD_SPACING),
+        ) {
+            items(chips, key = { chip -> "${chip.chord.name}-${chip.kind}" }) { chip ->
+                val isRinged = chip.chord == ringedChord
+                BoardChordChip(
+                    chip = chip,
+                    isRinged = isRinged,
+                    colors = colors,
+                    onTap = { onTap(chip.chord) },
+                )
+            }
+        }
+        if (harmonyNote != null) {
+            val noteStyle =
+                TextStyle(color = colors.secondary, fontSize = 13.sp, fontFamily = MusicFontFamily)
+            BasicText(
+                text = harmonyNote,
+                style = noteStyle,
+                modifier = Modifier.testTag("harmonyNote"),
             )
         }
     }
@@ -346,10 +370,11 @@ private fun UndoArrow(
 }
 
 /**
- * A chord card: numeral, name and notes. After a change, a line above says what the chord was,
- * a gained note is green, and a chord the scale lost is crossed out. The chord whose notes are
- * ringed on the board sits on a tinted card edged in the board's chord colour. Twin of the
- * private `BoardChordChip` in `Scales/Views/ScaleChordsRow.swift`.
+ * A chord card: numeral, name and notes. A note the scale doesn't hold is faint. After a
+ * change, a line above says what the chord was, a gained note is green, and a chord the scale
+ * lost is crossed out. The chord whose notes are ringed on the board sits on a tinted card
+ * edged in the board's chord colour. Twin of the private `BoardChordChip` in
+ * `Scales/Views/ScaleChordsRow.swift`.
  *
  * TalkBack reads the card as one element with the chip's spoken label and "selected" when it
  * is ringed. `clickable` (rather than `selectable`) is used so the card can carry Swift's
@@ -465,7 +490,7 @@ private fun ChordName(
             stepSize = 0.5.sp,
         )
     BasicText(
-        text = chip.chord.triad.name,
+        text = chip.chord.name,
         style = style,
         maxLines = 1,
         softWrap = false,
@@ -475,7 +500,8 @@ private fun ChordName(
     )
 }
 
-/** The chord's notes, "D F♯ A", with any note it gained in bold green. */
+/** The chord's notes, "D F♯ A", with any note it gained in bold green and any note the scale
+ *  lacks faint. */
 @Composable
 private fun NotesLine(
     chip: BoardChordChipContent,
@@ -491,19 +517,21 @@ private fun NotesLine(
             fontFamily = MusicFontFamily,
         )
     BasicText(
-        text = notesText(chip, colors.green),
+        text = notesText(chip, colors),
         style = style,
         maxLines = 1,
         softWrap = false,
     )
 }
 
-/** The notes separated by spaces; a note the change added is bold and green. */
+/** The notes separated by spaces; a note the change added is bold and green, and a note of
+ *  a borrowed chord that the scale lacks is in the secondary colour. */
 private fun notesText(
     chip: BoardChordChipContent,
-    green: Color,
+    colors: ChordChipColors,
 ): AnnotatedString {
-    val newNoteStyle = SpanStyle(color = green, fontWeight = FontWeight.Bold)
+    val newNoteStyle = SpanStyle(color = colors.green, fontWeight = FontWeight.Bold)
+    val outsideNoteStyle = SpanStyle(color = colors.secondary)
     return buildAnnotatedString {
         for ((index, note) in chip.chord.notes
             .withIndex()) {
@@ -511,8 +539,11 @@ private fun notesText(
                 append(" ")
             }
             val isNew = note in chip.newNotes
+            val isOutside = note in chip.outsideNotes
             if (isNew) {
                 withStyle(newNoteStyle) { append(note.displayName) }
+            } else if (isOutside) {
+                withStyle(outsideNoteStyle) { append(note.displayName) }
             } else {
                 append(note.displayName)
             }

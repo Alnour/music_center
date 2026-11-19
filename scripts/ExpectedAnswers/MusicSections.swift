@@ -132,20 +132,23 @@ struct ChordAnswer: Encodable {
     let formulaNumeral: String
     /// The Swift case name of the triad's quality ("majorFlatFive").
     let quality: String
+    /// The chart name, with a 7 on a dominant seventh chord ("A7").
     let name: String
     let spokenName: String
     let spokenTitle: String
     let notes: [String]
+    let isDominantSeventh: Bool
 
     init(_ chord: ScaleChord) {
         degree = chord.degree.label
         numeral = chord.numeral
         formulaNumeral = chord.formulaNumeral
         quality = String(describing: chord.triad.quality)
-        name = chord.triad.name
-        spokenName = chord.triad.spokenName
+        name = chord.name
+        spokenName = chord.spokenName
         spokenTitle = chord.spokenTitle
         notes = displayNames(chord.notes)
+        isDominantSeventh = chord.isDominantSeventh
     }
 }
 
@@ -166,6 +169,12 @@ struct SpellingAnswer: Encodable {
     let letterTriads: [ChordAnswer]
     /// The key-table chords: the same as `letterTriads` for seven-note scales, else empty.
     let diatonicTriadCount: Int
+    /// The chords under the board: `letterTriads`, or the borrowed chords of a pentatonic
+    /// or blues scale (`Scale.boardChords`).
+    let boardChords: [ChordAnswer]
+    /// The line under those chords saying where they come from; absent for a scale
+    /// harmonised on its own notes.
+    let harmonyNote: String?
 }
 
 func toneAnswers(_ scale: Scale) -> [ToneAnswer] {
@@ -194,7 +203,9 @@ func spellingsSection() -> [SpellingAnswer] {
                 tones: toneAnswers(scale),
                 keySignature: scale.keySignature,
                 letterTriads: chordAnswers(scale.letterTriads()),
-                diatonicTriadCount: scale.diatonicTriads().count
+                diatonicTriadCount: scale.diatonicTriads().count,
+                boardChords: chordAnswers(scale.boardChords()),
+                harmonyNote: scale.harmonyNote
             )
             spellings.append(answer)
         }

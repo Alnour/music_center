@@ -10,8 +10,12 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.alnourkhalifa.scales.core.music.Letter
+import com.alnourkhalifa.scales.core.music.NoteName
 import com.alnourkhalifa.scales.core.music.ScaleDegree
 import com.alnourkhalifa.scales.core.music.ScaleEdit
+import com.alnourkhalifa.scales.core.music.ScaleReference
+import com.alnourkhalifa.scales.core.music.ScaleType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -24,6 +28,12 @@ private const val TONIC_CHIP = "I, G major: G, B, D"
 
 /** G major's fifth chord, four steps along the row. */
 private const val DOMINANT_CHIP = "V, D major: D, F♯, A"
+
+/** A blues scale's three seventh chords, each with the notes the scale lacks marked. */
+private const val I7_CHIP = "I7, A dominant seventh: A, C♯ (not in the scale), E, G"
+private const val IV7_CHIP = "IV7, D dominant seventh: D, F♯ (not in the scale), A, C"
+private const val V7_CHIP =
+    "V7, E dominant seventh: E, G♯ (not in the scale), B (not in the scale), D"
 
 /** Steps Right from the first chip to the V chip. */
 private const val STEPS_TO_DOMINANT = 4
@@ -135,6 +145,48 @@ class TvChipsTest {
         tv.composeRule
             .onNodeWithTag("tvBoard")
             .assertIsFocused()
+    }
+
+    // feature: chord-harmony
+    @Test
+    fun bluesChipsAreTheTwelveBarChordsAndRingOnlyTheScalesNotes() {
+        val aBlues = ScaleReference.BuiltIn(ScaleType.BLUES)
+        tv.onMainThread {
+            tv.app.session
+                .choose(aBlues, NoteName(Letter.A))
+        }
+        tv.composeRule.waitForIdle()
+        tv.composeRule
+            .onNodeWithContentDescription(IV7_CHIP)
+            .assertExists()
+        tv.composeRule
+            .onNodeWithContentDescription(V7_CHIP)
+            .assertExists()
+        tv.composeRule
+            .onNodeWithTag("harmonyNote")
+            .assertIsDisplayed()
+
+        tv.press(Key.DirectionDown)
+        val tonicSeventh = tv.composeRule.onNodeWithContentDescription(I7_CHIP)
+        tonicSeventh.assertIsFocused()
+        tv.pressOk()
+        tonicSeventh.assertIsSelected()
+        val expected = setOf(NoteName(Letter.A), NoteName(Letter.E), NoteName(Letter.G))
+        assertEquals(expected, tv.app.sessionState.value.ringedNotes)
+
+        val minorPentatonic = ScaleReference.BuiltIn(ScaleType.MINOR_PENTATONIC)
+        tv.onMainThread {
+            tv.app.session
+                .choose(minorPentatonic)
+        }
+        tv.composeRule.waitForIdle()
+        tv.composeRule
+            .onNodeWithContentDescription("iv, D minor: D, F (not in the scale), A")
+            .assertExists()
+        assertTrue(
+            tv.app.sessionState.value.ringedNotes
+                .isEmpty(),
+        )
     }
 
     // feature: chord-chips-rings

@@ -22,8 +22,9 @@ import org.junit.Test
 
 /**
  * The chord cards under the board, built straight from a scale and a change rather than
- * through a session, against the cards Swift wrote in the `session` section: step 0 (G Major)
- * and step 4 (G Major with the 7th lowered, now G Mixolydian).
+ * through a session, against the cards Swift wrote in the `session` section: step 0 (G Major),
+ * step 4 (G Major with the 7th lowered, now G Mixolydian), step 12 (A Blues, the twelve-bar
+ * seventh chords) and step 14 (A Minor Pentatonic, A minor's chords).
  */
 class AnswersChipsTest {
     private val gMajor = Scale(NoteName(Letter.G), ScaleType.MAJOR)
@@ -78,6 +79,43 @@ class AnswersChipsTest {
         checkAll("G Major lowered 7th", sessionChips(4), chips)
     }
 
+    // feature: chord-chips-rings, chord-harmony
+    @Test
+    fun borrowedChordCardsMatchSwift() {
+        val aBlues = Scale(NoteName(Letter.A), ScaleType.BLUES)
+        checkAll("A Blues", sessionChips(A_BLUES_STEP), BoardChordChipContent.chips(aBlues, null))
+        val aMinorPentatonic = Scale(NoteName(Letter.A), ScaleType.MINOR_PENTATONIC)
+        val pentatonicChips = BoardChordChipContent.chips(aMinorPentatonic, change = null)
+        checkAll("A Minor Pentatonic", sessionChips(A_MINOR_PENTATONIC_STEP), pentatonicChips)
+    }
+
+    // feature: chord-harmony
+    @Test
+    fun aBorrowedChordMarksTheNotesTheScaleLacks() {
+        val aBlues = Scale(NoteName(Letter.A), ScaleType.BLUES)
+        val chips = BoardChordChipContent.chips(aBlues, change = null)
+        val tonic = chips[0]
+        assertEquals(listOf(NoteName(Letter.C, 1)), tonic.outsideNotes)
+        assertEquals(
+            "I7, A dominant seventh: A, C♯ (not in the scale), E, G",
+            tonic.accessibilityLabel,
+        )
+        val dominant = chips[2]
+        assertEquals(
+            "V7, E dominant seventh: E, G♯ (not in the scale), B (not in the scale), D",
+            dominant.accessibilityLabel,
+        )
+
+        val aMinorPentatonic = Scale(NoteName(Letter.A), ScaleType.MINOR_PENTATONIC)
+        val subdominant = BoardChordChipContent.chips(aMinorPentatonic, change = null)[3]
+        assertEquals("iv, D minor: D, F (not in the scale), A", subdominant.accessibilityLabel)
+
+        // A scale's own chords hold only its notes.
+        for (chip in BoardChordChipContent.chips(gMajor, change = null)) {
+            assertEquals(emptyList<NoteName>(), chip.outsideNotes)
+        }
+    }
+
     // feature: chord-chips-rings
     @Test
     fun theWordsOnTheCards() {
@@ -126,5 +164,11 @@ class AnswersChipsTest {
             }
         }
         assertEquals("removing a note loses a chord", true, ChordChange.Kind.REMOVED in kinds)
+    }
+
+    private companion object {
+        /** The `session` steps that choose A Blues and then A Minor Pentatonic. */
+        const val A_BLUES_STEP = 12
+        const val A_MINOR_PENTATONIC_STEP = 14
     }
 }

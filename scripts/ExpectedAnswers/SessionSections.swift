@@ -94,6 +94,8 @@ struct ChipAnswer: Encodable {
     let formulaNumeral: String
     let name: String
     let notes: [String]
+    /// Notes of a borrowed chord the scale lacks, in the chord's order.
+    let outsideNotes: [String]
     /// "unchanged", "changed", "removed" or "added".
     let kind: String
     let caption: String
@@ -152,8 +154,9 @@ func snapshot(_ step: String, _ session: PracticeSession, _ library: ScaleLibrar
     for content in contents {
         let chip = ChipAnswer(
             formulaNumeral: content.chord.formulaNumeral,
-            name: content.chord.triad.name,
+            name: content.chord.name,
             notes: displayNames(content.chord.notes),
+            outsideNotes: displayNames(content.outsideNotes),
             kind: String(describing: content.kind),
             caption: content.caption,
             accessibilityLabel: content.accessibilityLabel,
@@ -229,7 +232,11 @@ func sessionSection() throws -> [SessionStepAnswer] {
 
     session.choose(.builtIn(.major), root: NoteName(.d), from: library)
     steps.append(
-        try snapshot("choose D Major: the rings stay, no card is marked", session, library)
+        try snapshot(
+            "choose D Major: G's V chord is not a card here, so nothing is ringed",
+            session,
+            library
+        )
     )
 
     session.choose(.builtIn(.major), root: NoteName(.g), from: library)
@@ -265,6 +272,32 @@ func sessionSection() throws -> [SessionStepAnswer] {
 
     session.toggleRing(for: tonic)
     steps.append(try snapshot("ring the I chord again: the rings clear", session, library))
+
+    session.choose(.builtIn(.blues), root: NoteName(.a), from: library)
+    steps.append(
+        try snapshot(
+            "choose A Blues: the cards are the twelve-bar seventh chords",
+            session,
+            library
+        )
+    )
+
+    guard let tonicSeventh = session.scale.boardChords().first else {
+        throw AnswersError.fixtureFailed("A Blues has no chords under the board")
+    }
+    session.toggleRing(for: tonicSeventh)
+    steps.append(
+        try snapshot("ring A7: only the notes the blues scale holds", session, library)
+    )
+
+    session.choose(.builtIn(.minorPentatonic), from: library)
+    steps.append(
+        try snapshot(
+            "choose A Minor Pentatonic: A7 is not a card here, so nothing is ringed",
+            session,
+            library
+        )
+    )
 
     return steps
 }

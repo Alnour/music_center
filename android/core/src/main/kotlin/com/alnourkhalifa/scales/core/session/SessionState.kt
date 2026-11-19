@@ -5,6 +5,7 @@ import com.alnourkhalifa.scales.core.music.KeyboardLayout
 import com.alnourkhalifa.scales.core.music.NoteName
 import com.alnourkhalifa.scales.core.music.Scale
 import com.alnourkhalifa.scales.core.music.ScaleChord
+import com.alnourkhalifa.scales.core.music.boardChords
 
 /**
  * One immutable snapshot of what the board shows: the stored part of `PracticeSession` in
@@ -24,8 +25,8 @@ data class SessionState(
     val boardChange: BoardChange? = null,
     /**
      * The chord whose notes are ringed on the board, picked from the chords under it. Kept for
-     * this run only, and kept while the scale changes; [ringedNotes] ignores it once the
-     * scale no longer holds all its notes, so the rings vanish with the chord instead of
+     * this run only, and kept while the scale changes; [ringedNotes] ignores it once it is no
+     * longer one of the chords under the board, so the rings vanish with the chord instead of
      * pointing at nothing.
      */
     val ringedChord: ScaleChord? = null,
@@ -33,20 +34,39 @@ data class SessionState(
     val scale: Scale
         get() = Scale(settings.root, settings.scaleDefinition)
 
-    /** The notes to ring on the board: the picked chord's notes, in the chord's order, while
-     *  every one of them is in the scale as spelled now. */
+    /** The notes to ring on the board: the picked chord's notes that the scale holds, in the
+     *  chord's order, while the chord is still one of the chords under the board. A borrowed
+     *  chord (the E7 of A blues) rings the notes the scale has and leaves out the rest. */
     val ringedNotes: Set<NoteName>
         get() {
             val chord = ringedChord ?: return emptySet()
+            if (chord !in chordsUnderBoard) {
+                return emptySet()
+            }
             val scaleNotes = mutableSetOf<NoteName>()
             for (tone in scale.tones) {
                 scaleNotes.add(tone.name)
             }
-            val chordNotes = chord.notes.toSet()
-            if (!scaleNotes.containsAll(chordNotes)) {
-                return emptySet()
+            val ringed = linkedSetOf<NoteName>()
+            for (note in chord.notes) {
+                if (note in scaleNotes) {
+                    ringed.add(note)
+                }
             }
-            return chordNotes
+            return ringed
+        }
+
+    /** The chords the cards under the board show: the result of the last note change while it
+     *  is still on the board, otherwise the scale's own ([boardChords]). */
+    private val chordsUnderBoard: List<ScaleChord>
+        get() {
+            val change = currentBoardChange ?: return scale.boardChords()
+            val chords = mutableListOf<ScaleChord>()
+            for (chordChange in change.transformation.chordChanges.changes) {
+                val after = chordChange.after ?: continue
+                chords.add(after)
+            }
+            return chords
         }
 
     /** The last board change while the board still shows its result; null once the player
