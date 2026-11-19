@@ -8,9 +8,27 @@ DEVICE    ?=
 DERIVED   := DerivedData
 SIM_APP   := $(DERIVED)/Build/Products/Debug-iphonesimulator/$(NAME).app
 DEVICE_APP := $(DERIVED)/Build/Products/Debug-iphoneos/$(NAME).app
+PY        := python3 -I
+# Swift that swift-format checks; the answers generator joins once it exists.
+SWIFT_SOURCES := Scales ScalesTests ScalesUITests $(wildcard scripts/ExpectedAnswers Package.swift)
 
-.PHONY: gen build test run run-device lint format clean screenshots screenshots-ipad archive upload \
-	mac mac-test run-mac mac-dmg install-mac
+.PHONY: gen build test test-unit test-ui run run-device lint format clean screenshots \
+	screenshots-ipad archive upload mac mac-test run-mac mac-dmg install-mac \
+	answers answers-check parity mirror features verify verify-ui verify-all
+
+# The included Android targets come first in the file, so name the default goal explicitly.
+.DEFAULT_GOAL := gen
+
+# The Android targets (android-setup, build-android, test-android, test-android-ui,
+# run-android, run-android-tv, run-fire, lint-android, format-android, bundle-android,
+# screenshots-android) live in their own file next to the Android build scripts.
+-include scripts/android.mk
+
+# Until that file exists, the Android steps of `make verify` report themselves skipped.
+ifeq ($(wildcard scripts/android.mk),)
+build-android test-android test-android-ui lint-android:
+	@echo "$@: skipped, scripts/android.mk is not here yet"
+endif
 
 gen:
 	xcodegen generate --quiet
@@ -24,6 +42,17 @@ test: gen
 	xcodebuild -project $(NAME).xcodeproj -scheme $(NAME) \
 	  -destination "platform=iOS Simulator,name=$(SIM)" \
 	  -derivedDataPath $(DERIVED) -quiet test
+
+# The two halves of `make test`: logic tests take seconds, interface tests minutes.
+test-unit: gen
+	xcodebuild -project $(NAME).xcodeproj -scheme $(NAME) \
+	  -destination "platform=iOS Simulator,name=$(SIM)" \
+	  -derivedDataPath $(DERIVED) -only-testing:ScalesTests -quiet test
+
+test-ui: gen
+	xcodebuild -project $(NAME).xcodeproj -scheme $(NAME) \
+	  -destination "platform=iOS Simulator,name=$(SIM)" \
+	  -derivedDataPath $(DERIVED) -only-testing:ScalesUITests -quiet test
 
 run: build
 	xcrun simctl boot "$(SIM)" 2>/dev/null || true
@@ -70,10 +99,46 @@ install-mac:
 	scripts/install_mac.sh
 
 lint:
-	xcrun swift-format lint --strict --recursive Scales ScalesTests
+	xcrun swift-format lint --strict --recursive $(SWIFT_SOURCES)
 
 format:
-	xcrun swift-format format --in-place --recursive Scales ScalesTests
+	xcrun swift-format format --in-place --recursive $(SWIFT_SOURCES)
+
+# Cross-platform checks. expected/answers.json is written by the Swift code and read by the
+# Kotlin tests, so both apps answer every music question the same way; answers-check fails
+# when the committed file no longer matches what the Swift code writes.
+answers:
+	swift run --quiet ExpectedAnswers expected/answers.json
+
+answers-check:
+	@mkdir -p $(DERIVED)
+	swift run --quiet ExpectedAnswers $(DERIVED)/answers.json
+	@cmp -s expected/answers.json $(DERIVED)/answers.json || \
+	  (echo "expected/answers.json is stale: run make answers and commit it"; exit 1)
+
+# Every feature in features.json has a tagged test on each platform that owes it.
+parity:
+	$(PY) scripts/check_parity.py
+
+# Every Swift logic file has a same-named Kotlin twin in android/core, and the reverse.
+mirror:
+	$(PY) scripts/check_mirror.py
+
+# The feature registry as a table: which platform owes what, and by which wave.
+features:
+	$(PY) scripts/check_parity.py --features
+
+# Cheapest first (~4 min warm): run before every commit and by .githooks/pre-push.
+verify: parity mirror lint lint-android answers-check test-unit mac-test test-android build-android
+
+# The interface tests on iPhone, iPad and the Android emulators (~13 min).
+verify-ui:
+	$(MAKE) test-ui
+	$(MAKE) test-ui SIM="iPad Pro 13-inch (M5)"
+	$(MAKE) test-android-ui
+
+# Before each owner gate and each store upload.
+verify-all: verify verify-ui
 
 clean:
 	rm -rf build DerivedData

@@ -9,3 +9,12 @@ build/
 # Swift PM
 Packages/
 .swiftpm/
+# Android (Gradle project under android/)
+android/.gradle/
+android/.kotlin/
+android/**/build/
+android/local.properties
+android/.idea/
+# Signing keys never enter the repository
+*.jks
+*.keystore

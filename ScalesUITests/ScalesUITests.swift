@@ -18,6 +18,7 @@ final class ScalesUITests: XCTestCase {
     }
 
     @MainActor
+    // feature: board, roots-scales
     func testChoosingAScaleUpdatesTheTitle() throws {
         app.menuButton(labelled: "Root").tap()
         app.buttons["A"].firstMatch.tap()
@@ -31,13 +32,20 @@ final class ScalesUITests: XCTestCase {
     /// The keyboard replaces the fretboard and hides the guitar-only options. The choice is
     /// saved between launches, so the test puts the guitar back for the other tests.
     @MainActor
+    // feature: keyboard, chord-chips-rings
     func testChoosingTheKeyboardShowsAnOctave() throws {
         let guitarChoice = app.buttons["Guitar"]
-        XCTAssertTrue(guitarChoice.waitForExistence(timeout: 3), "the instrument pills are in the toolbar")
+        XCTAssertTrue(
+            guitarChoice.waitForExistence(timeout: 3),
+            "the instrument pills are in the toolbar"
+        )
         guitarChoice.tap()
         app.openBoardSettings()
         let tuningRow = app.menuButton(labelled: "Tuning")
-        XCTAssertTrue(tuningRow.waitForExistence(timeout: 3), "guitar options start in the settings")
+        XCTAssertTrue(
+            tuningRow.waitForExistence(timeout: 3),
+            "guitar options start in the settings"
+        )
         app.dismissPopover()
         XCTAssertTrue(tuningRow.waitForNonExistence(timeout: 3), "the settings close")
 
@@ -75,6 +83,7 @@ final class ScalesUITests: XCTestCase {
     }
 
     @MainActor
+    // feature: tv-board
     func testFullScreenBoardOpensInLandscapeAndCloses() throws {
         app.openTVMenu()
         let fullScreenButton = app.buttons["Full-screen board"]
@@ -110,6 +119,7 @@ final class ScalesUITests: XCTestCase {
     }
 
     @MainActor
+    // feature: airplay-cast
     func testTVMenuOffersAirPlayAndStatus() throws {
         app.openTVMenu()
         let airPlayButton = app.buttons["AirPlay"]
@@ -120,6 +130,7 @@ final class ScalesUITests: XCTestCase {
     }
 
     @MainActor
+    // feature: drum-trainer
     func testDrumsTabPlaysAndPausesTheGroove() throws {
         app.openTab("Drums")
         let playButton = app.buttons["Play"]
@@ -134,13 +145,17 @@ final class ScalesUITests: XCTestCase {
     }
 
     @MainActor
+    // feature: chord-tables
     func testChordTablesShowMajorAndMinorKeys() throws {
         app.openTab("Chords")
         XCTAssertTrue(app.staticTexts["C major"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["B diminished"].exists)
         app.buttons["Minor keys"].tap()
         XCTAssertTrue(app.staticTexts["A minor"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.staticTexts["E minor"].firstMatch.exists, "minor keys list natural minor's chords")
+        XCTAssertTrue(
+            app.staticTexts["E minor"].firstMatch.exists,
+            "minor keys list natural minor's chords"
+        )
         XCTAssertFalse(app.staticTexts["or G♯ diminished"].exists, "no harmonic-minor stand-ins")
         attachScreenshot(named: "Minor key chords")
         app.buttons["Major keys"].tap()
@@ -177,6 +192,7 @@ final class ScalesUITests: XCTestCase {
     /// The Scales screen shows the chords as cards under the board and changes one note in
     /// place: the chords that used it change with it.
     @MainActor
+    // feature: chord-chips-rings, note-edit-revert
     func testScalesScreenChangesANote() throws {
         let rootMenu = app.menuButton(labelled: "Root")
         rootMenu.tap()
@@ -222,6 +238,7 @@ final class ScalesUITests: XCTestCase {
     }
 
     @MainActor
+    // feature: transform-lessons
     func testTransformTabExplainsALoweredSeventh() throws {
         app.openTab("Transform")
         chooseTransformStart(key: "G", scale: "Major")
@@ -246,6 +263,7 @@ final class ScalesUITests: XCTestCase {
     }
 
     @MainActor
+    // feature: transform-lessons
     func testNamingANewScaleAddsItToMyScales() throws {
         let name = "Test Scale \(UUID().uuidString.prefix(4))"
         app.openTab("Transform")
@@ -269,10 +287,12 @@ final class ScalesUITests: XCTestCase {
 
         app.openTab("Scales")
         app.menuButton(labelled: "Scale").tap()
-        // My Scales comes after the built-in scales, below the menu's first screenful.
+        // My Scales comes after the built-in scales, below the menu's first screenful. The
+        // menu only builds the rows on screen, and which rows those are depends on the scale
+        // already chosen, so the list is found by either end of the built-in scales.
         let pickerChoice = app.buttons[name]
         let menuList = app.collectionViews.containing(
-            NSPredicate(format: "label == %@", "Whole Tone")
+            NSPredicate(format: "label == %@ OR label == %@", "Major", "Whole Tone")
         ).firstMatch
         var menuSwipes = 0
         while !pickerChoice.waitForExistence(timeout: 1) && menuSwipes < 3 {
@@ -291,6 +311,67 @@ final class ScalesUITests: XCTestCase {
         app.buttons["Delete"].firstMatch.tap()
         app.buttons["Delete Scale"].tap()
         XCTAssertTrue(scaleRow.waitForNonExistence(timeout: 3), "the scale is deleted")
+    }
+
+    /// The Notes, Degrees and Dots pills change what the circles show; VoiceOver hears it
+    /// as the board's value, so the test reads the same thing a blind player would.
+    @MainActor
+    // feature: labels
+    func testLabelPillsChangeWhatTheCirclesShow() throws {
+        chooseGMajorOnTheGuitar()
+        let board = boardElement(labelled: "Fretboard showing G Major")
+        XCTAssertTrue(board.waitForExistence(timeout: 3))
+
+        app.buttons["Degrees"].firstMatch.tap()
+        XCTAssertEqual(board.value as? String, "Circles show scale degrees")
+        attachScreenshot(named: "Degrees in the circles")
+        app.buttons["Dots"].firstMatch.tap()
+        XCTAssertEqual(board.value as? String, "Plain circles")
+        app.buttons["Notes"].firstMatch.tap()
+        XCTAssertEqual(board.value as? String, "Circles show note names")
+    }
+
+    /// The row above the board spells the scale, read as one sentence by VoiceOver.
+    @MainActor
+    // feature: notes-row
+    func testNotesRowSpellsTheScale() throws {
+        chooseGMajorOnTheGuitar()
+        let notesRow = app.descendants(matching: .any)["Notes: G, A, B, C, D, E, F♯"]
+        XCTAssertTrue(notesRow.waitForExistence(timeout: 3), "the notes row spells G major")
+    }
+
+    /// The board and the chord cards describe themselves in words: the board names the
+    /// scale, and a card says its numeral, its name and its notes.
+    @MainActor
+    // feature: accessibility-labels
+    func testBoardAndChordCardsHaveSpokenLabels() throws {
+        chooseGMajorOnTheGuitar()
+        let board = boardElement(labelled: "Fretboard showing G Major")
+        XCTAssertTrue(board.waitForExistence(timeout: 3), "the board names its scale")
+        let dominantChip = app.buttons["V, D major: D, F♯, A"]
+        XCTAssertTrue(dominantChip.waitForExistence(timeout: 3), "a card reads out its chord")
+    }
+
+    /// The board by its spoken label, whatever kind of element carries it: the fretboard
+    /// sits in a sideways scroll view, which takes the label, while the keyboard does not.
+    @MainActor
+    private func boardElement(labelled label: String) -> XCUIElement {
+        let predicate = NSPredicate(format: "label == %@", label)
+        return app.descendants(matching: .any).matching(predicate).firstMatch
+    }
+
+    /// Puts G major on the fretboard. Settings survive between launches, so each test that
+    /// reads the board sets the scale and instrument it expects.
+    @MainActor
+    private func chooseGMajorOnTheGuitar() {
+        let guitarChoice = app.buttons["Guitar"]
+        XCTAssertTrue(guitarChoice.waitForExistence(timeout: 3), "the instrument pills are shown")
+        guitarChoice.tap()
+        app.menuButton(labelled: "Root").tap()
+        app.buttons["G"].firstMatch.tap()
+        app.menuButton(labelled: "Scale").tap()
+        app.buttons["Major"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["G Major"].waitForExistence(timeout: 3))
     }
 
     /// Sets the Transform screen's starting key and scale from their pickers.

@@ -20,6 +20,16 @@ enum NoteLabelStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         case .none: "Dots"
         }
     }
+
+    /// What the circles on the board show, read by VoiceOver (and TalkBack on Android) as
+    /// the board's value, so a player who cannot see the board still hears what it holds.
+    var accessibilityDescription: String {
+        switch self {
+        case .noteNames: "Circles show note names"
+        case .degrees: "Circles show scale degrees"
+        case .none: "Plain circles"
+        }
+    }
 }
 
 /// Everything the player chooses, saved between launches so the app reopens on the

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Play's 512x512 store icon: the adaptive launcher icon flattened, so the listing shows the
+  same picture as the phone's home screen. The fretboard is
+  android/app/src/main/res/drawable/ic_launcher_foreground.xml on its 1024 grid, scaled to
+  0.6296 and centred exactly as the vector does, over the launcher background #171C25.
+  The square runs to the edges because Play applies its own rounded mask. Play asks for a
+  32-bit PNG (with alpha), and rsvg-convert writes plain RGB when every pixel is opaque, so
+  the background leaves out the top-left corner pixel; Play's mask cuts that corner anyway.
+  Render: rsvg-convert -w 512 -h 512 icon-512.svg -o icon-512.png
+          rsvg-convert -w 114 -h 114 icon-512.svg -o icon-114.png   (Amazon's small icon)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <path fill="#171C25" d="M2,0H1024V1024H0V2H2z"/>
+  <g transform="translate(189.65,189.65) scale(0.6296)">
+    <path fill="#D3D7E0" d="M137,202h26v620h-26z"/>
+    <path fill="#5C6475" d="M387,202h10v620h-10z M628,202h9v620h-9z M869,202h9v620h-9z"/>
+    <path fill="#7D8596" d="M150,196h724v12h-724z M150,320h724v12h-724z M150,445h724v10h-724z M150,570h724v8h-724z M150,695h724v6h-724z M150,819h724v6h-724z"/>
+    <g fill="#9FABC2">
+      <circle cx="271" cy="202" r="54"/>
+      <circle cx="512" cy="326" r="54"/>
+      <circle cx="753" cy="326" r="54"/>
+      <circle cx="753" cy="450" r="54"/>
+      <circle cx="271" cy="574" r="54"/>
+      <circle cx="753" cy="574" r="54"/>
+      <circle cx="512" cy="698" r="54"/>
+      <circle cx="271" cy="822" r="54"/>
+      <circle cx="753" cy="822" r="54"/>
+    </g>
+    <g fill="#F5CB60">
+      <circle cx="753" cy="202" r="54"/>
+      <circle cx="271" cy="450" r="54"/>
+      <circle cx="753" cy="698" r="54"/>
+    </g>
+  </g>
+</svg>

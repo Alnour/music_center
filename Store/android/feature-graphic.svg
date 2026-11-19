@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Play's feature graphic, 1024x500 with no transparency: the launcher icon's fretboard on the
+  left and the name on the right, on the icon's dark slate, so the listing banner, the icon
+  and the TV banner read as one family. The fretboard is the icon's drawing on its 1024 grid
+  at 0.5, centred vertically. Play may crop the edges and lay a play button over the middle
+  on some surfaces, so the name sits right of centre and clear of the outer edges.
+  Render: rsvg-convert -w 1024 -h 500 feature-graphic.svg -o feature-graphic.png
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <rect width="1024" height="500" fill="#171C25"/>
+  <g transform="translate(36,-6) scale(0.5)">
+    <path fill="#D3D7E0" d="M137,202h26v620h-26z"/>
+    <path fill="#5C6475" d="M387,202h10v620h-10z M628,202h9v620h-9z M869,202h9v620h-9z"/>
+    <path fill="#7D8596" d="M150,196h724v12h-724z M150,320h724v12h-724z M150,445h724v10h-724z M150,570h724v8h-724z M150,695h724v6h-724z M150,819h724v6h-724z"/>
+    <g fill="#9FABC2">
+      <circle cx="271" cy="202" r="54"/>
+      <circle cx="512" cy="326" r="54"/>
+      <circle cx="753" cy="326" r="54"/>
+      <circle cx="753" cy="450" r="54"/>
+      <circle cx="271" cy="574" r="54"/>
+      <circle cx="753" cy="574" r="54"/>
+      <circle cx="512" cy="698" r="54"/>
+      <circle cx="271" cy="822" r="54"/>
+      <circle cx="753" cy="822" r="54"/>
+    </g>
+    <g fill="#F5CB60">
+      <circle cx="753" cy="202" r="54"/>
+      <circle cx="271" cy="450" r="54"/>
+      <circle cx="753" cy="698" r="54"/>
+    </g>
+  </g>
+  <text x="745" y="262" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="600" font-size="120" fill="#E6E9EF">Scales</text>
+  <text x="745" y="314" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="24" fill="#9FABC2">Every scale, on the neck and on the TV</text>
+</svg>

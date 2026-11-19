@@ -32,12 +32,16 @@ the TV, so a player can read the shape from across the room while practising.
   the phone or iPad covers the case where no TV is around.
 - **iPhone, iPad and Mac.** One codebase; the Mac version is built with Mac Catalyst and
   handed out as a download.
+- **Android phones, tablets and TVs.** A Kotlin twin of the same app, with its own screen
+  for the TV remote on Android TV, Google TV and Fire TV (see [Android](#android)).
 
 ## Requirements
 
 - iOS or iPadOS 26 or later; macOS for the Catalyst build.
 - Xcode 26 or later with Swift 6.
 - [xcodegen](https://github.com/yonaskolb/XcodeGen) to generate the Xcode project.
+- Android: runs on Android 9 (Fire OS 7) or later; building needs JDK 17 and the Android
+  command-line tools (Homebrew's `openjdk@17` and `android-commandlinetools`).
 
 ## Building
 
@@ -65,6 +69,48 @@ make install-mac    # Release copy into /Applications/Scales.app
 `scripts/build_mac_dmg.sh` and `scripts/notarize_mac_dmg.sh` produce a notarised disk
 image, and `scripts/deploy_to_store.sh` uploads to App Store Connect; both need the
 owner's certificates.
+
+## Android
+
+The Android app lives in `android/`: one APK for phones, tablets, Android TV, Google TV and
+Fire TV, with a touch screen (`PhoneActivity`, Material 3) and a remote-control screen
+(`TvActivity`, TV Material). It mirrors the Swift code file for file: `android/core` is the
+pure-Kotlin twin of `Scales/Music`, `Scales/Session` and `Scales/Drums`, `android/ui` holds the
+board painters both screens share, and `android/app` holds the screens. Its make targets live
+in `scripts/android.mk`, which the root Makefile includes.
+
+```sh
+make android-setup         # once: SDK 37, build tools, the four emulators (~4.2 GB)
+make build-android         # debug APK
+make test-android          # JVM tests of core, ui and app (no emulator)
+make test-android-ui       # Compose interface tests on the phone and TV emulators
+make run-android           # install and open on the phone emulator
+make run-android-tv        # the same on the TV emulator
+make run-fire FIRE=<ip>    # a Fire TV stick with ADB debugging on
+make lint-android          # ktlint, detekt and Android lint
+make screenshots-android   # store screenshots into Store/android/screenshots/
+make bundle-android        # release AAB and APK, checked by scripts/check_apk.sh
+make android-bump          # versionCode + 1 before a store upload
+```
+
+Emulators, all arm64 and booted on demand by `scripts/android_boot.sh`: `scales_phone`
+(Pixel 8, port 5554), `scales_tv` (Google TV 1080p, 5556), `scales_tablet` (Pixel Tablet,
+5558) and `scales_floor` (Android 9, standing in for Fire OS 7, 5560). Homebrew's
+command-line tools and JDK 17 are expected; `ANDROID_HOME` and `JAVA_HOME` override them.
+
+Build outputs land under `android/app/build/outputs/`: `apk/debug/app-debug.apk`,
+`bundle/release/app-release.aab` (for Play) and `apk/release/app-release.apk` (for Amazon;
+`app-release-unsigned.apk` without the owner's upload key). Store text, assets and the
+owner's upload steps are in `Store/android/listing.md`.
+
+**One feature list for every platform.** `features.json` registers each feature with a
+status for iOS, Android phone and Android TV. A test proves a feature by carrying a
+`// feature: <id>` comment just above it, and `make parity` checks that every required cell
+has such a test (`make features` prints the table). `expected/answers.json`, written from the
+Swift code by `make answers`, is what the Kotlin tests compare against, so both apps spell
+and place every note the same way. `make verify` runs parity, the twin check, both lints,
+the answers check and every unit test and build (~4 min); `make verify-all` adds the
+interface tests on the iOS simulators and the Android emulators.
 
 ## Layout
 

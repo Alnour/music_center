@@ -33,6 +33,7 @@ private func chordNames(_ chords: [ScaleChord]) -> [String] {
 
 /// Definitions: the shared description of built-in and saved scales.
 struct ScaleDefinitionTests {
+    // feature: roots-scales
     @Test func everyBuiltInFormulaIsAlreadyInLetterOrder() {
         for type in ScaleType.allCases {
             #expect(type.definition.degrees == type.degrees, "\(type) was reordered")
@@ -41,6 +42,7 @@ struct ScaleDefinitionTests {
         }
     }
 
+    // feature: roots-scales
     @Test func degreesAreSortedIntoLetterOrder() {
         let definition = ScaleDefinition(
             name: "Shuffled",
@@ -49,6 +51,7 @@ struct ScaleDefinitionTests {
         #expect(definition.formula == "1 2 ♭3 5")
     }
 
+    // feature: roots-scales, transform-lessons
     @Test func definitionsRoundTripThroughJSON() throws {
         let definition = ScaleType.phrygianDominant.definition
         let data = try JSONEncoder().encode(definition)
@@ -56,6 +59,7 @@ struct ScaleDefinitionTests {
         #expect(decoded == definition)
     }
 
+    // feature: roots-scales
     @Test func samePitchesIgnoreSpellingAndName() {
         let respelledWholeTone = ScaleDefinition(
             name: "Respelled",
@@ -68,6 +72,7 @@ struct ScaleDefinitionTests {
         #expect(!ScaleType.major.definition.hasSamePitches(as: ScaleType.mixolydian.definition))
     }
 
+    // feature: roots-scales
     @Test func scaleTitleUsesTheDefinitionName() {
         let definition = ScaleDefinition(name: "Bright Major", degrees: ScaleType.lydian.degrees)
         #expect(Scale(root: NoteName(.g), definition: definition).title == "G Bright Major")
@@ -79,18 +84,21 @@ struct ScaleDefinitionTests {
 struct ScaleEditTests {
     private let major = ScaleType.major.definition
 
+    // feature: note-edit-revert, transform-lessons
     @Test func loweringTheSeventhOfMajorGivesMixolydian() throws {
         let result = try major.applying(.lower(degree("7")))
         #expect(result.degrees == ScaleType.mixolydian.degrees)
         #expect(result.name == "Major ♭7")
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func raisingTheFourthOfMajorGivesLydian() throws {
         let result = try major.applying(.raise(degree("4")))
         #expect(result.degrees == ScaleType.lydian.degrees)
         #expect(result.name == "Major ♯4")
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func takingAnAccidentalAwayIsWrittenAsANatural() throws {
         let edit = ScaleEdit.lower(degree("♯4"))
         let result = try ScaleType.lydian.definition.applying(edit)
@@ -99,18 +107,21 @@ struct ScaleEditTests {
         #expect(result.name == "Lydian ♮4")
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func removingTheFourthOfMajorLeavesSixNotes() throws {
         let result = try major.applying(.remove(degree("4")))
         #expect(result.formula == "1 2 3 5 6 7")
         #expect(result.name == "Major no 4")
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func addingTheFourthToMajorPentatonicSortsItIntoPlace() throws {
         let result = try ScaleType.majorPentatonic.definition.applying(.add(degree("4")))
         #expect(result.formula == "1 2 3 4 5 6")
         #expect(result.name == "Major Pentatonic add 4")
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func rootCannotBeAlteredOrRemoved() {
         let root = ScaleDegree.root
         #expect(throws: ScaleEditError.rootCannotChange) { try major.applying(.lower(root)) }
@@ -119,6 +130,7 @@ struct ScaleEditTests {
         #expect(throws: ScaleEditError.rootCannotChange) { try major.applying(.add(degree("♯1"))) }
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func editingAMissingDegreeIsRefused() {
         #expect(throws: ScaleEditError.degreeNotInScale) {
             try major.applying(.lower(degree("♭3")))
@@ -128,6 +140,7 @@ struct ScaleEditTests {
         }
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func addingADegreeAlreadyThereIsRefused() {
         let lydian = ScaleType.lydian.definition
         #expect(throws: ScaleEditError.degreeAlreadyInScale) {
@@ -135,11 +148,13 @@ struct ScaleEditTests {
         }
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func addingADegreeBeyondTheSeventhIsRefused() {
         let eighth = ScaleDegree(number: 8, alteration: 0)
         #expect(throws: ScaleEditError.noSuchDegree) { try major.applying(.add(eighth)) }
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func loweringPastOneFlatIsRefused() {
         let dorian = ScaleType.dorian.definition
         #expect(throws: ScaleEditError.alterationTooFar) {
@@ -147,6 +162,7 @@ struct ScaleEditTests {
         }
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func aNoteMayNotSoundTheSameAsAnother() {
         let lydian = ScaleType.lydian.definition
         let sameAsSharpFour = ScaleEditError.samePitchAsAnotherNote(degree("♯4"))
@@ -155,6 +171,7 @@ struct ScaleEditTests {
         #expect(throws: sameAsRoot) { try major.applying(.raise(degree("7"))) }
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func scalesKeepAtLeastThreeNotes() {
         let triad = ScaleDefinition(
             name: "Triad",
@@ -163,6 +180,7 @@ struct ScaleEditTests {
         #expect(throws: ScaleEditError.tooFewNotes) { try triad.applying(.remove(degree("3"))) }
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func majorOffersTheFiveMissingPitchesInBothSpellings() {
         var addedLabels: [String] = []
         for edit in major.legalEdits() {
@@ -173,6 +191,7 @@ struct ScaleEditTests {
         #expect(addedLabels == ["♭2", "♯2", "♭3", "♯4", "♭5", "♯5", "♭6", "♯6", "♭7"])
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func everyLegalEditAppliesAndKeepsPitchesDistinct() throws {
         for type in ScaleType.allCases {
             let definition = type.definition
@@ -188,6 +207,7 @@ struct ScaleEditTests {
         }
     }
 
+    // feature: note-edit-revert, transform-lessons
     @Test func editSentencesSpellNotesInTheKey() {
         #expect(
             ScaleEdit.lower(degree("7")).sentence(above: NoteName(.g))
@@ -223,6 +243,7 @@ struct LetterTriadTests {
         return names
     }
 
+    // feature: roots-scales, chord-chips-rings
     @Test func byLetterMatchesEveryOtherNoteForSevenNoteScales() {
         for type in ScaleType.allCases where type.degrees.count == 7 {
             for root in NoteName.rootChoices {
@@ -233,6 +254,7 @@ struct LetterTriadTests {
         }
     }
 
+    // feature: roots-scales, chord-chips-rings
     @Test func pentatonicScalesMakeTwoTriadsAndTwoSuspendedChords() {
         let cMajorPentatonic = Scale(root: NoteName(.c), type: .majorPentatonic)
         #expect(chordNames(cMajorPentatonic.letterTriads()) == ["C", "Dsus4", "Gsus4", "Am"])
@@ -240,6 +262,7 @@ struct LetterTriadTests {
         #expect(chordNames(aMinorPentatonic.letterTriads()) == ["Am", "C", "Dsus4", "Gsus4"])
     }
 
+    // feature: roots-scales, chord-chips-rings
     @Test func suspendedChordsCarryTheStandInNote() throws {
         let chords = Scale(root: NoteName(.c), type: .majorPentatonic).letterTriads()
         let onD = try #require(chords.first { $0.degree.number == 2 })
@@ -248,6 +271,7 @@ struct LetterTriadTests {
         #expect(onD.formulaNumeral == "IIsus4")
     }
 
+    // feature: roots-scales, chord-chips-rings
     @Test func theSecondStandsInWhenThereIsNoFourthEither() {
         // C D G: no E, no F, so the chord on C is Csus2.
         let definition = ScaleDefinition(
@@ -258,6 +282,7 @@ struct LetterTriadTests {
         #expect(chordNames(chords) == ["Csus2", "Gsus4"])
     }
 
+    // feature: roots-scales, chord-chips-rings
     @Test func everyChordQualityHasAChartName() {
         var names: [String] = []
         for quality in TriadQuality.allCases {
@@ -275,6 +300,7 @@ struct LetterTriadTests {
         #expect(TriadQuality(thirdSemitones: 5, fifthSemitones: 9) == nil)
     }
 
+    // feature: roots-scales, chord-chips-rings
     @Test func bluesPrefersThePairingWithFewestAccidentals() throws {
         let chords = Scale(root: NoteName(.c), type: .blues).letterTriads()
         let tonic = try #require(chords.first)
@@ -282,12 +308,14 @@ struct LetterTriadTests {
         #expect(tonic.notes == [NoteName(.c), NoteName(.e, -1), NoteName(.g)])
     }
 
+    // feature: roots-scales, chord-chips-rings
     @Test func chordsCarryTheirSpelledNotes() {
         let dominant = Scale(root: NoteName(.g), type: .major).letterTriads()[4]
         #expect(dominant.notes == [NoteName(.d), NoteName(.f, 1), NoteName(.a)])
         #expect(dominant.spokenTitle == "V, D major")
     }
 
+    // feature: roots-scales, chord-tables
     @Test func formulaNumeralsCarryAccidentalsAndKeyNumeralsStayPlain() {
         let harmonicMinor = Scale(root: NoteName(.c), type: .harmonicMinor).letterTriads()
         var formulaNumerals: [String] = []
@@ -302,6 +330,7 @@ struct LetterTriadTests {
         #expect(phrygianSecond.formulaNumeral == "♭II")
     }
 
+    // feature: chord-tables
     @Test func keyTablesStillOnlyCoverSevenNoteScales() {
         #expect(Scale(root: NoteName(.a), type: .minorPentatonic).diatonicTriads().isEmpty)
         #expect(Scale(root: NoteName(.a), type: .minorPentatonic).letterTriads().count == 4)
@@ -383,6 +412,7 @@ struct ChordChangeReportTests {
         return kinds
     }
 
+    // feature: transform-lessons, note-edit-revert
     @Test func loweringTheSeventhOfCMajor() throws {
         let changes = try report(NoteName(.c), .major, .lower(degree("7"))).changes
         #expect(changes.count == 7)
@@ -403,6 +433,7 @@ struct ChordChangeReportTests {
         #expect(seventh.notesNew == [NoteName(.b, -1)])
     }
 
+    // feature: transform-lessons, note-edit-revert
     @Test func removingTheFourthDropsOrSuspendsTheChordsThatNeededIt() throws {
         let result = try report(NoteName(.c), .major, .remove(degree("4")))
         #expect(
@@ -421,6 +452,7 @@ struct ChordChangeReportTests {
         )
     }
 
+    // feature: transform-lessons, note-edit-revert
     @Test func addingTheFourthToPentatonicMakesNewChordsAndResolvesASuspension() throws {
         let result = try report(NoteName(.c), .majorPentatonic, .add(degree("4")))
         #expect(kinds(result) == [.unchanged, .changed, .added, .unchanged, .unchanged])
@@ -434,6 +466,7 @@ struct ChordChangeReportTests {
         #expect(result.changes[3].after?.triad.name == "Gsus4")
     }
 
+    // feature: transform-lessons, note-edit-revert
     @Test func raisingTheFlatThreeFollowsTheChordOntoItsNewRoot() throws {
         let result = try report(NoteName(.a), .naturalMinor, .raise(degree("♭3")))
         let third = result.changes[2]
@@ -448,6 +481,7 @@ struct ChordChangeReportTests {
         #expect(result.changes[5].after?.triad.name == "F+")
     }
 
+    // feature: transform-lessons, note-edit-revert
     @Test func loweringTheFifthFlattensTheHomeChord() throws {
         let result = try report(NoteName(.c), .major, .lower(degree("5")))
         #expect(result.changes[0].kind == .changed)
@@ -459,12 +493,14 @@ struct ChordChangeReportTests {
         #expect(result.changes[0].after?.triad.name == "C(♭5)")
     }
 
+    // feature: transform-lessons, note-edit-revert
     @Test func raisingTheFifthOfAMinorChordSharpensIt() throws {
         let result = try report(NoteName(.a), .dorian, .raise(degree("5")))
         #expect(result.changes[0].after?.triad.name == "Am(♯5)")
         #expect(result.changes[0].after?.formulaNumeral == "i(♯5)")
     }
 
+    // feature: transform-lessons, note-edit-revert
     @Test func identicalScalesReportNoChange() {
         let scale = Scale(root: NoteName(.e), type: .dorian)
         let report = ChordChangeReport(before: scale, after: scale)
@@ -475,12 +511,14 @@ struct ChordChangeReportTests {
 
 /// Naming an edited scale from its sound.
 struct ScaleIdentifierTests {
+    // feature: transform-lessons
     @Test func majorIsCalledMajorNotIonian() {
         #expect(ScaleIdentifier.match(ScaleType.ionian.definition, among: []) == .builtIn(.major))
         let aeolian = ScaleType.aeolian.definition
         #expect(ScaleIdentifier.match(aeolian, among: []) == .builtIn(.naturalMinor))
     }
 
+    // feature: transform-lessons
     @Test func majorWithAFlatSeventhIsMixolydian() throws {
         let edited = try ScaleType.major.definition.applying(.lower(degree("7")))
         let match = ScaleIdentifier.match(edited, among: [])
@@ -489,6 +527,7 @@ struct ScaleIdentifierTests {
         #expect(match?.reference == .builtIn(.mixolydian))
     }
 
+    // feature: transform-lessons
     @Test func aRespelledScaleIsStillRecognised() {
         let respelled = ScaleDefinition(
             name: "Respelled",
@@ -499,6 +538,7 @@ struct ScaleIdentifierTests {
         #expect(ScaleIdentifier.match(respelled, among: []) == .builtIn(.wholeTone))
     }
 
+    // feature: transform-lessons
     @Test func savedScalesAreRecognisedAndNewOnesAreNot() throws {
         let edited = try ScaleType.major.definition.applying(.raise(degree("5")))
         #expect(ScaleIdentifier.match(edited, among: []) == nil)
@@ -514,6 +554,7 @@ struct ScaleIdentifierTests {
 
 /// A whole lesson: one edit in one key, named and kept.
 struct ScaleTransformationTests {
+    // feature: transform-lessons
     @Test func gMajorWithALoweredSeventh() throws {
         let transformation = try ScaleTransformation(
             root: NoteName(.g),
@@ -528,6 +569,7 @@ struct ScaleTransformationTests {
         #expect(named.after.degrees == transformation.after.degrees)
     }
 
+    // feature: transform-lessons
     @Test func anImpossibleEditThrows() {
         #expect(throws: ScaleEditError.rootCannotChange) {
             try ScaleTransformation(
@@ -538,6 +580,7 @@ struct ScaleTransformationTests {
         }
     }
 
+    // feature: transform-lessons
     @Test func lessonsRoundTripThroughJSON() throws {
         let transformation = try ScaleTransformation(
             root: NoteName(.e, -1),

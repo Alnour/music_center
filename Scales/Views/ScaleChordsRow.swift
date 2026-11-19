@@ -63,56 +63,8 @@ struct ScaleChordsRow: View {
         }
     }
 
-    /// The scale's notes as spelled, to tell which notes of a borrowed chord it lacks.
-    private var scaleNotes: Set<NoteName> {
-        var notes = Set<NoteName>()
-        for tone in scale.tones {
-            notes.insert(tone.name)
-        }
-        return notes
-    }
-
-    /// The notes of a chord the scale doesn't hold: a borrowed chord's 4 or 7, or the
-    /// major third of a blues seventh chord.
-    private func outsideNotes(of chord: ScaleChord) -> [NoteName] {
-        var outside: [NoteName] = []
-        for note in chord.notes where !scaleNotes.contains(note) {
-            outside.append(note)
-        }
-        return outside
-    }
-
-    /// One chip per chord: the scale's chords as they stand, or, after a change, every
-    /// chord the scale had or has, with what happened to it.
-    private var chips: [BoardChordChip.Content] {
-        var chips: [BoardChordChip.Content] = []
-        guard let change else {
-            for chord in scale.boardChords() {
-                let chip = BoardChordChip.Content(
-                    chord: chord,
-                    before: nil,
-                    kind: .unchanged,
-                    newNotes: [],
-                    outsideNotes: outsideNotes(of: chord)
-                )
-                chips.append(chip)
-            }
-            return chips
-        }
-        for chordChange in change.transformation.chordChanges.changes {
-            let shown = chordChange.after ?? chordChange.before
-            guard let shown else { continue }
-            chips.append(
-                BoardChordChip.Content(
-                    chord: shown,
-                    before: chordChange.kind == .changed ? chordChange.before : nil,
-                    kind: chordChange.kind,
-                    newNotes: chordChange.notesNew,
-                    outsideNotes: []
-                )
-            )
-        }
-        return chips
+    private var chips: [BoardChordChipContent] {
+        BoardChordChipContent.chips(for: scale, change: change)
     }
 }
 
@@ -145,17 +97,7 @@ struct BoardChangeRow: View {
 private struct BoardChordChip: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    struct Content {
-        let chord: ScaleChord
-        /// The chord this one replaced, when the change moved one of its notes.
-        let before: ScaleChord?
-        let kind: ChordChange.Kind
-        let newNotes: [NoteName]
-        /// Notes of a borrowed chord that the scale on the board doesn't hold.
-        let outsideNotes: [NoteName]
-    }
-
-    let chip: Content
+    let chip: BoardChordChipContent
     let isRinged: Bool
 
     var body: some View {
@@ -165,7 +107,7 @@ private struct BoardChordChip: View {
                     .font(.system(.subheadline, design: .serif).weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
-                Text(caption)
+                Text(chip.caption)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(captionColor)
             }
@@ -192,7 +134,7 @@ private struct BoardChordChip: View {
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
+        .accessibilityLabel(chip.accessibilityLabel)
         .accessibilityAddTraits(isRinged ? .isSelected : [])
         .accessibilityHint("Rings the chord's notes on the board")
     }
@@ -200,16 +142,6 @@ private struct BoardChordChip: View {
     /// The same green the board paints the chord's notes in, so card and board match.
     private var ringColor: Color {
         FretboardPalette.matching(colorScheme).chordRing
-    }
-
-    /// "was Gm", "new", "gone", or a blank line that keeps every chip the same height.
-    private var caption: String {
-        switch chip.kind {
-        case .unchanged: " "
-        case .changed: "was \(chip.before?.name ?? "")"
-        case .added: "new"
-        case .removed: "gone"
-        }
     }
 
     private var captionColor: Color {
@@ -241,24 +173,5 @@ private struct BoardChordChip: View {
             text += piece
         }
         return text
-    }
-
-    private var accessibilityLabel: String {
-        var names: [String] = []
-        for note in chip.chord.notes {
-            if chip.outsideNotes.contains(note) {
-                names.append("\(note.displayName) (not in the scale)")
-            } else {
-                names.append(note.displayName)
-            }
-        }
-        let notes = names.joined(separator: ", ")
-        let chord = "\(chip.chord.formulaNumeral), \(chip.chord.spokenName): \(notes)"
-        switch chip.kind {
-        case .unchanged: return chord
-        case .changed: return "\(chord). Was \(chip.before?.spokenName ?? "")."
-        case .added: return "\(chord). New."
-        case .removed: return "\(chord). Gone."
-        }
     }
 }

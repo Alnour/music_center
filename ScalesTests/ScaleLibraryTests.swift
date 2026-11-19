@@ -44,6 +44,7 @@ private func raisedFifthLesson(root: NoteName = NoteName(.g)) throws -> ScaleTra
 
 @MainActor
 struct ScaleLibraryTests {
+    // feature: transform-lessons
     @Test func startsEmptyWithoutAFile() {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -52,6 +53,7 @@ struct ScaleLibraryTests {
         #expect(library.lessons.isEmpty)
     }
 
+    // feature: transform-lessons
     @Test func aKnownResultIsFiledUnderTheBuiltInScale() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -65,6 +67,7 @@ struct ScaleLibraryTests {
         #expect(library.lessons(for: .builtIn(.mixolydian)) == [lesson])
     }
 
+    // feature: transform-lessons
     @Test func aNewResultNeedsAName() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -77,6 +80,7 @@ struct ScaleLibraryTests {
         #expect(library.lessons.isEmpty)
     }
 
+    // feature: transform-lessons
     @Test func aNewResultIsSavedAsTheirOwnScale() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -92,6 +96,7 @@ struct ScaleLibraryTests {
         #expect(lesson.title == "G Major → G Augmented Major")
     }
 
+    // feature: transform-lessons
     @Test func savingTheSameNewScaleAgainFilesItUnderTheFirst() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -108,6 +113,7 @@ struct ScaleLibraryTests {
         #expect(second.title == "D Major → D Augmented Major")
     }
 
+    // feature: transform-lessons
     @Test func scalesAndLessonsSurviveARelaunch() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -122,6 +128,7 @@ struct ScaleLibraryTests {
         #expect(secondLaunch.lessons.count == 2)
     }
 
+    // feature: transform-lessons
     @Test func renamingUpdatesTheScaleAndItsLessons() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -137,6 +144,7 @@ struct ScaleLibraryTests {
         #expect(library.lessons.first?.title == "G Major → G Ionian ♯5")
     }
 
+    // feature: transform-lessons
     @Test func renamingRefusesABlankNameOrAnUnknownScale() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -151,6 +159,7 @@ struct ScaleLibraryTests {
         #expect(library.scale(id: id)?.definition.name == "Augmented Major")
     }
 
+    // feature: transform-lessons
     @Test func deletingAScaleRemovesItsLessonsOnly() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -166,6 +175,7 @@ struct ScaleLibraryTests {
         #expect(throws: ScaleLibraryError.scaleNotFound) { try library.deleteScale(id) }
     }
 
+    // feature: transform-lessons
     @Test func deletingALesson() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -178,6 +188,7 @@ struct ScaleLibraryTests {
         #expect(throws: ScaleLibraryError.lessonNotFound) { try library.deleteLesson(lesson.id) }
     }
 
+    // feature: transform-lessons
     @Test func anUnreadableFileIsSetAsideAndTheLibraryStartsEmpty() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -193,6 +204,7 @@ struct ScaleLibraryTests {
         #expect(!FileManager.default.fileExists(atPath: file.url.path()))
     }
 
+    // feature: transform-lessons
     @Test func aFailedSaveLeavesTheLibraryUnchanged() throws {
         let file = TemporaryLibraryFile()
         defer { file.remove() }
@@ -219,6 +231,7 @@ struct ScaleLibraryTests {
 /// The board's settings and the player's own scales.
 @MainActor
 struct CustomScaleSettingsTests {
+    // feature: settings-persist
     @Test func settingsSavedBeforeCustomScalesStillLoad() throws {
         let savedByTheFirstRelease = """
             {"root":{"letter":4,"accidental":0},"scaleType":"dorian","tuning":"standard",
@@ -234,12 +247,14 @@ struct CustomScaleSettingsTests {
         #expect(settings.scaleReference == .builtIn(.dorian))
     }
 
+    // feature: settings-persist
     @Test func builtInSettingsAreSavedExactlyAsBefore() throws {
         let data = try JSONEncoder().encode(PracticeSettings())
         let text = try #require(String(data: data, encoding: .utf8))
         #expect(!text.contains("customScale"))
     }
 
+    // feature: transform-lessons, settings-persist
     @Test func theBoardDrawsAChosenScaleAndRemembersIt() throws {
         let suiteName = "ScalesTests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -264,6 +279,7 @@ struct CustomScaleSettingsTests {
         #expect(relaunched.scale.title == "G Augmented Major")
     }
 
+    // feature: roots-scales, transform-lessons
     @Test func choosingABuiltInScaleOrAnUnknownIdBehaves() throws {
         let suiteName = "ScalesTests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -287,6 +303,7 @@ struct CustomScaleSettingsTests {
         #expect(session.scale.title == "E♭ Augmented Major")
     }
 
+    // feature: transform-lessons
     @Test func renamingAndDeletingReachTheBoard() throws {
         let suiteName = "ScalesTests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -310,6 +327,7 @@ struct CustomScaleSettingsTests {
         #expect(session.scale.title == "G Dorian", "falls back to the built-in chosen before")
     }
 
+    // feature: settings-persist, keyboard
     @Test func settingsSavedBeforeTheKeyboardDefaultToTheGuitar() throws {
         let savedByTheFirstRelease = """
             {"root":{"letter":4,"accidental":0},"scaleType":"dorian","tuning":"standard",
@@ -324,6 +342,7 @@ struct CustomScaleSettingsTests {
         #expect(settings.selectedInstrument == .guitar)
     }
 
+    // feature: settings-persist, keyboard
     @Test func guitarSettingsAreSavedWithoutAnInstrumentKey() throws {
         var settings = PracticeSettings()
         settings.selectedInstrument = .keyboard
@@ -335,6 +354,7 @@ struct CustomScaleSettingsTests {
         #expect(!text.contains("keyboardOctaves"))
     }
 
+    // feature: keyboard, airplay-cast
     @Test func theKeyboardGetsItsOwnTVClip() {
         var keyboard = PracticeSettings()
         keyboard.selectedInstrument = .keyboard
@@ -344,6 +364,7 @@ struct CustomScaleSettingsTests {
         #expect(ClipCache.bundledShortClip(for: keyboard) == nil)
     }
 
+    // feature: airplay-cast
     @Test func aCustomScaleGetsItsOwnTVClip() {
         let definition = ScaleDefinition(
             name: "Augmented Major",

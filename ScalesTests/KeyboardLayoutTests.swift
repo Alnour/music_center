@@ -13,6 +13,7 @@ import Testing
 struct KeyboardLayoutTests {
     private let gMajor = KeyboardLayout(scale: Scale(root: NoteName(.g), type: .major))
 
+    // feature: keyboard
     @Test func octaveRunsFromCToTheNextC() {
         var pitchClasses: [Int] = []
         for key in gMajor.keys {
@@ -23,6 +24,7 @@ struct KeyboardLayoutTests {
         #expect(gMajor.blackKeys.count == 5)
     }
 
+    // feature: keyboard
     @Test func blackKeysAreTheFiveSharpsAndFlats() {
         var blackPitchClasses: [Int] = []
         for key in gMajor.blackKeys {
@@ -31,6 +33,7 @@ struct KeyboardLayoutTests {
         #expect(blackPitchClasses == [1, 3, 6, 8, 10])
     }
 
+    // feature: keyboard
     @Test func gMajorMarksItsSevenNotesWithGAsRoot() {
         var names: [String] = []
         var rootNames: [String] = []
@@ -45,6 +48,7 @@ struct KeyboardLayoutTests {
         #expect(rootNames == ["G"])
     }
 
+    // feature: keyboard
     @Test func gMajorUsesOneBlackKeyAndSkipsF() {
         var blackKeysInScale: [String] = []
         for key in gMajor.blackKeys {
@@ -58,6 +62,7 @@ struct KeyboardLayoutTests {
         #expect(fKey.tone == nil)
     }
 
+    // feature: keyboard
     @Test func bothCKeysCarryTheSameToneInCMajor() {
         let cMajor = KeyboardLayout(scale: Scale(root: NoteName(.c), type: .major))
         let firstKey = cMajor.keys[0]
@@ -66,6 +71,7 @@ struct KeyboardLayoutTests {
         #expect(closingKey.tone == firstKey.tone)
     }
 
+    // feature: keyboard
     @Test func twoOctavesRepeatTheKeysAndCloseOnC() {
         let layout = KeyboardLayout(scale: Scale(root: NoteName(.g), type: .major), octaveCount: 2)
         #expect(layout.keys.count == 25)
@@ -80,6 +86,7 @@ struct KeyboardLayoutTests {
         #expect(rootCount == 2, "G appears once per octave")
     }
 
+    // feature: keyboard
     @Test func aPentatonicMarksItsNotesOnBothCKeys() {
         let layout = KeyboardLayout(scale: Scale(root: NoteName(.a), type: .minorPentatonic))
         var markedCount = 0

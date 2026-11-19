@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Window themes only: Compose draws everything inside. The platform Material themes
+      are enough here and keep the AppCompat and Material Components libraries out of the APK.
+    -->
+    <style name="Theme.Scales" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- The TV is always dark, as Android TV and Fire OS launchers are. -->
+    <style name="Theme.Scales.TV" parent="android:Theme.Material.NoActionBar" />
+</resources>

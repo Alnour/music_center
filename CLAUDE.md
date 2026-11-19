@@ -6,8 +6,9 @@ screen mirroring (Roku, Apple TV, AirPlay smart TVs).
 The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml, never the
 `.xcodeproj` (git-ignored).
 
-- `make build` · `make run` (simulator) · `make test` · `make lint` / `make format`
-  · `make run-device DEVICE="<iPhone name>"` · `scripts/deploy_to_store.sh` (bumps the build
+- `make build` · `make run` (simulator) · `make test` (`make test-unit` logic only,
+  `make test-ui` interface only) · `make lint` / `make format` (also `scripts/ExpectedAnswers`
+  and `Package.swift`) · `make run-device DEVICE="<iPhone name>"` · `scripts/deploy_to_store.sh` (bumps the build
   number, archives, uploads to App Store Connect). The Makefile is self-contained because the shared
   `../ios_apps/tools` scripts only find apps inside the ios_apps folder. Xcode 27 replaced the
   Simulator app with DeviceHub (`Xcode.app/Contents/Applications`); `make run` opens either.
@@ -45,9 +46,11 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   the same root, the blues scales the I7, IV7, V7 of a twelve-bar blues
   (`ScaleChord.isDominantSeventh`, the only seventh chords in the app). A chord note the
   scale lacks is faint on the card and never ringed, and `harmonyNote` under the cards
-  says where the chords come from. The chips are all on one screen with the notes row, the board and a single row holding
-  the Root and Scale menus plus `CompactScaleEditMenu` (nested menus; the Transform tab
-  keeps the row-per-note `ScaleEditMenus`) to change one note in place. Tapping a chip
+  says where the chords come from. The words on each card are plain data in
+  `BoardChordChipContent` (`BoardChordChips.swift`, mirrored in Kotlin). The chips are all on one screen with the notes row, the board and a single row holding
+  the Root and Scale menus plus `CompactScaleEditMenu` (nested menus in `ScaleEditMenuViews.swift`; the Transform tab
+  keeps the row-per-note `ScaleEditMenus` view; the edit choices and menu titles are UI-free in
+  `Music/ScaleEditMenus.swift`) to change one note in place. Tapping a chip
   rings the chord's notes on the board, the notes row, the TV scene and the full-screen
   board (`PracticeSession.ringedChord`, this run only; `ringedNotes` holds only the
   notes the scale has and is empty once the chord is no longer one of the cards; `ChordRing` draws the ring; chord notes take the palette's
@@ -121,3 +124,68 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   HomeKit › Require Code). Roku's control protocol (port 8060) is handy for diagnosis
   (`curl http://<roku>:8060/query/active-app`) but Roku forbids third-party mobile apps from
   sending it commands, so it is not a casting path for this app.
+- Android (branch `android`; each wave's agents work in worktrees on `android/w<N>-<letter>`
+  and the orchestrator merges them in one "Wave N integration" commit, then `android` merges
+  to `main` after the owner gate): `android/` holds three Gradle modules, `core` (pure Kotlin
+  JVM: `music`, `session`, `drums`, `board` mirror `Scales/Music`, `Scales/Session`,
+  `Scales/Drums` and the geometry files file for file, same type and member names), `ui`
+  (Compose Foundation painters shared by phone and TV) and `app` (one APK, package
+  `com.alnourkhalifa.scales`, launchers `.app.phone.PhoneActivity` and `.app.tv.TvActivity`;
+  `PhoneActivity` hands a Fire OS or Android TV device to `TvActivity`). Phone screens use
+  Material 3 and never `androidx.tv`; TV screens under `app/tv` use tv-material and never
+  `androidx.compose.material3`, D-pad only, files prefixed `Tv`. Make targets, defined in
+  `scripts/android.mk`: `android-setup` (SDK 37, emulators; once) · `build-android` ·
+  `test-android` · `test-android-ui` · `run-android` · `run-android-tv` ·
+  `run-fire FIRE=<ip>` · `lint-android` / `format-android` · `bundle-android` ·
+  `screenshots-android`. `features.json` registers every feature with a status per platform
+  (`required`, `later` + `laterUntil`, `no` + `reason`); tests prove a feature with a
+  `// feature: id1, id2` comment on one of the three lines above `@Test func`, `func test…(`
+  or Kotlin `@Test`, and `make parity` (`scripts/check_parity.py`, `--release` fails on any
+  `later`) checks every required cell has one; `make features` prints the registry.
+  `make mirror` (`scripts/check_mirror.py`) checks the Swift/Kotlin twins; its `PENDING` set
+  shrinks per wave. `expected/answers.json` is written from the Swift code by `make answers`
+  (`Package.swift`, target `scripts/ExpectedAnswers`) and read by the Kotlin tests;
+  `make answers-check` fails when it is stale. `make verify` (parity, mirror, both lints,
+  answers-check, iOS and Mac unit tests, Android unit tests and build; ~4 min) runs before
+  every commit and in `.githooks/pre-push` (enable once: `git config core.hooksPath
+  .githooks`); `make verify-all` adds the interface tests on iPhone, iPad and the Android
+  emulators and runs before each owner gate and store upload.
+- Android release: `make bundle-android` runs `parity --release`, builds the R8 release AAB
+  (Play) and APK (Amazon; `app-release-unsigned.apk` without the owner's upload key, whose
+  details live only in `~/.gradle/gradle.properties`) and runs `scripts/check_apk.sh`
+  (native allow-list, both ARM ABIs, 16 KB alignment, leanback/touchscreen not required, no
+  extra permissions, banner, versionCode, targetSdk floor). `make android-bump`
+  (`scripts/bump_android_version.sh`) raises `versionCode` in `android/version.properties`
+  before each upload. `make screenshots-android` (`ANDROID_SHOTS=phone|tablet|tv`) runs
+  `StoreScreenshots` / `TvStoreScreenshots` with `am instrument` and pulls the PNGs into
+  `Store/android/screenshots/`. Listing text, assets and the owner's steps are in
+  `Store/android/listing.md`. Agents never upload to Play or Amazon.
+
+## Adding a feature (every platform, every time)
+
+1. Register the id in `features.json` with a status per platform (`later` needs
+   `laterUntil`, `no` needs a `reason`; `test` is `ui`, `any` or `manual`, and `manual` needs
+   a `reason`). `make parity` now lists the missing tests. During a wave only the
+   integration commit edits this file.
+2. Logic in `Scales/Music|Session|Drums/X.swift` (no UI imports) and its Kotlin twin
+   `android/core/src/main/kotlin/com/alnourkhalifa/scales/core/{music,session,drums}/X.kt`,
+   same names. `make mirror`.
+3. If the logic produces something players see, add a section or cases to
+   `scripts/ExpectedAnswers/main.swift`, `make answers`, commit `expected/answers.json`, and
+   teach the matching `Answers…Test.kt`. Write sets and dictionaries sorted.
+4. A new setting: optional and nil for its default in `PracticeSettings.swift`; mirror it in
+   `PracticeSettings.kt` and add one read and one write line in `core/session/SettingsStore.kt`;
+   `make answers`.
+5. iPhone/iPad/Mac: SwiftUI view with accessibility labels; tagged tests in `ScalesTests` and
+   `ScalesUITests`. Identifiers shared with Android test tags: `tvMenu`, `boardSettings`,
+   `changeBoardNote`, `boardChords`, `revertBoardChange`, `tempoLabel`, `addNote`,
+   `editNote-<label>`, `myScale-<name>`, `saveLessonButton`, `scaleNameField`.
+6. Android phone/tablet: Compose screen in `android/app/.../app/phone/` (Material 3, never
+   `androidx.tv`); tagged test in the screen's own file under `androidTest/.../app/phone/`.
+7. Android TV: screen or panel row in `android/app/.../app/tv/` (tv-material, never
+   material3), D-pad only; key-press test in the screen's own file under
+   `androidTest/.../app/tv/`. Or `androidTv: "no"` with a reason.
+8. `make verify`, then `make verify-all`.
+9. If the looks changed: `make screenshots`, `make screenshots-ipad`,
+   `make screenshots-android`, and compare them side by side.
+10. A line in this file.

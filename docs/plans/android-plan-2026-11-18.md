@@ -469,3 +469,30 @@ headroom on a 1 GB stick; Compose speed there; `release(37)` mapping; `tv_1080p`
 Android 9 image; Fire OS launcher behaviour with two launcher categories; Play TV reviewers' view
 of the keep-awake timer; privacy policy requirement for a no-data app. All counts and hours are
 estimates.
+
+---
+
+## Status on 18 November 2026, end of day
+
+Every wave is built on branch `android-int`, the integration branch cut from `android` (the
+`android` branch in the main checkout still carries Alnour's uncommitted pentatonic/blues
+harmony work, so it was not touched). `make verify-all` passes: parity, mirror, Swift and
+Kotlin lint, answers freshness, iOS and Mac unit tests, Kotlin unit tests, the iPhone and iPad
+UI tests, and the phone and TV instrumented suites.
+
+| Wave | Result |
+|---|---|
+| 0 | `Package.swift` + `scripts/ExpectedAnswers/` write `expected/answers.json` (17 sections, 3.1 MB, `make answers`); `features.json` + `scripts/check_parity.py` + `scripts/check_mirror.py`; `make verify`/`verify-ui`/`verify-all`; `android/` scaffolding with Gradle 9.9.1, AGP 9.5.1, Kotlin 2.4.21; four emulators |
+| 1 | `android/core`: every Swift logic file has its Kotlin twin (32 of 32), 160+ JVM tests read the answers file |
+| 2 | `android/ui`: fretboard, keyboard, notes row, TV layout, chord table, chord chips, drum staff; the bundled accidentals font (`scripts/build_music_font.py`: bold Noto Sans Symbols ♭♮♯ + Noto Music 𝄪𝄫, Roboto metrics, regular and bold files) |
+| 3 | Phone: Scales screen with toolbar, menus, sheets, full-screen board; Chords; Transform with lessons and My Scales; Drums with streaming AudioTrack. 18 instrumented tests |
+| 4 | TV: board with focusable chord chips, options panel, choice lists, change-a-note lists, keep-board-on timer, chord tables, drums. 26 instrumented tests. Back is handled once, in `TvApp` |
+| 5 | Release build (`make bundle-android`, 3.0 MB APK, 4.4 MB AAB, `scripts/check_apk.sh` green), `make android-bump`, store screenshots for phone, tablet and TV, `Store/android/listing.md` with the owner-only checklist |
+
+Registry: 18 features, every required cell has a tagged test on iOS, Android phone and
+Android TV (`make parity`: 0 errors, 0 warnings).
+
+Left for Alnour: merge `android-int` into `android` once the harmony work is committed (then
+`make answers` to carry `boardChords()` into the answers file and port it to Kotlin per the
+CLAUDE.md recipe); the upload keystore and store uploads (`Store/android/listing.md`); a real
+Fire TV stick check; the Amazon background image.
