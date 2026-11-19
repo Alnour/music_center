@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +43,62 @@ private const val TV_MARGIN_SHARE = 0.05
 private val HINT_DURATION = 5.seconds
 
 /**
+ * The focus requesters joining the TV board to the controls under it, kept by `TvApp` for
+ * the screen's life.
+ *
+ * Why it is hoisted that far: the board box and the chips are separate composables, yet each
+ * needs the other's [FocusRequester] (the board sends Down to [below], the chips send Up to
+ * [board]), and Back from a chip must return to the board before it can leave the app. Back
+ * reaches the app through the activity's back dispatcher on the key's release, and only
+ * `TvApp` has a `BackHandler`; it asks [returnToBoard] first.
+ *
+ * @property board the board box, where Up and Back from the chips land.
+ * @property below where Down from the board lands. The row under the board attaches it to the
+ *   "Back to …" button when a note change is shown, otherwise to the ringed or first chip.
+ */
+@Stable
+class TvBoardFocusLinks {
+    val board: FocusRequester = FocusRequester()
+    val below: FocusRequester = FocusRequester()
+
+    /** True while a chip or the "Back to …" button holds focus; set by the row. */
+    var isBelowBoardFocused: Boolean by mutableStateOf(false)
+
+    /**
+     * Back's first stop: when focus is under the board it moves to the board and this returns
+     * true, so the caller does nothing more; otherwise false and Back carries on as usual.
+     */
+    fun returnToBoard(): Boolean {
+        if (!isBelowBoardFocused) {
+            return false
+        }
+        board.requestFocus()
+        return true
+    }
+}
+
+/** One [TvBoardFocusLinks] for the TV screen, kept while the activity's composition lives. */
+@Composable
+fun rememberTvBoardFocusLinks(): TvBoardFocusLinks = remember { TvBoardFocusLinks() }
+
+/**
+ * What `TvBoardScreen` hands to the slot under the board: the [links] and whether anything
+ * there may take focus now. [canFocus] is false while the options panel covers the board, so
+ * focus can't slip from the panel onto a chip the player can't see is focused.
+ */
+@Immutable
+data class TvBoardFocus(
+    val links: TvBoardFocusLinks,
+    val canFocus: Boolean,
+) {
+    val board: FocusRequester
+        get() = links.board
+
+    val below: FocusRequester
+        get() = links.below
+}
+
+/**
  * The TV's start screen: the saved board full screen, 5% margins all round (Google's 48 dp
  * and 27 dp, Amazon's 90% fill), the background running to the screen's edge.
  *
@@ -50,32 +108,44 @@ private val HINT_DURATION = 5.seconds
  * back onto it; when it turns true again the board takes focus back.
  *
  * [bottomContent] sits under the board inside the margins; the chord chips go there. Its
- * focusable controls are children of the board box, and the focus rules between the box and
- * them belong to whoever fills the slot (extend the box's `focusProperties`).
+ * focusable controls are children of the board box, so focus can't reach them by searching:
+ * the board sends Down to [TvBoardFocusLinks.below], which the slot attaches to its first
+ * control, and the slot sends Up to [TvBoardFocusLinks.board]. [links] is passed in by
+ * `TvApp`, whose Back handler uses it to return from the chips to the board. The same
+ * [canFocus] flag reaches the slot, so nothing under the board takes focus while the panel is
+ * open.
  */
 @Composable
 fun TvBoardScreen(
     canFocus: Boolean,
     onOpenPanel: () -> Unit,
     modifier: Modifier = Modifier,
-    bottomContent: (@Composable () -> Unit)? = null,
+    links: TvBoardFocusLinks = rememberTvBoardFocusLinks(),
+    bottomContent: (@Composable (TvBoardFocus) -> Unit)? = null,
 ) {
     val app = rememberScalesApplication()
     val state = app.sessionState.value
     val settings = state.settings
-    val requester = remember { FocusRequester() }
+    val requester = links.board
+    val belowRequester = links.below
+    val focus = TvBoardFocus(links = links, canFocus = canFocus)
     LaunchedEffect(canFocus) {
         if (canFocus) {
             requestFocusOnceLaidOut(requester)
         }
     }
+    val hasBottomContent = bottomContent != null
     val boxModifier =
         modifier
             .fillMaxSize()
             .testTag("tvBoard")
             .focusRequester(requester)
-            .focusProperties { this.canFocus = canFocus }
-            .onKeyEvent { event -> handleOk(event, onOpenPanel) }
+            .focusProperties {
+                this.canFocus = canFocus
+                if (hasBottomContent) {
+                    down = belowRequester
+                }
+            }.onKeyEvent { event -> handleOk(event, onOpenPanel) }
             .focusable()
     Box(modifier = boxModifier) {
         val palette = FretboardPalette.matching(settings.tvUsesDarkTheme)
@@ -93,7 +163,7 @@ fun TvBoardScreen(
             ringedNotes = state.ringedNotes,
             horizontalMarginShare = TV_MARGIN_SHARE,
             verticalMarginShare = TV_MARGIN_SHARE,
-            bottomContent = bottomContent,
+            bottomContent = bottomContent?.let { content -> { content(focus) } },
         )
         OptionsHint(palette)
     }
