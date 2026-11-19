@@ -66,10 +66,14 @@ test-android:
 	$(GRADLE) :core:test :app:testDebugUnitTest
 
 # Compose interface tests on the phone and TV emulators, booted first if needed.
+# Each emulator runs only its own interface tests: a D-pad walk means nothing on a phone and
+# a touch flow nothing on a TV, and Gradle would otherwise run every test on every device.
+TEST_ARGS := -Pandroid.testInstrumentationRunnerArguments.package
 test-android-ui:
 	scripts/android_boot.sh $(PHONE_AVD) $(PHONE_PORT)
 	scripts/android_boot.sh $(TV_AVD) $(TV_PORT)
-	$(GRADLE) connectedDebugAndroidTest
+	cd android && ANDROID_SERIAL=emulator-$(PHONE_PORT) ./gradlew --console=plain connectedDebugAndroidTest $(TEST_ARGS)=$(ANDROID_ID).app.phone
+	cd android && ANDROID_SERIAL=emulator-$(TV_PORT) ./gradlew --console=plain connectedDebugAndroidTest $(TEST_ARGS)=$(ANDROID_ID).app.tv
 
 run-android: build-android
 	scripts/android_boot.sh $(PHONE_AVD) $(PHONE_PORT)
