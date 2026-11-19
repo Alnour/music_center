@@ -181,9 +181,11 @@ def check(registry, release):
             counts[label] = counts.get(label, 0) + 1
             if error:
                 errors.append(error)
+            # A logic test under android/core proves both Android columns at once, so it is
+            # no mistake for it to carry a feature the TV does not offer; only an interface
+            # test written for a platform marked "no" is worth a warning.
             ui_tag = (feature["id"], platform, "ui") in hits
-            logic_tag = (feature["id"], platform, "logic") in hits
-            if label == "n/a" and (ui_tag or logic_tag):
+            if label == "n/a" and ui_tag:
                 warnings.append(f"{feature['id']} is tagged for {platform}, which is marked no")
         print(row)
     summary = " · ".join(f"{label} {count}" for label, count in sorted(counts.items()))

@@ -11,10 +11,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -24,10 +21,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -47,10 +41,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -70,10 +61,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -83,10 +71,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -106,10 +91,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": {
         "ios": "manual",
@@ -124,10 +106,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -137,10 +116,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -150,10 +126,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -174,10 +147,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -187,10 +157,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
@@ -200,10 +167,7 @@
       "platforms": {
         "ios": "required",
         "androidPhone": "required",
-        "androidTv": "later"
-      },
-      "laterUntil": {
-        "androidTv": "wave 4"
+        "androidTv": "required"
       },
       "test": "ui"
     },
