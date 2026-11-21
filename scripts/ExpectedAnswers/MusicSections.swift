@@ -117,6 +117,26 @@ func tuningsSection() -> [TuningAnswer] {
     return tunings
 }
 
+/// The bass guitar's tunings, in the same shape as the guitar's.
+func bassTuningsSection() -> [TuningAnswer] {
+    var tunings: [TuningAnswer] = []
+    for tuning in BassTuning.allCases {
+        var pitchClasses: [Int] = []
+        for note in tuning.openStrings {
+            pitchClasses.append(note.pitchClass)
+        }
+        let answer = TuningAnswer(
+            rawValue: tuning.rawValue,
+            displayName: tuning.displayName,
+            shortName: tuning.shortName,
+            openStrings: displayNames(tuning.openStrings),
+            openPitchClasses: pitchClasses
+        )
+        tunings.append(answer)
+    }
+    return tunings
+}
+
 // MARK: - spellings
 
 struct ToneAnswer: Encodable {
@@ -242,29 +262,59 @@ func fretboardsSection() -> [FretboardAnswer] {
                 tuning: tuning,
                 fretCount: fretCount
             )
-            var strings: [GuitarStringAnswer] = []
-            for guitarString in layout.strings {
-                var tones: [String?] = []
-                for tone in guitarString.tonesByFret {
-                    tones.append(toneLabel(tone))
-                }
-                let answer = GuitarStringAnswer(
-                    openNote: guitarString.openNote.displayName,
-                    tonesByFret: tones
-                )
-                strings.append(answer)
-            }
             let board = FretboardAnswer(
                 root: root.displayName,
                 tuning: tuning.rawValue,
                 scaleType: type.rawValue,
                 fretCount: fretCount,
-                strings: strings
+                strings: stringAnswers(layout)
             )
             boards.append(board)
         }
     }
     return boards
+}
+
+/// The bass guitar's neck: G at 24 frets, every bass tuning × every scale type.
+func bassFretboardsSection() -> [FretboardAnswer] {
+    let root = NoteName(.g)
+    let fretCount = 24
+    var boards: [FretboardAnswer] = []
+    for tuning in BassTuning.allCases {
+        for type in ScaleType.allCases {
+            let layout = FretboardLayout(
+                scale: Scale(root: root, type: type),
+                openStrings: tuning.openStrings,
+                fretCount: fretCount
+            )
+            let board = FretboardAnswer(
+                root: root.displayName,
+                tuning: tuning.rawValue,
+                scaleType: type.rawValue,
+                fretCount: fretCount,
+                strings: stringAnswers(layout)
+            )
+            boards.append(board)
+        }
+    }
+    return boards
+}
+
+/// Every string of a neck, thickest first, with the tone on each fret.
+func stringAnswers(_ layout: FretboardLayout) -> [GuitarStringAnswer] {
+    var strings: [GuitarStringAnswer] = []
+    for guitarString in layout.strings {
+        var tones: [String?] = []
+        for tone in guitarString.tonesByFret {
+            tones.append(toneLabel(tone))
+        }
+        let answer = GuitarStringAnswer(
+            openNote: guitarString.openNote.displayName,
+            tonesByFret: tones
+        )
+        strings.append(answer)
+    }
+    return strings
 }
 
 // MARK: - keyboards

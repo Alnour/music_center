@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -55,8 +56,8 @@ private const val BOARD_TEXT_CACHE_SIZE = 64
  * minimum widths, which are points on iOS, would shrink to hairlines on a dense screen. Text
  * is measured with a font scale of 1, as SwiftUI's fixed sizes ignore Dynamic Type, so a
  * large system text setting never bursts the circles. Labels are measured once per size and
- * settings in `drawWithCache`. The board also carries its own spoken label ([scaleTitle]),
- * which iOS sets on the screen around it.
+ * settings in `drawWithCache`. The board also carries its own spoken label ([spokenName] and
+ * [scaleTitle], "Bass fretboard showing G Major"), which iOS sets on the screen around it.
  */
 @Composable
 fun FretboardView(
@@ -68,13 +69,14 @@ fun FretboardView(
     ringedNotes: Set<NoteName> = emptySet(),
     thinStringOnTop: Boolean = true,
     isLeftHanded: Boolean = false,
+    spokenName: String = GUITAR_BOARD_SPOKEN_NAME,
 ) {
     val textMeasurer = rememberTextMeasurer(cacheSize = BOARD_TEXT_CACHE_SIZE)
     val look = BoardLook(labelStyle, palette, ringedNotes)
     Spacer(
         modifier =
             modifier
-                .boardSemantics("Fretboard showing $scaleTitle", labelStyle)
+                .boardSemantics("$spokenName showing $scaleTitle", labelStyle)
                 .drawWithCache {
                     val canvas = BoardCanvas(textMeasurer, density)
                     val geometry =
@@ -111,6 +113,7 @@ fun PhoneFretboard(
     ringedNotes: Set<NoteName> = emptySet(),
     thinStringOnTop: Boolean = true,
     isLeftHanded: Boolean = false,
+    spokenName: String = GUITAR_BOARD_SPOKEN_NAME,
 ) {
     BoxWithConstraints(modifier = modifier.background(palette.background)) {
         val columnUnits = FretboardGeometry.columnUnits(layout.fretCount)
@@ -136,9 +139,16 @@ fun PhoneFretboard(
             ringedNotes = ringedNotes,
             thinStringOnTop = thinStringOnTop,
             isLeftHanded = isLeftHanded,
+            spokenName = spokenName,
         )
     }
 }
+
+/** What TalkBack calls the guitar's neck, as VoiceOver does on iOS. */
+const val GUITAR_BOARD_SPOKEN_NAME = "Fretboard"
+
+/** What TalkBack calls the bass guitar's neck, so it is not taken for the guitar's. */
+const val BASS_BOARD_SPOKEN_NAME = "Bass fretboard"
 
 /** The narrowest cell a phone fretboard gets. */
 private val minimumPhoneCellWidth = 46.dp
@@ -170,8 +180,8 @@ private fun phoneCellWidth(
 /**
  * The fretboard's drawing, prepared for one size and one set of settings: every label is
  * measured up front, and [draw] only places them, so a redraw costs no text layout.
- * The draw order is Swift's: fret numbers, inlays, wires, strings, then the note circles on
- * top of everything.
+ * The draw order is Swift's: fret numbers, inlays, wires, strings, the capo's bar, then the
+ * note circles on top of everything.
  */
 private class FretboardPainter(
     private val layout: FretboardLayout,
@@ -190,6 +200,7 @@ private class FretboardPainter(
         scope.drawInlays()
         scope.drawFretWires()
         scope.drawStrings()
+        scope.drawCapo()
         for (circle in noteCircles) {
             scope.drawNoteCircle(circle, look.palette.chordRing)
         }
@@ -306,6 +317,24 @@ private class FretboardPainter(
             val labelCenter = canvas.point(geometry.tuningLabelX, y)
             drawTextCentred(openStringLabels[row], labelCenter)
         }
+    }
+
+    /** The capo's bar across the strings, under the notes of its own fret: a rounded bar
+     *  whose corner radius is half its width. */
+    private fun DrawScope.drawCapo() {
+        if (layout.capoFret <= 0) {
+            return
+        }
+        val bar = geometry.capoBarRect(layout.capoFret, stringCount)
+        val topLeft = canvas.point(bar.x, bar.y)
+        val barSize = CanvasSize(canvas.px(bar.width), canvas.px(bar.height))
+        val cornerRadius = canvas.px(bar.width / 2)
+        drawRoundRect(
+            color = look.palette.capo,
+            topLeft = topLeft,
+            size = barSize,
+            cornerRadius = CornerRadius(cornerRadius, cornerRadius),
+        )
     }
 }
 

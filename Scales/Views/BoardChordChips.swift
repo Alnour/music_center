@@ -23,10 +23,17 @@ struct BoardChordChipContent: Equatable, Sendable {
     /// Notes of a borrowed chord that the scale on the board doesn't hold: a pentatonic's
     /// 4 or 7, or the major third of a blues seventh chord. Shown faint and never ringed.
     let outsideNotes: [NoteName]
+    /// The shape the chord is fingered as with the capo on; nil without a capo.
+    let capoShape: CapoChordShape?
 
     /// One card per chord: the scale's chords as they stand, or, after a change, every
-    /// chord the scale had or has, with what happened to it.
-    static func chips(for scale: Scale, change: BoardChange?) -> [BoardChordChipContent] {
+    /// chord the scale had or has, with what happened to it. With a capo on, each card
+    /// also carries the shape to finger (`PracticeSettings.capoTransposition`).
+    static func chips(
+        for scale: Scale,
+        change: BoardChange?,
+        capo: CapoTransposition? = nil
+    ) -> [BoardChordChipContent] {
         var chips: [BoardChordChipContent] = []
         guard let change else {
             var scaleNotes = Set<NoteName>()
@@ -43,7 +50,8 @@ struct BoardChordChipContent: Equatable, Sendable {
                     before: nil,
                     kind: .unchanged,
                     newNotes: [],
-                    outsideNotes: outsideNotes
+                    outsideNotes: outsideNotes,
+                    capoShape: capo?.shape(for: chord)
                 )
                 chips.append(chip)
             }
@@ -61,7 +69,8 @@ struct BoardChordChipContent: Equatable, Sendable {
                 before: before,
                 kind: chordChange.kind,
                 newNotes: chordChange.notesNew,
-                outsideNotes: []
+                outsideNotes: [],
+                capoShape: capo?.shape(for: shown)
             )
             chips.append(chip)
         }
@@ -79,7 +88,8 @@ struct BoardChordChipContent: Equatable, Sendable {
     }
 
     /// What VoiceOver reads for the card: "V, D major: D, F♯, A", then what happened to the
-    /// chord after a change ("Was D major.", "New.", "Gone.").
+    /// chord after a change ("Was D major.", "New.", "Gone."), then the shape fingered
+    /// with a capo on ("Fingered as C major, an open chord.").
     var accessibilityLabel: String {
         var names: [String] = []
         for note in chord.notes {
@@ -91,11 +101,17 @@ struct BoardChordChipContent: Equatable, Sendable {
         }
         let notes = names.joined(separator: ", ")
         let spokenChord = "\(chord.formulaNumeral), \(chord.spokenName): \(notes)"
+        let spokenChange: String
         switch kind {
-        case .unchanged: return spokenChord
-        case .changed: return "\(spokenChord). Was \(before?.spokenName ?? "")."
-        case .added: return "\(spokenChord). New."
-        case .removed: return "\(spokenChord). Gone."
+        case .unchanged: spokenChange = spokenChord
+        case .changed: spokenChange = "\(spokenChord). Was \(before?.spokenName ?? "")."
+        case .added: spokenChange = "\(spokenChord). New."
+        case .removed: spokenChange = "\(spokenChord). Gone."
         }
+        guard let capoShape else { return spokenChange }
+        if kind == .unchanged {
+            return "\(spokenChange). \(capoShape.spokenSentence)"
+        }
+        return "\(spokenChange) \(capoShape.spokenSentence)"
     }
 }

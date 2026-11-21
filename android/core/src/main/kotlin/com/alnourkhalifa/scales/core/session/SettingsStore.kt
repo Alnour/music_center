@@ -1,5 +1,6 @@
 package com.alnourkhalifa.scales.core.session
 
+import com.alnourkhalifa.scales.core.music.BassTuning
 import com.alnourkhalifa.scales.core.music.CustomScale
 import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.music.Letter
@@ -15,8 +16,8 @@ import com.alnourkhalifa.scales.core.music.Tuning
  * one JSON value, so one outdated field resets everything; here each setting has its own key,
  * so a missing or unreadable value falls back to its own default and the rest still load.
  * The saved scale is the one value stored as JSON, in Swift's shape. Optional settings
- * (`customScale`, `instrument`, `keyboardOctaves`) are removed when null, the way Swift's
- * JSON leaves them out, so a default player stores none of them.
+ * (`customScale`, `instrument`, `keyboardOctaves`, `capoFret`, `bassTuning`) are removed when
+ * null, the way Swift's JSON leaves them out, so a default player stores none of them.
  *
  * Adding a setting means one read line in [load] and one write line in [save].
  */
@@ -45,6 +46,8 @@ class SettingsStore(
             customScale = read(CUSTOM_SCALE, ::parseCustomScale),
             instrument = read(INSTRUMENT, Instrument::fromRawValue),
             keyboardOctaves = read(KEYBOARD_OCTAVES, String::toIntOrNull),
+            capoFret = read(CAPO_FRET, String::toIntOrNull),
+            bassTuning = read(BASS_TUNING, BassTuning::fromRawValue),
         )
     }
 
@@ -61,6 +64,8 @@ class SettingsStore(
         write(CUSTOM_SCALE, settings.customScale?.let(ScaleLibraryJson::encodeCustomScale))
         write(INSTRUMENT, settings.instrument?.rawValue)
         write(KEYBOARD_OCTAVES, settings.keyboardOctaves)
+        write(CAPO_FRET, settings.capoFret)
+        write(BASS_TUNING, settings.bassTuning?.rawValue)
     }
 
     /** A number as its decimal text, or no key for null. */
@@ -114,6 +119,8 @@ class SettingsStore(
         const val CUSTOM_SCALE = "customScale"
         const val INSTRUMENT = "instrument"
         const val KEYBOARD_OCTAVES = "keyboardOctaves"
+        const val CAPO_FRET = "capoFret"
+        const val BASS_TUNING = "bassTuning"
 
         private fun parseLetter(text: String): Letter? {
             val rawValue = text.toIntOrNull() ?: return null

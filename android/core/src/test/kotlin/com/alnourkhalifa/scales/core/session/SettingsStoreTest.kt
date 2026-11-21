@@ -1,6 +1,8 @@
 package com.alnourkhalifa.scales.core.session
 
 import com.alnourkhalifa.scales.core.Answers
+import com.alnourkhalifa.scales.core.music.BassTuning
+import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.music.Letter
 import com.alnourkhalifa.scales.core.music.NoteName
 import com.alnourkhalifa.scales.core.music.ScaleType
@@ -99,9 +101,67 @@ class SettingsStoreTest {
                 SettingsStore.CUSTOM_SCALE,
                 SettingsStore.INSTRUMENT,
                 SettingsStore.KEYBOARD_OCTAVES,
+                SettingsStore.CAPO_FRET,
+                SettingsStore.BASS_TUNING,
             )
         val left = values.keys().intersect(optionalKeys)
         assertTrue("optional keys left behind: $left", left.isEmpty())
         assertEquals(PracticeSettings(), SettingsStore(values).load())
+    }
+
+    // feature: settings-persist, capo-shapes
+    @Test
+    fun aCapoFretIsSavedAndNoCapoRemovesTheKey() {
+        val values = InMemoryKeyValueStore()
+        val withCapo = PracticeSettings().withSelectedCapoFret(5)
+
+        SettingsStore(values).save(withCapo)
+
+        assertEquals("5", values.getString(SettingsStore.CAPO_FRET))
+        assertEquals(5, SettingsStore(values).load().selectedCapoFret)
+
+        val noCapo = withCapo.withSelectedCapoFret(0)
+        SettingsStore(values).save(noCapo)
+
+        assertEquals(null, values.getString(SettingsStore.CAPO_FRET))
+        assertEquals(PracticeSettings(), SettingsStore(values).load())
+    }
+
+    // feature: settings-persist, bass
+    @Test
+    fun aBassTuningIsSavedAndStandardRemovesTheKey() {
+        val values = InMemoryKeyValueStore()
+        val bass = PracticeSettings().withSelectedInstrument(Instrument.BASS)
+        val dropD = bass.withSelectedBassTuning(BassTuning.DROP_D)
+
+        SettingsStore(values).save(dropD)
+
+        assertEquals("bass", values.getString(SettingsStore.INSTRUMENT))
+        assertEquals("dropD", values.getString(SettingsStore.BASS_TUNING))
+        val loaded = SettingsStore(values).load()
+        assertEquals(BassTuning.DROP_D, loaded.selectedBassTuning)
+        assertEquals("Bass · Drop D", loaded.boardCaption)
+        assertEquals(4, loaded.boardOpenStrings.size)
+
+        val standard = dropD.withSelectedBassTuning(BassTuning.STANDARD)
+        SettingsStore(values).save(standard.withSelectedInstrument(Instrument.GUITAR))
+
+        assertEquals(null, values.getString(SettingsStore.BASS_TUNING))
+        assertEquals(PracticeSettings(), SettingsStore(values).load())
+    }
+
+    // feature: settings-persist, capo-shapes
+    @Test
+    fun settingsSavedBeforeTheCapoLoadWithNoCapo() {
+        val values = InMemoryKeyValueStore()
+        values.putString(SettingsStore.TUNING, "dropD")
+        values.putString(SettingsStore.FRET_COUNT, "12")
+
+        val loaded = SettingsStore(values).load()
+
+        assertEquals(null, loaded.capoFret)
+        assertEquals(0, loaded.selectedCapoFret)
+        assertEquals(0, loaded.boardCapoFret)
+        assertEquals("Drop D", loaded.boardCaption)
     }
 }

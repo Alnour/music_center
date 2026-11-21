@@ -3,6 +3,8 @@
 
 package com.alnourkhalifa.scales.core.board
 
+import com.alnourkhalifa.scales.core.music.CapoChordShape
+import com.alnourkhalifa.scales.core.music.CapoTransposition
 import com.alnourkhalifa.scales.core.music.ChordChange
 import com.alnourkhalifa.scales.core.music.NoteName
 import com.alnourkhalifa.scales.core.music.Scale
@@ -28,6 +30,8 @@ data class BoardChordChipContent(
     /** Notes of a borrowed chord that the scale on the board doesn't hold: a pentatonic's 4
      *  or 7, or the major third of a blues seventh chord. Shown faint and never ringed. */
     val outsideNotes: List<NoteName>,
+    /** The shape the chord is fingered as with the capo on; null without a capo. */
+    val capoShape: CapoChordShape? = null,
 ) {
     /** "was Gm", "new", "gone", or a blank line that keeps every card the same height. */
     val caption: String
@@ -40,7 +44,8 @@ data class BoardChordChipContent(
             }
 
     /** What TalkBack reads for the card: "V, D major: D, F♯, A", then what happened to the
-     *  chord after a change ("Was D major.", "New.", "Gone."). */
+     *  chord after a change ("Was D major.", "New.", "Gone."), then the shape fingered with a
+     *  capo on ("Fingered as C major, an open chord."). */
     val accessibilityLabel: String
         get() {
             val names = mutableListOf<String>()
@@ -53,24 +58,33 @@ data class BoardChordChipContent(
             }
             val notes = names.joinToString(", ")
             val spokenChord = "${chord.formulaNumeral}, ${chord.spokenName}: $notes"
-            return when (kind) {
-                ChordChange.Kind.UNCHANGED -> spokenChord
-                ChordChange.Kind.CHANGED -> "$spokenChord. Was ${before?.spokenName ?: ""}."
-                ChordChange.Kind.ADDED -> "$spokenChord. New."
-                ChordChange.Kind.REMOVED -> "$spokenChord. Gone."
+            val spokenChange =
+                when (kind) {
+                    ChordChange.Kind.UNCHANGED -> spokenChord
+                    ChordChange.Kind.CHANGED -> "$spokenChord. Was ${before?.spokenName ?: ""}."
+                    ChordChange.Kind.ADDED -> "$spokenChord. New."
+                    ChordChange.Kind.REMOVED -> "$spokenChord. Gone."
+                }
+            val shape = capoShape ?: return spokenChange
+            // An unchanged card's words end without a full stop, the others with one.
+            if (kind == ChordChange.Kind.UNCHANGED) {
+                return "$spokenChange. ${shape.spokenSentence}"
             }
+            return "$spokenChange ${shape.spokenSentence}"
         }
 
-    /** Swift's static `chips(for:change:)`. */
+    /** Swift's static `chips(for:change:capo:)`. */
     companion object {
         /** One card per chord: the scale's chords as they stand, or, after a change, every
-         *  chord the scale had or has, with what happened to it. */
+         *  chord the scale had or has, with what happened to it. With a capo on, each card
+         *  also carries the shape to finger (`PracticeSettings.capoTransposition`). */
         fun chips(
             scale: Scale,
             change: BoardChange?,
+            capo: CapoTransposition? = null,
         ): List<BoardChordChipContent> {
             if (change == null) {
-                return unchangedChips(scale)
+                return unchangedChips(scale, capo)
             }
             val chips = mutableListOf<BoardChordChipContent>()
             for (chordChange in change.transformation.chordChanges.changes) {
@@ -90,6 +104,7 @@ data class BoardChordChipContent(
                         kind = chordChange.kind,
                         newNotes = chordChange.notesNew,
                         outsideNotes = emptyList(),
+                        capoShape = capo?.shape(shown),
                     )
                 chips.add(chip)
             }
@@ -98,7 +113,10 @@ data class BoardChordChipContent(
 
         /** The scale's chords as they stand (`Scale.boardChords`), each with the notes the
          *  scale lacks, which only a borrowed chord has. */
-        private fun unchangedChips(scale: Scale): List<BoardChordChipContent> {
+        private fun unchangedChips(
+            scale: Scale,
+            capo: CapoTransposition?,
+        ): List<BoardChordChipContent> {
             val scaleNotes = mutableSetOf<NoteName>()
             for (tone in scale.tones) {
                 scaleNotes.add(tone.name)
@@ -118,6 +136,7 @@ data class BoardChordChipContent(
                         kind = ChordChange.Kind.UNCHANGED,
                         newNotes = emptyList(),
                         outsideNotes = outsideNotes,
+                        capoShape = capo?.shape(chord),
                     )
                 chips.add(chip)
             }

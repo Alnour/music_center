@@ -19,53 +19,109 @@ struct TVDisplayView: View {
 
     var body: some View {
         let settings = session.settings
-        let scale = session.scale
         let palette: FretboardPalette = settings.tvUsesDarkTheme ? .dark : .light
         GeometryReader { proxy in
-            let metrics = TVLayoutMetrics(size: proxy.size)
-            VStack(alignment: .leading, spacing: metrics.spacing) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(scale.title)
-                        .font(.system(size: metrics.titleFontSize, weight: .bold, design: .rounded))
-                        .foregroundStyle(palette.title)
-                    Spacer()
-                    Text(boardCaption(for: settings))
-                        .font(
-                            .system(
-                                size: metrics.captionFontSize,
-                                weight: .medium,
-                                design: .rounded
-                            )
-                        )
-                        .foregroundStyle(palette.secondaryText)
-                    if let onClose {
-                        Button("Close", systemImage: "xmark.circle.fill", action: onClose)
-                            .labelStyle(.iconOnly)
-                            .font(.system(size: metrics.closeIconSize))
-                            .foregroundStyle(palette.secondaryText)
-                            .padding(.leading, metrics.closeLeadingPadding)
-                    }
+            if fillsPhone {
+                phoneLayout(size: proxy.size, settings: settings, palette: palette)
+            } else {
+                tvLayout(size: proxy.size, settings: settings, palette: palette)
+            }
+        }
+        .background(palette.background.ignoresSafeArea())
+    }
+
+    /// Whether this layout fills an iPhone held sideways rather than a TV or an iPad.
+    private var fillsPhone: Bool {
+        onClose != nil && DeviceKind.current == .phone
+    }
+
+    /// The TV picture: title row, then the spelled notes, then the board, with margins
+    /// clear of overscan.
+    private func tvLayout(size: CGSize, settings: PracticeSettings, palette: FretboardPalette)
+        -> some View
+    {
+        let scale = session.scale
+        let metrics = TVLayoutMetrics(size: size)
+        return VStack(alignment: .leading, spacing: metrics.spacing) {
+            HStack(alignment: .firstTextBaseline) {
+                title(scale, size: metrics.titleFontSize, palette: palette)
+                Spacer()
+                caption(for: settings, size: metrics.captionFontSize, palette: palette)
+                if onClose != nil {
+                    closeButton(size: metrics.closeIconSize, palette: palette)
+                        .padding(.leading, metrics.closeLeadingPadding)
                 }
+            }
+            ScaleNotesRow(
+                scale: scale,
+                palette: palette,
+                noteSize: metrics.notesFontSize,
+                highlightedNotes: session.ringedNotes
+            )
+            board(for: settings, palette: palette)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.horizontal, metrics.horizontalMargin)
+        .padding(.vertical, metrics.verticalMargin)
+    }
+
+    /// The same picture squeezed onto a phone: one header row holding the title, the
+    /// spelled notes, the tuning and the close button, so the board gets the rest.
+    private func phoneLayout(size: CGSize, settings: PracticeSettings, palette: FretboardPalette)
+        -> some View
+    {
+        let scale = session.scale
+        let metrics = PhoneBoardMetrics(size: size)
+        return VStack(alignment: .leading, spacing: metrics.spacing) {
+            HStack(alignment: .center, spacing: metrics.headerSpacing) {
+                title(scale, size: metrics.titleFontSize, palette: palette)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 ScaleNotesRow(
                     scale: scale,
                     palette: palette,
                     noteSize: metrics.notesFontSize,
                     highlightedNotes: session.ringedNotes
                 )
-                board(for: settings, palette: palette)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .fixedSize()
+                Spacer(minLength: 0)
+                caption(for: settings, size: metrics.captionFontSize, palette: palette)
+                    .lineLimit(1)
+                closeButton(size: metrics.closeIconSize, palette: palette)
             }
-            .padding(.horizontal, metrics.horizontalMargin)
-            .padding(.vertical, metrics.verticalMargin)
+            board(for: settings, palette: palette)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(palette.background.ignoresSafeArea())
+        .padding(.horizontal, metrics.horizontalMargin)
+        .padding(.vertical, metrics.verticalMargin)
+    }
+
+    private func title(_ scale: Scale, size: CGFloat, palette: FretboardPalette) -> some View {
+        Text(scale.title)
+            .font(.system(size: size, weight: .bold, design: .rounded))
+            .foregroundStyle(palette.title)
+    }
+
+    private func caption(for settings: PracticeSettings, size: CGFloat, palette: FretboardPalette)
+        -> some View
+    {
+        Text(settings.boardCaption)
+            .font(.system(size: size, weight: .medium, design: .rounded))
+            .foregroundStyle(palette.secondaryText)
+    }
+
+    private func closeButton(size: CGFloat, palette: FretboardPalette) -> some View {
+        Button("Close", systemImage: "xmark.circle.fill") { onClose?() }
+            .labelStyle(.iconOnly)
+            .font(.system(size: size))
+            .foregroundStyle(palette.secondaryText)
     }
 
     /// The fretboard or the piano octave, whichever instrument the player chose.
     @ViewBuilder
     private func board(for settings: PracticeSettings, palette: FretboardPalette) -> some View {
         switch settings.selectedInstrument {
-        case .guitar:
+        case .guitar, .bass:
             FretboardView(
                 layout: session.layout,
                 labelStyle: settings.labelStyle,
@@ -79,16 +135,9 @@ struct TVDisplayView: View {
                 layout: session.keyboardLayout,
                 labelStyle: settings.labelStyle,
                 palette: palette,
-                ringedNotes: session.ringedNotes
+                ringedNotes: session.ringedNotes,
+                stretchesToFill: fillsPhone
             )
-        }
-    }
-
-    /// The small caption beside the title: the tuning matters on a guitar, not on a piano.
-    private func boardCaption(for settings: PracticeSettings) -> String {
-        switch settings.selectedInstrument {
-        case .guitar: settings.tuning.shortName
-        case .keyboard: Instrument.keyboard.title
         }
     }
 }

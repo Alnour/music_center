@@ -126,6 +126,24 @@ class FretboardGeometry(
     val nutWidth: Double
         get() = max(MIN_NUT_WIDTH, cellWidth * NUT_SHARE)
 
+    /**
+     * The capo's bar: a rounded bar across every string, centred in the capo fret's cell and
+     * reaching a little past the outer strings, as a real capo does. It is narrower than a
+     * note circle, so the notes on the capo's fret (the new open strings) are drawn over it
+     * and stay readable.
+     */
+    fun capoBarRect(
+        fret: Int,
+        stringCount: Int,
+    ): Rect {
+        val width = cellWidth * CAPO_BAR_WIDTH_SHARE
+        val overhang = rowHeight * CAPO_BAR_OVERHANG_SHARE
+        val top = stringY(row = 0) - overhang
+        val bottom = stringY(row = stringCount - 1) + overhang
+        val left = noteX(fret) - width / 2
+        return Rect(x = left, y = top, width = width, height = bottom - top)
+    }
+
     /** The fret numbers above the board. */
     val fretNumberFontSize: Double
         get() = min(rowHeight, cellWidth) * FRET_NUMBER_FONT_SHARE
@@ -171,6 +189,8 @@ class FretboardGeometry(
         private const val FRET_WIRE_SHARE = 0.02
         private const val MIN_NUT_WIDTH = 3.0
         private const val NUT_SHARE = 0.06
+        private const val CAPO_BAR_WIDTH_SHARE = 0.3
+        private const val CAPO_BAR_OVERHANG_SHARE = 0.46
         private const val FRET_NUMBER_FONT_SHARE = 0.38
         private const val OPEN_STRING_FONT_SHARE = 0.32
         private const val LONG_LABEL_FONT_SHARE = 0.78

@@ -62,7 +62,9 @@ private val ThumbDark = Color(0xFF636366)
  * Material's `SegmentedButton` is not used because its outlined segments and tick read as a
  * different control beside the iPhone screenshots, and the tick widens the segment it lands
  * on, shifting the labels each time the choice changes. Every segment takes the width of the
- * widest label, as iOS sizes them, so a long label never squeezes its neighbours.
+ * widest label, as iOS sizes them, so a long label never squeezes its neighbours. Where the
+ * control is narrower than that (six segments across a phone), [segmentWeight] lets a long
+ * word take more of the width than a short one, so "Keyboard" is not cut short beside "Bass".
  *
  * Each segment is a radio button in a selectable group, so TalkBack reads "selected" on the
  * picked one and tests can `assertIsSelected` it. [modifier] sizes the whole control (pass
@@ -77,6 +79,7 @@ fun <T> IosSegmentedControl(
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
     optionTag: ((T) -> String)? = null,
+    segmentWeight: (T) -> Float = { 1f },
 ) {
     val isDark = isSystemInDarkTheme()
     val trackColor = if (isDark) TrackDark else TrackLight
@@ -94,7 +97,7 @@ fun <T> IosSegmentedControl(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         for (option in options) {
-            var segmentModifier = Modifier.weight(1f)
+            var segmentModifier = Modifier.weight(segmentWeight(option))
             if (optionTag != null) {
                 segmentModifier = segmentModifier.testTag(optionTag(option))
             }

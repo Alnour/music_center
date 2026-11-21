@@ -10,7 +10,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.session.SessionState
+import com.alnourkhalifa.scales.ui.BASS_BOARD_SPOKEN_NAME
 import com.alnourkhalifa.scales.ui.FretboardPalette
+import com.alnourkhalifa.scales.ui.GUITAR_BOARD_SPOKEN_NAME
 import com.alnourkhalifa.scales.ui.KeyboardView
 import com.alnourkhalifa.scales.ui.PhoneFretboard
 
@@ -41,7 +43,11 @@ fun PhoneBoard(
             .clip(RoundedCornerShape(BOARD_CORNER_RADIUS))
             .background(palette.background)
     when (settings.selectedInstrument) {
-        Instrument.GUITAR -> {
+        Instrument.GUITAR, Instrument.BASS -> {
+            var spokenName = GUITAR_BOARD_SPOKEN_NAME
+            if (settings.selectedInstrument == Instrument.BASS) {
+                spokenName = BASS_BOARD_SPOKEN_NAME
+            }
             PhoneFretboard(
                 layout = state.layout,
                 scaleTitle = title,
@@ -51,6 +57,7 @@ fun PhoneBoard(
                 ringedNotes = state.ringedNotes,
                 thinStringOnTop = settings.thinStringOnTop,
                 isLeftHanded = settings.isLeftHanded,
+                spokenName = spokenName,
             )
         }
 

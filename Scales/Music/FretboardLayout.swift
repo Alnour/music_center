@@ -17,20 +17,43 @@ struct FretboardLayout: Sendable {
     }
 
     let fretCount: Int
+    /// The fret the capo is on, 0 for no capo. Always below `fretCount`.
+    let capoFret: Int
     /// Thickest string first, matching `Tuning.openStrings`.
     let strings: [GuitarString]
 
-    init(scale: Scale, tuning: Tuning, fretCount: Int) {
+    /// The guitar's neck in one of its six-string tunings.
+    init(scale: Scale, tuning: Tuning, fretCount: Int, capoFret: Int = 0) {
+        self.init(
+            scale: scale,
+            openStrings: tuning.openStrings,
+            fretCount: fretCount,
+            capoFret: capoFret
+        )
+    }
+
+    /// A neck with any set of open strings, thickest first: the guitar's six, or the bass
+    /// guitar's four or five (`BassTuning.openStrings`).
+    ///
+    /// A capo presses every string at its fret, so the frets behind it cannot be played:
+    /// they carry no tones, and the tones on the capo's own fret are the new open strings.
+    init(scale: Scale, openStrings: [NoteName], fretCount: Int, capoFret: Int = 0) {
+        let playableCapoFret = max(0, min(capoFret, fretCount - 1))
         var strings: [GuitarString] = []
-        for openNote in tuning.openStrings {
+        for openNote in openStrings {
             var tonesByFret: [ScaleTone?] = []
             for fret in 0...fretCount {
+                if fret < playableCapoFret {
+                    tonesByFret.append(nil)
+                    continue
+                }
                 let pitchClass = PitchMath.wrap(openNote.pitchClass + fret)
                 tonesByFret.append(scale.tone(forPitchClass: pitchClass))
             }
             strings.append(GuitarString(openNote: openNote, tonesByFret: tonesByFret))
         }
         self.fretCount = fretCount
+        self.capoFret = playableCapoFret
         self.strings = strings
     }
 

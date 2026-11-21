@@ -7,10 +7,11 @@
 
 /// Which instrument the board is drawn for.
 ///
-/// The guitar gets the fretboard; the keyboard gets one piano octave. The choice only
-/// changes how the scale is pictured, so the scale, root and labels are shared.
+/// The guitar and the bass guitar get the fretboard; the keyboard gets piano octaves. The
+/// choice only changes how the scale is pictured, so the scale, root and labels are shared.
 enum Instrument: String, CaseIterable, Codable, Identifiable, Sendable {
     case guitar
+    case bass
     case keyboard
 
     var id: String { rawValue }
@@ -18,7 +19,18 @@ enum Instrument: String, CaseIterable, Codable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .guitar: "Guitar"
+        case .bass: "Bass"
         case .keyboard: "Keyboard"
+        }
+    }
+
+    /// Whether the board is a neck with strings and frets. The fret count, the string
+    /// order and the left-handed switch apply to both fretted instruments, so the screens
+    /// ask this rather than naming the guitar and the bass each time.
+    var isFretted: Bool {
+        switch self {
+        case .guitar, .bass: true
+        case .keyboard: false
         }
     }
 }

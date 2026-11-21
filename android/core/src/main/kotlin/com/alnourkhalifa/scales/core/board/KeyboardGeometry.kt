@@ -20,6 +20,7 @@ import kotlin.math.min
 class KeyboardGeometry(
     size: Size,
     whiteKeyCount: Int,
+    whiteKeyHeightToWidth: Double = KeyboardGeometry.whiteKeyHeightToWidth,
 ) {
     /** Every white key has this width; black keys are a share of it. */
     val whiteKeyWidth: Double
@@ -34,7 +35,7 @@ class KeyboardGeometry(
     val originY: Double
 
     init {
-        val widthToHeight = widthToHeight(whiteKeyCount)
+        val widthToHeight = whiteKeyCount.toDouble() / whiteKeyHeightToWidth
         val fittedWidth = min(size.width, size.height * widthToHeight)
         val fittedHeight = fittedWidth / widthToHeight
         whiteKeyWidth = fittedWidth / whiteKeyCount.toDouble()
@@ -115,6 +116,12 @@ class KeyboardGeometry(
          */
         val whiteKeyHeightToWidth: Double = 24.0 / 7.0
 
+        /**
+         * The tallest a white key may be stretched when the keyboard fills a short, wide
+         * screen (a phone turned sideways): twice its true shape, still a readable key.
+         */
+        val maxStretchedHeightToWidth: Double = whiteKeyHeightToWidth * 2
+
         /** A black key's width as a share of a white key's width. */
         val blackKeyWidthRatio: Double = 0.6
 
@@ -142,6 +149,21 @@ class KeyboardGeometry(
          *  keyboard a frame of its own shape. */
         fun widthToHeight(whiteKeyCount: Int): Double =
             whiteKeyCount.toDouble() / whiteKeyHeightToWidth
+
+        /**
+         * The key shape that fills this frame, for the full-screen board on a phone: the keys
+         * grow taller than a real piano's so the board is not a strip across a short screen,
+         * up to [maxStretchedHeightToWidth], and never shorter than their true shape.
+         */
+        fun stretchedHeightToWidth(
+            size: Size,
+            whiteKeyCount: Int,
+        ): Double {
+            val whiteKeyWidth = size.width / whiteKeyCount.toDouble()
+            val fillingHeightToWidth = size.height / whiteKeyWidth
+            val cappedHeightToWidth = min(fillingHeightToWidth, maxStretchedHeightToWidth)
+            return max(cappedHeightToWidth, whiteKeyHeightToWidth)
+        }
 
         /** Radius of the note circle on a key of this width. */
         fun circleRadius(

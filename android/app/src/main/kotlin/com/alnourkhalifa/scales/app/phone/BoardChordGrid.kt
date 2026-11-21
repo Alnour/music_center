@@ -25,11 +25,20 @@ import com.alnourkhalifa.scales.ui.ScaleChordsRow
 const val CHORDS_HEIGHT_SHARE: Float = 0.34f
 
 /**
- * The chord cards under the board on the Scales screen, and the line under them saying where a
- * pentatonic or blues scale's chords come from. Twin of the `ScrollView` holding
+ * The share while a capo names shapes: every card is one line taller (its shape) and a line
+ * names the key, so two rows of cards need more height to show without scrolling. Swift's
+ * `chordsHeightShareWithCapo`.
+ */
+const val CHORDS_HEIGHT_SHARE_WITH_CAPO: Float = 0.43f
+
+/**
+ * The chord cards under the board on the Scales screen, the line under them saying where a
+ * pentatonic or blues scale's chords come from, and, with a capo on, the line above them
+ * saying which key's shapes the cards name. Twin of the `ScrollView` holding
  * `ScaleChordsRow` in `Scales/Views/ContentView.swift`.
  *
- * The grid is as tall as its cards up to [CHORDS_HEIGHT_SHARE] of [screenHeight], and
+ * The grid is as tall as its cards up to [CHORDS_HEIGHT_SHARE] of [screenHeight]
+ * ([CHORDS_HEIGHT_SHARE_WITH_CAPO] while a capo names shapes), and
  * scrolls inside that when a changed scale lists more chords than fit; it is a lazy grid, so
  * it must never sit inside another vertical scroller. Wide windows get roomier cards (120 dp
  * against 84 dp), so a tablet shows all seven chords of a major scale in one row.
@@ -51,7 +60,14 @@ fun BoardChordGrid(
     // work the chords out again.
     val root = state.settings.root
     val definition = state.settings.scaleDefinition
-    val chips = remember(root, definition, change) { BoardChordChipContent.chips(scale, change) }
+    val capoFret = state.settings.boardCapoFret
+    val tuning = state.settings.tuning
+    val capo =
+        remember(root, definition, capoFret, tuning) { state.settings.capoTransposition(scale) }
+    val chips =
+        remember(root, definition, change, capo) {
+            BoardChordChipContent.chips(scale, change, capo)
+        }
     // The line saying where borrowed chords come from shows only while no change is marked
     // on the cards, as on iOS.
     var harmonyNote: String? = null
@@ -61,7 +77,8 @@ fun BoardChordGrid(
     val palette = FretboardPalette.matching(isSystemInDarkTheme())
     val colors = phoneChordChipColors(palette)
     val cardMinimumWidth = if (isWide) 120.dp else 84.dp
-    val maximumHeight = screenHeight * CHORDS_HEIGHT_SHARE
+    val heightShare = if (capo != null) CHORDS_HEIGHT_SHARE_WITH_CAPO else CHORDS_HEIGHT_SHARE
+    val maximumHeight = screenHeight * heightShare
     ScaleChordsRow(
         chips = chips,
         ringedChord = state.ringedChord,
@@ -73,6 +90,7 @@ fun BoardChordGrid(
                 .heightIn(max = maximumHeight),
         cardMinimumWidth = cardMinimumWidth,
         harmonyNote = harmonyNote,
+        capoNote = capo?.note,
     )
 }
 

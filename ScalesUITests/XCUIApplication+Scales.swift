@@ -39,17 +39,23 @@ extension XCUIApplication {
     }
 
     /// Closes an open popover by tapping the board under it, which does nothing on its own.
+    /// The tap lands on the board's lower-left corner: the settings popover hangs from the
+    /// top-right buttons and can cover the board's middle on a phone.
     @MainActor
     func dismissPopover() {
-        let board = otherElements.matching(
+        // The fretboard scrolls sideways and so reports as a scroll view, the keyboard as a
+        // plain element; looking through every kind finds whichever is on screen.
+        let board = descendants(matching: .any).matching(
             NSPredicate(
-                format: "label BEGINSWITH %@ OR label BEGINSWITH %@",
+                format: "label BEGINSWITH %@ OR label BEGINSWITH %@ OR label BEGINSWITH %@",
                 "Fretboard showing",
+                "Bass fretboard showing",
                 "Keyboard showing"
             )
         ).firstMatch
         if board.exists {
-            board.tap()
+            let corner = board.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.95))
+            corner.tap()
         } else {
             coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)).tap()
         }

@@ -45,9 +45,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.alnourkhalifa.scales.app.capoChoices
+import com.alnourkhalifa.scales.app.plainCapoTitle
+import com.alnourkhalifa.scales.core.music.BassTuning
+import com.alnourkhalifa.scales.core.music.Capo
 import com.alnourkhalifa.scales.core.music.Instrument
+import com.alnourkhalifa.scales.core.music.Scale
 import com.alnourkhalifa.scales.core.music.Tuning
 import com.alnourkhalifa.scales.core.session.PracticeSettings
+import com.alnourkhalifa.scales.ui.MusicFontFamily
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -70,8 +76,9 @@ fun BoardSettingsButton(
 }
 
 /**
- * One-time setup behind the gear button: frets, tuning and string order for the guitar, the
- * octave count for the keyboard; each instrument shows only its own rows. Twin of
+ * One-time setup behind the gear button: frets, tuning, capo and string order for the guitar,
+ * the octave count for the keyboard; each instrument shows only its own rows, so the capo
+ * picker is hidden while the keyboard is chosen. Twin of
  * `BoardSettingsMenu` in `Scales/Views/ContentView.swift`.
  *
  * What differs: the iPhone shows a popover; a bottom sheet is Android's way to show a few
@@ -97,18 +104,24 @@ fun BoardSettingsSheet(
     ) {
         FormColumn {
             when (settings.selectedInstrument) {
-                Instrument.GUITAR -> GuitarOptions(settings, onChange)
+                Instrument.GUITAR, Instrument.BASS -> FrettedOptions(settings, onChange)
                 Instrument.KEYBOARD -> KeyboardOptions(settings, onChange)
             }
         }
     }
 }
 
+/**
+ * The rows of a neck with strings and frets. The bass guitar gets the guitar's rows without
+ * the capo, and with its own tunings, so the guitar's tuning is still there when the player
+ * switches back.
+ */
 @Composable
-private fun GuitarOptions(
+private fun FrettedOptions(
     settings: PracticeSettings,
     onChange: ((PracticeSettings) -> PracticeSettings) -> Unit,
 ) {
+    val isBass = settings.selectedInstrument == Instrument.BASS
     FormCard {
         FormLabeledRow(title = "Frets") {
             IosSegmentedControl(
@@ -120,7 +133,15 @@ private fun GuitarOptions(
             )
         }
         HorizontalDivider()
-        TuningRow(settings.tuning) { tuning -> onChange { it.copy(tuning = tuning) } }
+        if (isBass) {
+            BassTuningRow(settings.selectedBassTuning) { tuning ->
+                onChange { it.withSelectedBassTuning(tuning) }
+            }
+        } else {
+            TuningRow(settings.tuning) { tuning -> onChange { it.copy(tuning = tuning) } }
+            HorizontalDivider()
+            CapoRow(settings) { fret -> onChange { it.withSelectedCapoFret(fret) } }
+        }
         HorizontalDivider()
         FormSwitchRow(
             title = "Thin string on top",
@@ -190,6 +211,101 @@ private fun TuningRow(
                 }
             }
         }
+    }
+}
+
+/** "Tuning" with the bass guitar's tuning as a menu picker; each menu row is tagged
+ *  `bassTuning-<rawValue>`. */
+@Composable
+private fun BassTuningRow(
+    tuning: BassTuning,
+    onChoose: (BassTuning) -> Unit,
+) {
+    var isOpen by remember { mutableStateOf(false) }
+    FormRow {
+        Text(text = "Tuning", modifier = Modifier.padding(end = 12.dp))
+        Spacer(modifier = Modifier.weight(1f))
+        Box {
+            MenuPickerButton(
+                text = tuning.displayName,
+                onClick = { isOpen = true },
+                modifier = Modifier.testTag("bassTuningMenu"),
+            )
+            DropdownMenu(expanded = isOpen, onDismissRequest = { isOpen = false }) {
+                for (choice in BassTuning.entries) {
+                    CheckedMenuItem(
+                        text = choice.displayName,
+                        isChecked = choice == tuning,
+                        onClick = {
+                            isOpen = false
+                            onChoose(choice)
+                        },
+                        modifier = Modifier.testTag("bassTuning-${choice.rawValue}"),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * "Capo" with the capo's fret as a menu picker at the row's end, and under it one sentence
+ * naming the fret that gives the most open chords, so a player who doesn't know where to put
+ * the capo is told. Each fret in the menu says which key's shapes it gives and how many
+ * chords become open (`Capo.suggestions`). Tags `capoPicker` and `capoAdvice`; each menu row
+ * is `capoFret-<fret>`.
+ */
+@Composable
+private fun CapoRow(
+    settings: PracticeSettings,
+    onChoose: (Int) -> Unit,
+) {
+    var isOpen by remember { mutableStateOf(false) }
+    val scale = Scale(settings.root, settings.scaleDefinition)
+    val choices =
+        remember(settings.root, settings.scaleDefinition, settings.tuning) {
+            capoChoices(scale, settings.tuning)
+        }
+    val advice =
+        remember(settings.root, settings.scaleDefinition, settings.tuning) {
+            Capo.advice(scale, settings.tuning)
+        }
+    val selected = settings.selectedCapoFret
+    Column {
+        FormRow {
+            Text(text = "Capo", modifier = Modifier.padding(end = 12.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            Box {
+                MenuPickerButton(
+                    text = plainCapoTitle(selected),
+                    onClick = { isOpen = true },
+                    modifier = Modifier.testTag("capoPicker"),
+                )
+                DropdownMenu(expanded = isOpen, onDismissRequest = { isOpen = false }) {
+                    for (choice in choices) {
+                        CheckedMenuItem(
+                            text = choice.label,
+                            isChecked = choice.fret == selected,
+                            onClick = {
+                                isOpen = false
+                                onChoose(choice.fret)
+                            },
+                            modifier = Modifier.testTag("capoFret-${choice.fret}"),
+                        )
+                    }
+                }
+            }
+        }
+        Text(
+            text = advice,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontFamily = MusicFontFamily,
+            modifier =
+                Modifier
+                    .padding(start = 16.dp, end = 16.dp, bottom = 10.dp)
+                    .testTag("capoAdvice"),
+        )
     }
 }
 

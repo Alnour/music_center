@@ -1,5 +1,6 @@
 package com.alnourkhalifa.scales.core.session
 
+import com.alnourkhalifa.scales.core.music.BassTuning
 import com.alnourkhalifa.scales.core.music.CustomScale
 import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.music.Letter
@@ -423,11 +424,13 @@ private data class DocumentJson(
 
 /**
  * `PracticeSettings` as Swift saves it. The non-optional keys are required, as Swift's
- * synthesized decoder requires them even though each has a default; the three optionals may
+ * synthesized decoder requires them even though each has a default; the five optionals may
  * be missing, which is how settings saved by the first release still load.
  */
 @Serializable
 private data class SettingsJson(
+    val bassTuning: String? = null,
+    val capoFret: Int? = null,
     val customScale: CustomScaleJson? = null,
     val fretCount: Int,
     val instrument: String? = null,
@@ -445,6 +448,10 @@ private data class SettingsJson(
             instrument?.let { raw ->
                 known(Instrument.fromRawValue(raw), "instrument", raw)
             }
+        val decodedBassTuning =
+            bassTuning?.let { raw ->
+                known(BassTuning.fromRawValue(raw), "bass tuning", raw)
+            }
         return PracticeSettings(
             root = root.toModel(),
             scaleType = known(ScaleType.fromRawValue(scaleType), "scale type", scaleType),
@@ -457,6 +464,8 @@ private data class SettingsJson(
             customScale = customScale?.toModel(),
             instrument = decodedInstrument,
             keyboardOctaves = keyboardOctaves,
+            capoFret = capoFret,
+            bassTuning = decodedBassTuning,
         )
     }
 
@@ -464,6 +473,8 @@ private data class SettingsJson(
         fun from(settings: PracticeSettings): SettingsJson {
             val storedScale = settings.customScale?.let { scale -> CustomScaleJson.from(scale) }
             return SettingsJson(
+                bassTuning = settings.bassTuning?.rawValue,
+                capoFret = settings.capoFret,
                 customScale = storedScale,
                 fretCount = settings.fretCount,
                 instrument = settings.instrument?.rawValue,

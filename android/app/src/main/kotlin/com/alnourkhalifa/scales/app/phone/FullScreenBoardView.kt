@@ -174,11 +174,13 @@ private fun FullScreenTVBoard(
         modifier = modifier,
         instrument = settings.selectedInstrument,
         tuning = settings.tuning,
+        bassTuning = settings.selectedBassTuning,
         fretCount = settings.fretCount,
         keyboardOctaves = settings.selectedKeyboardOctaves,
         labelStyle = settings.labelStyle,
         thinStringOnTop = settings.thinStringOnTop,
         isLeftHanded = settings.isLeftHanded,
+        capoFret = settings.boardCapoFret,
         ringedNotes = state.ringedNotes,
         onClose = onClose,
     )

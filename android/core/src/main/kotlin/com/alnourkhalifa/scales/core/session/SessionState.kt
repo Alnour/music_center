@@ -81,7 +81,13 @@ data class SessionState(
         }
 
     val layout: FretboardLayout
-        get() = FretboardLayout(scale, settings.tuning, settings.fretCount)
+        get() =
+            FretboardLayout(
+                scale,
+                settings.boardOpenStrings,
+                settings.fretCount,
+                capoFret = settings.boardCapoFret,
+            )
 
     val keyboardLayout: KeyboardLayout
         get() = KeyboardLayout(scale, settings.selectedKeyboardOctaves)

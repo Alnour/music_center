@@ -6,12 +6,27 @@ package com.alnourkhalifa.scales.core.music
  *
  * The layout is pure data so the phone screen and the TV screen draw exactly the same board,
  * and so tests can check note positions without rendering anything.
+ *
+ * The primary constructor takes any set of open strings, thickest first: the guitar's six,
+ * or the bass guitar's four or five ([BassTuning.openStrings]).
+ *
+ * A capo presses every string at its fret, so the frets behind it cannot be played: they
+ * carry no tones, and the tones on the capo's own fret are the new open strings.
  */
 class FretboardLayout(
     scale: Scale,
-    tuning: Tuning,
+    openStrings: List<NoteName>,
     val fretCount: Int,
+    capoFret: Int = 0,
 ) {
+    /** The guitar's neck in one of its six-string tunings. */
+    constructor(
+        scale: Scale,
+        tuning: Tuning,
+        fretCount: Int,
+        capoFret: Int = 0,
+    ) : this(scale, tuning.openStrings, fretCount, capoFret)
+
     /** Twin of `FretboardLayout.GuitarString`: one string's open note and what each fret
      *  holds. */
     data class GuitarString(
@@ -20,19 +35,29 @@ class FretboardLayout(
         val tonesByFret: List<ScaleTone?>,
     )
 
+    /** The fret the capo is on, 0 for no capo. Always below [fretCount]. */
+    val capoFret: Int
+
     /** Thickest string first, matching [Tuning.openStrings]. */
     val strings: List<GuitarString>
 
     init {
+        val highestCapoFret = fretCount - 1
+        val playableCapoFret = maxOf(0, minOf(capoFret, highestCapoFret))
         val strings = mutableListOf<GuitarString>()
-        for (openNote in tuning.openStrings) {
+        for (openNote in openStrings) {
             val tonesByFret = mutableListOf<ScaleTone?>()
             for (fret in 0..fretCount) {
+                if (fret < playableCapoFret) {
+                    tonesByFret.add(null)
+                    continue
+                }
                 val pitchClass = PitchMath.wrap(openNote.pitchClass + fret)
                 tonesByFret.add(scale.tone(pitchClass))
             }
             strings.add(GuitarString(openNote, tonesByFret))
         }
+        this.capoFret = playableCapoFret
         this.strings = strings
     }
 

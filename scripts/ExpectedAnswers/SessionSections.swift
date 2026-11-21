@@ -21,7 +21,7 @@ struct LabelStyleAnswer: Encodable {
 struct SettingsSection: Encodable {
     /// `PracticeSettings()` encoded with sorted keys.
     let defaultJSON: String
-    /// Every optional field set: a saved scale, the keyboard, one octave.
+    /// Every optional field set: a saved scale, the keyboard, one octave, a capo.
     let everyOptionalSetJSON: String
     /// Top-level keys of `everyOptionalSetJSON`, sorted.
     let allKeys: [String]
@@ -49,6 +49,8 @@ func settingsSection() throws -> SettingsSection {
     everything.customScale = Fixtures.augmentedMajor
     everything.selectedInstrument = .keyboard
     everything.selectedKeyboardOctaves = 1
+    everything.selectedCapoFret = 3
+    everything.selectedBassTuning = .dropD
 
     let everythingData = try JSONEncoder().encode(everything)
     let object = try JSONSerialization.jsonObject(with: everythingData)
@@ -102,6 +104,10 @@ struct ChipAnswer: Encodable {
     let accessibilityLabel: String
     /// True when this card is the ringed chord (`ringedChord == chord`, degree included).
     let isRinged: Bool
+    /// The shape line under the name with a capo on ("G shape", "Bm barre"), else null.
+    let capoCaption: String?
+    /// "open", "barre" or "movable" with a capo on, else null.
+    let capoFingering: String?
 }
 
 struct BoardChangeAnswer: Encodable {
@@ -130,6 +136,10 @@ struct SessionStepAnswer: Encodable {
     let hasStoredBoardChange: Bool
     let currentBoardChange: BoardChangeAnswer?
     let chips: [ChipAnswer]
+    /// The line under the cards with a capo on (`CapoTransposition.note`), else null.
+    let capoNote: String?
+    /// The caption beside the TV board's title (`PracticeSettings.boardCaption`).
+    let boardCaption: String
     let lessons: [LessonAnswer]
     let savedScaleCount: Int
 }
@@ -147,9 +157,11 @@ func snapshot(_ step: String, _ session: PracticeSession, _ library: ScaleLibrar
     -> SessionStepAnswer
 {
     var chips: [ChipAnswer] = []
+    let capo = session.settings.capoTransposition(for: session.scale)
     let contents = BoardChordChipContent.chips(
         for: session.scale,
-        change: session.currentBoardChange
+        change: session.currentBoardChange,
+        capo: capo
     )
     for content in contents {
         let chip = ChipAnswer(
@@ -160,7 +172,9 @@ func snapshot(_ step: String, _ session: PracticeSession, _ library: ScaleLibrar
             kind: String(describing: content.kind),
             caption: content.caption,
             accessibilityLabel: content.accessibilityLabel,
-            isRinged: content.chord == session.ringedChord
+            isRinged: content.chord == session.ringedChord,
+            capoCaption: content.capoShape?.caption,
+            capoFingering: content.capoShape?.fingering.rawValue
         )
         chips.append(chip)
     }
@@ -191,6 +205,8 @@ func snapshot(_ step: String, _ session: PracticeSession, _ library: ScaleLibrar
         hasStoredBoardChange: session.boardChange != nil,
         currentBoardChange: currentChange,
         chips: chips,
+        capoNote: capo?.note,
+        boardCaption: session.settings.boardCaption,
         lessons: lessons,
         savedScaleCount: library.scales.count
     )
@@ -297,6 +313,63 @@ func sessionSection() throws -> [SessionStepAnswer] {
             session,
             library
         )
+    )
+
+    session.choose(.builtIn(.major), root: NoteName(.b, -1), from: library)
+    session.settings.selectedCapoFret = 3
+    steps.append(
+        try snapshot(
+            "B♭ Major with a capo on fret 3: the cards carry G Major's shapes",
+            session,
+            library
+        )
+    )
+
+    try session.transform(.lower(ScaleDegree(symbol: "7")), from: library)
+    steps.append(
+        try snapshot(
+            "lower the 7th with the capo on: changed and lost chords keep shapes",
+            session,
+            library
+        )
+    )
+
+    session.settings.tuning = .dropD
+    steps.append(
+        try snapshot("drop D with the capo on: the capo stays, the shapes go", session, library)
+    )
+
+    session.settings.tuning = .halfStepDown
+    steps.append(
+        try snapshot(
+            "half step down with the capo on fret 3: shapes two semitones down",
+            session,
+            library
+        )
+    )
+
+    session.settings.tuning = .standard
+    session.settings.selectedInstrument = .keyboard
+    steps.append(
+        try snapshot(
+            "the keyboard with a capo fret still stored: no capo, no shapes",
+            session,
+            library
+        )
+    )
+
+    session.settings.selectedInstrument = .bass
+    steps.append(
+        try snapshot(
+            "the bass with a capo fret still stored: its own caption, no capo, no shapes",
+            session,
+            library
+        )
+    )
+
+    session.settings.selectedBassTuning = .fiveString
+    steps.append(
+        try snapshot("the five-string bass: the caption names the tuning", session, library)
     )
 
     return steps

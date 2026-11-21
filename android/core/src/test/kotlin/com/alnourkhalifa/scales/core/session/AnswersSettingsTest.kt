@@ -3,6 +3,7 @@ package com.alnourkhalifa.scales.core.session
 import com.alnourkhalifa.scales.core.Answers
 import com.alnourkhalifa.scales.core.array
 import com.alnourkhalifa.scales.core.int
+import com.alnourkhalifa.scales.core.music.BassTuning
 import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.string
 import kotlinx.serialization.json.Json
@@ -61,6 +62,8 @@ class AnswersSettingsTest {
         )
         assertEquals("every optional is set", Instrument.KEYBOARD, decoded.instrument)
         assertEquals("keyboardOctaves", 1, decoded.keyboardOctaves)
+        assertEquals("capoFret", 3, decoded.capoFret)
+        assertEquals("bassTuning", BassTuning.DROP_D, decoded.bassTuning)
         assertEquals(
             "customScale",
             "Augmented Major",
@@ -108,7 +111,7 @@ class AnswersSettingsTest {
         assertEquals("defaultKeyboardOctaves read", 2, PracticeSettings().selectedKeyboardOctaves)
     }
 
-    // feature: settings-persist, keyboard
+    // feature: settings-persist, keyboard, bass
     @Test
     fun theInstrumentsMatch() {
         val rawValues = mutableListOf<String>()

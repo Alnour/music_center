@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alnourkhalifa.scales.core.board.Size
 import com.alnourkhalifa.scales.core.board.TVLayoutMetrics
+import com.alnourkhalifa.scales.core.music.BassTuning
 import com.alnourkhalifa.scales.core.music.FretboardLayout
 import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.music.KeyboardLayout
@@ -41,6 +42,7 @@ import com.alnourkhalifa.scales.core.music.NoteName
 import com.alnourkhalifa.scales.core.music.Scale
 import com.alnourkhalifa.scales.core.music.Tuning
 import com.alnourkhalifa.scales.core.session.NoteLabelStyle
+import com.alnourkhalifa.scales.core.session.PracticeSettings
 import kotlin.math.roundToInt
 
 /**
@@ -53,7 +55,8 @@ import kotlin.math.roundToInt
  *
  * What differs: Swift reads the practice session from the environment; this view takes the
  * board's settings as parameters (defaults are the app's defaults), so the phone's full-screen
- * board, the TV screen and previews pass what they hold. The margins can be overridden as
+ * board, the TV screen and previews pass what they hold; [capoFret] is the settings'
+ * `boardCapoFret`, already 0 for the keyboard. The margins can be overridden as
  * shares of the screen ([horizontalMarginShare], [verticalMarginShare]), and an optional
  * [bottomContent] sits under the board (the TV screen's controls). SF Symbols' close button
  * is drawn by hand, as the ui module has no icon set.
@@ -65,11 +68,13 @@ fun TVDisplayView(
     modifier: Modifier = Modifier,
     instrument: Instrument = Instrument.GUITAR,
     tuning: Tuning = Tuning.STANDARD,
+    bassTuning: BassTuning = BassTuning.STANDARD,
     fretCount: Int = DEFAULT_FRET_COUNT,
     keyboardOctaves: Int = DEFAULT_KEYBOARD_OCTAVES,
     labelStyle: NoteLabelStyle = NoteLabelStyle.NOTE_NAMES,
     thinStringOnTop: Boolean = true,
     isLeftHanded: Boolean = false,
+    capoFret: Int = 0,
     ringedNotes: Set<NoteName> = emptySet(),
     horizontalMarginShare: Double? = null,
     verticalMarginShare: Double? = null,
@@ -80,11 +85,13 @@ fun TVDisplayView(
         TVBoardChoice(
             instrument = instrument,
             tuning = tuning,
+            bassTuning = bassTuning,
             fretCount = fretCount,
             keyboardOctaves = keyboardOctaves,
             labelStyle = labelStyle,
             thinStringOnTop = thinStringOnTop,
             isLeftHanded = isLeftHanded,
+            capoFret = capoFret,
         )
     val fixedFontDensity = Density(LocalDensity.current.density, fontScale = 1f)
     CompositionLocalProvider(LocalDensity provides fixedFontDensity) {
@@ -145,19 +152,35 @@ private fun marginOrDefault(
 private data class TVBoardChoice(
     val instrument: Instrument,
     val tuning: Tuning,
+    val bassTuning: BassTuning,
     val fretCount: Int,
     val keyboardOctaves: Int,
     val labelStyle: NoteLabelStyle,
     val thinStringOnTop: Boolean,
     val isLeftHanded: Boolean,
+    val capoFret: Int,
 ) {
-    /** The small caption beside the title: the tuning matters on a guitar, not on a piano. */
+    /** The small caption beside the title: the tuning, and the capo's fret when one is on.
+     *  The words come from `PracticeSettings.boardCaption`, as on iOS, so the TV, the phone's
+     *  full-screen board and the iPhone never word it differently. */
     val caption: String
-        get() =
-            when (instrument) {
-                Instrument.GUITAR -> tuning.shortName
-                Instrument.KEYBOARD -> Instrument.KEYBOARD.title
-            }
+        get() {
+            return asSettings.boardCaption
+        }
+
+    /** The open strings of the neck, thickest first: the bass guitar's or the guitar's. */
+    val openStrings: List<NoteName>
+        get() = asSettings.boardOpenStrings
+
+    /** These choices as the settings they came from, so the caption and the strings follow
+     *  the same rules as everywhere else. */
+    private val asSettings: PracticeSettings
+        get() {
+            val tuned = PracticeSettings(tuning = tuning)
+            val withInstrument = tuned.withSelectedInstrument(instrument)
+            val withBassTuning = withInstrument.withSelectedBassTuning(bassTuning)
+            return withBassTuning.withSelectedCapoFret(capoFret)
+        }
 }
 
 /** The fretboard or the piano octaves, whichever instrument the player chose. */
@@ -170,11 +193,16 @@ private fun TVBoard(
     modifier: Modifier,
 ) {
     when (board.instrument) {
-        Instrument.GUITAR -> {
+        Instrument.GUITAR, Instrument.BASS -> {
+            val openStrings = board.openStrings
             val layout =
-                remember(scale, board.tuning, board.fretCount) {
-                    FretboardLayout(scale, board.tuning, board.fretCount)
+                remember(scale, openStrings, board.fretCount, board.capoFret) {
+                    FretboardLayout(scale, openStrings, board.fretCount, board.capoFret)
                 }
+            var spokenName = GUITAR_BOARD_SPOKEN_NAME
+            if (board.instrument == Instrument.BASS) {
+                spokenName = BASS_BOARD_SPOKEN_NAME
+            }
             FretboardView(
                 layout = layout,
                 scaleTitle = scale.title,
@@ -184,6 +212,7 @@ private fun TVBoard(
                 ringedNotes = ringedNotes,
                 thinStringOnTop = board.thinStringOnTop,
                 isLeftHanded = board.isLeftHanded,
+                spokenName = spokenName,
             )
         }
 

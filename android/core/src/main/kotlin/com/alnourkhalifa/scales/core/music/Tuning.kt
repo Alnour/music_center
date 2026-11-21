@@ -11,12 +11,20 @@ enum class Tuning(
     val shortName: String,
     /** Open-string notes from the thickest (6th) string to the thinnest (1st). */
     val openStrings: List<NoteName>,
+    /**
+     * How far the tuning sits from standard when its chord shapes are the standard ones: 0
+     * for standard, -1 a half step down (an E shape then sounds E♭). Null for the tunings
+     * that change the gaps between strings, where the open chord shapes of the books no
+     * longer apply, so a capo names no shapes there.
+     */
+    val standardShapeOffset: Int?,
 ) {
     STANDARD(
         rawValue = "standard",
         displayName = "Standard (E A D G B E)",
         shortName = "Standard tuning",
         openStrings = naturals(Letter.E, Letter.A, Letter.D, Letter.G, Letter.B, Letter.E),
+        standardShapeOffset = 0,
     ),
     HALF_STEP_DOWN(
         rawValue = "halfStepDown",
@@ -31,24 +39,28 @@ enum class Tuning(
                 NoteName(Letter.B, -1),
                 NoteName(Letter.E, -1),
             ),
+        standardShapeOffset = -1,
     ),
     DROP_D(
         rawValue = "dropD",
         displayName = "Drop D (D A D G B E)",
         shortName = "Drop D",
         openStrings = naturals(Letter.D, Letter.A, Letter.D, Letter.G, Letter.B, Letter.E),
+        standardShapeOffset = null,
     ),
     DADGAD(
         rawValue = "dadgad",
         displayName = "DADGAD",
         shortName = "DADGAD",
         openStrings = naturals(Letter.D, Letter.A, Letter.D, Letter.G, Letter.A, Letter.D),
+        standardShapeOffset = null,
     ),
     OPEN_G(
         rawValue = "openG",
         displayName = "Open G (D G D G B D)",
         shortName = "Open G",
         openStrings = naturals(Letter.D, Letter.G, Letter.D, Letter.G, Letter.B, Letter.D),
+        standardShapeOffset = null,
     ),
     OPEN_D(
         rawValue = "openD",
@@ -63,6 +75,7 @@ enum class Tuning(
                 NoteName(Letter.A),
                 NoteName(Letter.D),
             ),
+        standardShapeOffset = null,
     ),
     ;
 

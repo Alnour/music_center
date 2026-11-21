@@ -9,13 +9,20 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.alnourkhalifa.scales.core.music.BassTuning
+import com.alnourkhalifa.scales.core.music.Capo
 import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.music.Letter
 import com.alnourkhalifa.scales.core.music.NoteName
+import com.alnourkhalifa.scales.core.music.Scale
+import com.alnourkhalifa.scales.core.music.ScaleReference
 import com.alnourkhalifa.scales.core.music.ScaleType
+import com.alnourkhalifa.scales.core.music.Tuning
 import com.alnourkhalifa.scales.ui.BOARD_TEST_TAG
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -92,6 +99,94 @@ class TvPanelTest {
         val settings = tv.app.sessionState.value.settings
         assertEquals(Instrument.KEYBOARD, settings.selectedInstrument)
         assertEquals(1, settings.selectedKeyboardOctaves)
+    }
+
+    // The bass, chosen with the remote: the capo row goes, the tuning row lists the bass's
+    // own tunings, and the board's caption and spoken label name the bass.
+    // feature: bass
+    @Test
+    fun bassFromThePanel() {
+        tv.openPanel()
+        tv.focusByKeys("row-instrument")
+        tv.pressOk()
+        tv.focusByKeys("choice-bass")
+        tv.pressOk()
+
+        tv.composeRule
+            .onNodeWithTag("row-capo")
+            .assertDoesNotExist()
+        tv.focusByKeys("row-tuning")
+        tv.composeRule
+            .onNodeWithTag("row-tuning")
+            .assertTextContains("Standard tuning")
+        tv.pressOk()
+        tv.focusByKeys("choice-fiveString")
+        tv.pressOk()
+        tv.composeRule
+            .onNodeWithTag("row-tuning")
+            .assertTextContains("Five-string")
+
+        tv.pressBack()
+        tv.composeRule
+            .onNodeWithText("Bass · Five-string")
+            .assertIsDisplayed()
+        tv.composeRule
+            .onNodeWithContentDescription("Bass fretboard showing G Major")
+            .assertExists()
+        val state = tv.app.sessionState.value
+        assertEquals(Instrument.BASS, state.settings.selectedInstrument)
+        assertEquals(BassTuning.FIVE_STRING, state.settings.selectedBassTuning)
+        assertEquals(5, state.layout.strings.size)
+    }
+
+    // A capo on fret 3 of B♭ major, chosen with the remote: the list gives its advice and
+    // each fret's open chords, the chips name the G major shapes, the line under them says
+    // so, and the board's caption carries the capo.
+    // feature: capo-shapes
+    @Test
+    fun capoFromThePanel() {
+        val bFlat = NoteName(Letter.B, -1)
+        tv.onMainThread {
+            tv.app.session
+                .choose(ScaleReference.BuiltIn(ScaleType.MAJOR), bFlat)
+        }
+        tv.composeRule.waitForIdle()
+        tv.openPanel()
+        tv.focusByKeys("row-capo")
+        tv.composeRule
+            .onNodeWithTag("row-capo")
+            .assertTextContains("No capo")
+        tv.pressOk()
+        tv.composeRule
+            .onNodeWithTag("choice-0")
+            .assertIsFocused()
+        val advice = Capo.advice(Scale(bFlat, ScaleType.MAJOR), Tuning.STANDARD)
+        tv.composeRule
+            .onNodeWithText(advice)
+            .assertIsDisplayed()
+        tv.focusByKeys("choice-3")
+        tv.composeRule
+            .onNodeWithTag("choice-3")
+            .assertTextContains("Fret 3 · as G Major · 5 of 7 open")
+        tv.pressOk()
+
+        tv.composeRule
+            .onNodeWithTag("row-capo")
+            .assertIsFocused()
+            .assertTextContains("Fret 3")
+        assertEquals(3, tv.app.sessionState.value.settings.capoFret)
+        tv.pressBack()
+
+        tv.composeRule
+            .onNodeWithText("Standard tuning · Capo 3")
+            .assertIsDisplayed()
+        tv.composeRule
+            .onNodeWithContentDescription(
+                "I, B♭ major: B♭, D, F. Fingered as G major, an open chord.",
+            ).assertExists()
+        tv.composeRule
+            .onNodeWithTag("capoNote")
+            .assertTextEquals("Capo on fret 3: finger the chords as in G Major.")
     }
 
     // feature: labels

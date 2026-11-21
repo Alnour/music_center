@@ -15,9 +15,14 @@ import SwiftUI
 /// After a note change, every chord is shown as it is now, and the chords that used the
 /// changed note are marked: what each one was, the note it gained in green, and the chords
 /// the scale no longer makes crossed out. The marks stay until the player picks another scale.
+///
+/// With a capo on, each card adds the shape to finger and a line under the cards names the
+/// key those shapes come from.
 struct ScaleChordsRow: View {
     let scale: Scale
     let change: BoardChange?
+    /// How the chords are renamed as capo shapes; nil without a capo.
+    var capo: CapoTransposition?
     /// The chord whose notes are ringed on the board, if any.
     let ringedChord: ScaleChord?
     /// Called with the chord the player tapped.
@@ -36,6 +41,13 @@ struct ScaleChordsRow: View {
             // in one row and a phone in two or three, each card large enough to read from
             // playing distance.
             VStack(alignment: .leading, spacing: 6) {
+                // Above the cards, so it is on screen without scrolling past them.
+                if let capo {
+                    Text(capo.note)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("capoNote")
+                }
                 LazyVGrid(
                     columns: [
                         GridItem(.adaptive(minimum: cardMinimumWidth, maximum: 200), spacing: 8)
@@ -59,12 +71,13 @@ struct ScaleChordsRow: View {
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("harmonyNote")
                 }
+
             }
         }
     }
 
     private var chips: [BoardChordChipContent] {
-        BoardChordChipContent.chips(for: scale, change: change)
+        BoardChordChipContent.chips(for: scale, change: change, capo: capo)
     }
 }
 
@@ -90,7 +103,8 @@ struct BoardChangeRow: View {
     }
 }
 
-/// A chord card: numeral, name and notes. A note the scale doesn't hold is faint. After a
+/// A chord card: numeral, name and notes, then the capo shape when a capo is on (green
+/// for an open chord, the easy ones a capo is used for). A note the scale doesn't hold is faint. After a
 /// change, a line above says what the chord was, a gained note is green, and a chord the
 /// scale lost is crossed out. The chord whose
 /// notes are ringed on the board sits on a tinted card edged in the board's chord colour.
@@ -120,6 +134,13 @@ private struct BoardChordChip: View {
             Text(notesText)
                 .font(.subheadline)
                 .foregroundStyle(chip.kind == .removed ? .tertiary : .primary)
+            if let capoShape = chip.capoShape {
+                Text(capoShape.caption)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(capoShape.fingering == .open ? ringColor : .secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 8)

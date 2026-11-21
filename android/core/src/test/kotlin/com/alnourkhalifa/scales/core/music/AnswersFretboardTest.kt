@@ -14,8 +14,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Reads the `fretboards` section Swift wrote (G at 24 frets, every tuning × every scale type)
- * and carries the `FretboardLayoutTests` of `ScalesTests/MusicTheoryTests.swift`.
+ * Reads the `fretboards` and `bassFretboards` sections Swift wrote (G at 24 frets, every
+ * guitar and bass tuning × every scale type) and carries the `FretboardLayoutTests` of
+ * `ScalesTests/MusicTheoryTests.swift`.
  */
 class AnswersFretboardTest {
     private val gMajor =
@@ -31,7 +32,23 @@ class AnswersFretboardTest {
         for (tuning in Tuning.entries) {
             for (type in ScaleType.entries) {
                 val expected = answers[index].jsonObject
-                checkBoard(expected, tuning, type)
+                checkBoard(expected, tuning.rawValue, tuning.openStrings, type)
+                index += 1
+            }
+        }
+    }
+
+    // feature: bass
+    @Test
+    fun everyBassTuningAndScaleIsLaidOutAsSwiftLaysItOut() {
+        val answers = Answers.section("bassFretboards").jsonArray
+        val expectedCount = BassTuning.entries.size * ScaleType.entries.size
+        assertEquals("bass fretboard count", expectedCount, answers.size)
+        var index = 0
+        for (tuning in BassTuning.entries) {
+            for (type in ScaleType.entries) {
+                val expected = answers[index].jsonObject
+                checkBoard(expected, tuning.rawValue, tuning.openStrings, type)
                 index += 1
             }
         }
@@ -41,19 +58,20 @@ class AnswersFretboardTest {
      *  open note and the tone at every fret as `"F♯|7"` or null. */
     private fun checkBoard(
         expected: JsonObject,
-        tuning: Tuning,
+        tuningRawValue: String,
+        openStrings: List<NoteName>,
         type: ScaleType,
     ) {
         val case =
             "${expected.string("root")} ${expected.string("scaleType")} " +
                 "in ${expected.string("tuning")}"
-        assertSame("$case tuning", expected.string("tuning"), tuning.rawValue)
+        assertSame("$case tuning", expected.string("tuning"), tuningRawValue)
         assertSame("$case scaleType", expected.string("scaleType"), type.rawValue)
         val root = NoteName(Letter.G)
         assertSame("$case root", expected.string("root"), root.displayName)
 
         val fretCount = expected.int("fretCount")
-        val layout = FretboardLayout(Scale(root, type), tuning, fretCount)
+        val layout = FretboardLayout(Scale(root, type), openStrings, fretCount)
         assertSame("$case fretCount", fretCount, layout.fretCount)
 
         val expectedStrings = expected.array("strings")

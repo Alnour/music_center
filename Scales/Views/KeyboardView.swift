@@ -15,14 +15,31 @@ struct KeyboardView: View {
     let palette: FretboardPalette
     /// Notes to ring on the keys, the notes of the chord the player picked.
     var ringedNotes: Set<NoteName> = []
+    /// Stretch the keys taller than a real piano's to fill the frame; only the full-screen
+    /// board on a phone does, where keys of their true shape would be a strip.
+    var stretchesToFill = false
 
     var body: some View {
         Canvas { context, size in
-            let geometry = KeyboardGeometry(size: size, whiteKeyCount: layout.whiteKeys.count)
+            let geometry = KeyboardGeometry(
+                size: size,
+                whiteKeyCount: layout.whiteKeys.count,
+                whiteKeyHeightToWidth: keyHeightToWidth(for: size)
+            )
             let keyRects = geometry.keyRects(for: layout.keys)
             drawWhiteKeys(context, geometry, keyRects)
             drawBlackKeys(context, keyRects)
         }
+    }
+
+    private func keyHeightToWidth(for size: CGSize) -> CGFloat {
+        if stretchesToFill {
+            return KeyboardGeometry.stretchedHeightToWidth(
+                size: size,
+                whiteKeyCount: layout.whiteKeys.count
+            )
+        }
+        return KeyboardGeometry.whiteKeyHeightToWidth
     }
 
     private func drawWhiteKeys(

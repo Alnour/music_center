@@ -32,6 +32,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
+import com.alnourkhalifa.scales.app.plainCapoTitle
 import com.alnourkhalifa.scales.app.rememberScalesApplication
 import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.session.PracticeSettings
@@ -41,22 +42,23 @@ import com.alnourkhalifa.scales.ui.MusicFontFamily
 private const val PANEL_WIDTH_SHARE = 0.38f
 
 /**
- * The panel's rows, in the order the panel lists them. A row tied to one [instrument] is
- * hidden while the other is chosen (no tuning for a piano, no octaves for a guitar), the
- * same rule the phone's settings follow.
+ * The panel's rows, in the order the panel lists them. A row tied to some instruments
+ * ([appliesTo]) is hidden while another is chosen (no tuning for a piano, no capo for a bass,
+ * no octaves for a guitar), the same rule the phone's settings follow.
  */
 enum class TvPanelRow(
     val title: String,
-    val instrument: Instrument? = null,
+    private val appliesTo: (Instrument) -> Boolean = { true },
 ) {
     ROOT("Root"),
     SCALE("Scale"),
     INSTRUMENT("Instrument"),
-    TUNING("Tuning", Instrument.GUITAR),
-    FRETS("Frets", Instrument.GUITAR),
-    LEFT_HANDED("Left-handed", Instrument.GUITAR),
-    THIN_STRING_ON_TOP("Thin string on top", Instrument.GUITAR),
-    OCTAVES("Octaves", Instrument.KEYBOARD),
+    TUNING("Tuning", { instrument -> instrument.isFretted }),
+    CAPO("Capo", { instrument -> instrument == Instrument.GUITAR }),
+    FRETS("Frets", { instrument -> instrument.isFretted }),
+    LEFT_HANDED("Left-handed", { instrument -> instrument.isFretted }),
+    THIN_STRING_ON_TOP("Thin string on top", { instrument -> instrument.isFretted }),
+    OCTAVES("Octaves", { instrument -> instrument == Instrument.KEYBOARD }),
     LABELS("Labels"),
     DARK_BOARD("Dark board"),
     CHANGE_A_NOTE("Change a note"),
@@ -73,13 +75,13 @@ enum class TvPanelRow(
         }
 
     /** True when the row applies to the instrument on the board. */
-    fun isShown(chosen: Instrument): Boolean = instrument == null || instrument == chosen
+    fun isShown(chosen: Instrument): Boolean = appliesTo(chosen)
 
     /** Rows whose OK opens a [TvChoiceList] in the panel's place. */
     val opensChoiceList: Boolean
         get() =
             when (this) {
-                ROOT, SCALE, INSTRUMENT, TUNING, FRETS, OCTAVES, LABELS, KEEP_BOARD_ON -> true
+                ROOT, SCALE, INSTRUMENT, TUNING, CAPO, FRETS, OCTAVES, LABELS, KEEP_BOARD_ON -> true
                 else -> false
             }
 }
@@ -324,18 +326,41 @@ private fun rowValue(
     row: TvPanelRow,
     settings: PracticeSettings,
     timer: TvPracticeTimer,
-): String =
-    when (row) {
+): String {
+    val guitarValue = guitarRowValue(row, settings)
+    if (guitarValue != null) {
+        return guitarValue
+    }
+    return when (row) {
         TvPanelRow.ROOT -> settings.root.displayName
         TvPanelRow.SCALE -> settings.scaleDefinition.name
         TvPanelRow.INSTRUMENT -> settings.selectedInstrument.title
-        TvPanelRow.TUNING -> settings.tuning.shortName
-        TvPanelRow.FRETS -> settings.fretCount.toString()
         TvPanelRow.OCTAVES -> octavesLabel(settings.selectedKeyboardOctaves)
         TvPanelRow.LABELS -> settings.labelStyle.title
         TvPanelRow.KEEP_BOARD_ON -> keepOnLabel(timer.minutes)
         else -> "›"
     }
+}
+
+/** The value of a guitar or bass row with a list behind it, or null for any other row. */
+private fun guitarRowValue(
+    row: TvPanelRow,
+    settings: PracticeSettings,
+): String? =
+    when (row) {
+        TvPanelRow.TUNING -> tuningRowValue(settings)
+        TvPanelRow.CAPO -> plainCapoTitle(settings.selectedCapoFret)
+        TvPanelRow.FRETS -> settings.fretCount.toString()
+        else -> null
+    }
+
+/** The tuning of the neck on the board: the bass guitar's own while the bass is chosen. */
+private fun tuningRowValue(settings: PracticeSettings): String {
+    if (settings.selectedInstrument == Instrument.BASS) {
+        return settings.selectedBassTuning.shortName
+    }
+    return settings.tuning.shortName
+}
 
 /** "1 octave", "2 octaves". */
 internal fun octavesLabel(octaves: Int): String {

@@ -24,10 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.alnourkhalifa.scales.app.capoChoices
 import com.alnourkhalifa.scales.app.rememberScalesApplication
+import com.alnourkhalifa.scales.core.music.BassTuning
+import com.alnourkhalifa.scales.core.music.Capo
 import com.alnourkhalifa.scales.core.music.CustomScale
 import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.music.NoteName
+import com.alnourkhalifa.scales.core.music.Scale
 import com.alnourkhalifa.scales.core.music.ScaleFamily
 import com.alnourkhalifa.scales.core.music.ScaleReference
 import com.alnourkhalifa.scales.core.music.Tuning
@@ -265,6 +269,7 @@ fun TvPanelChoices(
             TvPanelRow.SCALE -> PanelLists.scaleList(settings, app.session, app.library.scales)
             TvPanelRow.INSTRUMENT -> PanelLists.instrumentList(settings, app.session)
             TvPanelRow.TUNING -> PanelLists.tuningList(settings, app.session)
+            TvPanelRow.CAPO -> PanelLists.capoList(settings, app.session)
             TvPanelRow.FRETS -> PanelLists.fretList(settings, app.session)
             TvPanelRow.OCTAVES -> PanelLists.octaveList(settings, app.session)
             TvPanelRow.LABELS -> PanelLists.labelList(settings, app.session)
@@ -366,10 +371,14 @@ private object PanelLists {
         }
     }
 
+    /** The tunings of the neck on the board: the bass guitar has its own. */
     fun tuningList(
         settings: PracticeSettings,
         session: PracticeSession,
     ): PanelList {
+        if (settings.selectedInstrument == Instrument.BASS) {
+            return bassTuningList(settings, session)
+        }
         val choices = mutableListOf<TvChoice>()
         for (tuning in Tuning.entries) {
             choices.add(TvChoice(id = tuning.rawValue, label = tuning.displayName))
@@ -377,6 +386,44 @@ private object PanelLists {
         return PanelList("Tuning", ungrouped(choices), settings.tuning.rawValue) { id ->
             val tuning = Tuning.fromRawValue(id) ?: Tuning.STANDARD
             session.updateSettings { it.copy(tuning = tuning) }
+        }
+    }
+
+    private fun bassTuningList(
+        settings: PracticeSettings,
+        session: PracticeSession,
+    ): PanelList {
+        val choices = mutableListOf<TvChoice>()
+        for (tuning in BassTuning.entries) {
+            choices.add(TvChoice(id = tuning.rawValue, label = tuning.displayName))
+        }
+        val selectedId = settings.selectedBassTuning.rawValue
+        return PanelList("Tuning", ungrouped(choices), selectedId) { id ->
+            val tuning = BassTuning.fromRawValue(id) ?: BassTuning.STANDARD
+            session.updateSettings { it.withSelectedBassTuning(tuning) }
+        }
+    }
+
+    /**
+     * Every capo fret with how many chords turn open there, under the sentence naming the
+     * best fret, so the player reads the advice before scrolling the frets. The sentence is
+     * the group's heading, which the D-pad passes over. Ids are the fret numbers.
+     */
+    fun capoList(
+        settings: PracticeSettings,
+        session: PracticeSession,
+    ): PanelList {
+        val scale = Scale(settings.root, settings.scaleDefinition)
+        val choices = mutableListOf<TvChoice>()
+        for (choice in capoChoices(scale, settings.tuning)) {
+            choices.add(TvChoice(id = choice.fret.toString(), label = choice.label))
+        }
+        val advice = Capo.advice(scale, settings.tuning)
+        val groups = listOf(TvChoiceGroup(header = advice, choices = choices))
+        val selectedId = settings.selectedCapoFret.toString()
+        return PanelList("Capo", groups, selectedId) { id ->
+            val fret = id.toInt()
+            session.updateSettings { it.withSelectedCapoFret(fret) }
         }
     }
 

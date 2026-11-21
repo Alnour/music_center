@@ -36,6 +36,9 @@ struct FretboardPalette: Sendable {
     let chordFill: Color
     let chordText: Color
     let chordRing: Color
+    /// The capo's bar: darker than the strings and fret wires it clamps, lighter than the
+    /// note circles drawn over it.
+    let capo: Color
 
     static let light = FretboardPalette(
         background: Color(hex: 0xFFFFFF),
@@ -55,7 +58,8 @@ struct FretboardPalette: Sendable {
         keyOutline: Color(hex: 0x8A8F9C),
         chordFill: Color(hex: 0x2E9E6B),
         chordText: Color(hex: 0xFFFFFF),
-        chordRing: Color(hex: 0x1F7A50)
+        chordRing: Color(hex: 0x1F7A50),
+        capo: Color(hex: 0x4A4F5C)
     )
 
     static let dark = FretboardPalette(
@@ -76,7 +80,8 @@ struct FretboardPalette: Sendable {
         keyOutline: Color(hex: 0x4A5162),
         chordFill: Color(hex: 0x4CD98F),
         chordText: Color(hex: 0x07261A),
-        chordRing: Color(hex: 0x7CF0B4)
+        chordRing: Color(hex: 0x7CF0B4),
+        capo: Color(hex: 0x5C6478)
     )
 
     static func matching(_ colorScheme: ColorScheme) -> FretboardPalette {

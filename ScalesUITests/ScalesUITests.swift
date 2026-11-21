@@ -82,6 +82,53 @@ final class ScalesUITests: XCTestCase {
         app.dismissPopover()
     }
 
+    /// The bass draws the scale on its own four-string neck, with its own tunings and no
+    /// capo. The instrument is saved between launches, so the test puts the guitar back.
+    @MainActor
+    // feature: bass
+    func testChoosingTheBassShowsItsNeckAndTunings() throws {
+        let bassChoice = app.buttons["Bass"]
+        XCTAssertTrue(bassChoice.waitForExistence(timeout: 3), "the bass is an instrument pill")
+        bassChoice.tap()
+        let bassBoard = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Bass fretboard showing")
+        ).firstMatch
+        XCTAssertTrue(bassBoard.waitForExistence(timeout: 3), "the bass neck is on the board")
+        attachScreenshot(named: "The scale on the bass")
+
+        let firstChip = app.element(identified: "boardChords").buttons.firstMatch
+        XCTAssertTrue(firstChip.waitForExistence(timeout: 3), "the chords sit under the bass")
+
+        app.openBoardSettings()
+        let tuningRow = app.menuButton(labelled: "Tuning")
+        XCTAssertTrue(tuningRow.waitForExistence(timeout: 3), "the bass has a tuning")
+        XCTAssertTrue(tuningRow.label.contains("E A D G"), "the bass starts in standard tuning")
+        XCTAssertFalse(tuningRow.label.contains("B E)"), "its tunings are not the guitar's")
+        XCTAssertFalse(app.element(identified: "capoPicker").exists, "the bass has no capo")
+        tuningRow.tap()
+        let fiveString = app.buttons["Five-string (B E A D G)"]
+        XCTAssertTrue(fiveString.waitForExistence(timeout: 3), "the five-string bass is offered")
+        fiveString.tap()
+        app.dismissPopover()
+        attachScreenshot(named: "The scale on a five-string bass")
+
+        app.openBoardSettings()
+        XCTAssertTrue(tuningRow.waitForExistence(timeout: 3))
+        tuningRow.tap()
+        let standard = app.buttons["Standard (E A D G)"]
+        XCTAssertTrue(standard.waitForExistence(timeout: 3))
+        standard.tap()
+        app.dismissPopover()
+
+        app.buttons["Guitar"].tap()
+        app.openBoardSettings()
+        XCTAssertTrue(
+            app.element(identified: "capoPicker").waitForExistence(timeout: 3),
+            "the guitar's capo returns"
+        )
+        app.dismissPopover()
+    }
+
     @MainActor
     // feature: tv-board
     func testFullScreenBoardOpensInLandscapeAndCloses() throws {
@@ -198,6 +245,61 @@ final class ScalesUITests: XCTestCase {
         let subdominant = app.buttons["iv, D minor: D, F (not in the scale), A"]
         XCTAssertTrue(subdominant.waitForExistence(timeout: 3))
         attachScreenshot(named: "Minor pentatonic chords")
+    }
+
+    /// A capo on the third fret turns B♭ major's chords into G major's open shapes: each
+    /// card names the shape to finger and a line under the cards names the key. The capo is
+    /// saved between launches, so the test takes it off again for the other tests.
+    // feature: capo-shapes
+    @MainActor
+    func testCapoNamesTheShapeOnEachChordCard() throws {
+        app.buttons["Guitar"].tap()
+        app.menuButton(labelled: "Root").tap()
+        app.buttons["B♭"].firstMatch.tap()
+        app.menuButton(labelled: "Scale").tap()
+        app.buttons["Major"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["B♭ Major"].waitForExistence(timeout: 3))
+
+        app.openBoardSettings()
+        let capoMenu = app.menuButton(labelled: "Capo")
+        XCTAssertTrue(capoMenu.waitForExistence(timeout: 3), "the guitar options offer a capo")
+        XCTAssertTrue(
+            app.element(identified: "capoAdvice").exists,
+            "the settings name the frets with the most open chords"
+        )
+        capoMenu.tap()
+        let thirdFret = app.buttons["Fret 3 · as G Major · 5 of 7 open"]
+        XCTAssertTrue(thirdFret.waitForExistence(timeout: 3), "each fret says what it gives")
+        thirdFret.tap()
+        // A tap made while the menu is still closing is swallowed, so wait for it to go.
+        XCTAssertTrue(thirdFret.waitForNonExistence(timeout: 3), "the menu closes")
+        app.dismissPopover()
+        XCTAssertTrue(capoMenu.waitForNonExistence(timeout: 3), "the settings close")
+
+        let tonic = app.buttons["I, B♭ major: B♭, D, F. Fingered as G major, an open chord."]
+        XCTAssertTrue(tonic.waitForExistence(timeout: 3), "the card names its open shape")
+        let mediant = "iii, D minor: D, F, A. Fingered as B minor, a barre chord."
+        XCTAssertTrue(app.buttons[mediant].exists, "a shape that needs a barre says so")
+        XCTAssertTrue(
+            app.element(identified: "capoNote").exists,
+            "a line under the cards names the key the shapes come from"
+        )
+        attachScreenshot(named: "B♭ major with a capo on fret 3")
+
+        app.openBoardSettings()
+        XCTAssertTrue(capoMenu.waitForExistence(timeout: 3))
+        capoMenu.tap()
+        let noCapo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "No capo"))
+        noCapo.firstMatch.tap()
+        XCTAssertTrue(thirdFret.waitForNonExistence(timeout: 3), "the menu closes")
+        app.dismissPopover()
+        XCTAssertTrue(
+            app.buttons["I, B♭ major: B♭, D, F"].waitForExistence(timeout: 3),
+            "without the capo the cards are plain again"
+        )
+        XCTAssertTrue(capoMenu.waitForNonExistence(timeout: 3), "the settings close")
+        app.menuButton(labelled: "Root").tap()
+        app.buttons["G"].firstMatch.tap()
     }
 
     /// The Scales screen shows the chords as cards under the board and changes one note in

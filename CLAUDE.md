@@ -26,7 +26,7 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   uploads it to Apple's notary service and staples it; like the store script, the owner runs it.
   `DeviceKind` names the device (phone, iPad, Mac); the Mac skips the mirroring-detected
   fallback to the full-screen board.
-- Instrument (a segmented pill in the Scales tab's toolbar row): `Instrument` is guitar or keyboard.
+- Instrument (a segmented pill in the Scales tab's toolbar row): `Instrument` is guitar, bass or keyboard.
   `KeyboardLayout` (C to a closing C, 13 keys per octave plus one; one or two octaves) and
   `KeyboardView` mirror `FretboardLayout` and `FretboardView`; `TVDisplayView` and
   `ContentView` switch on `PracticeSettings.selectedInstrument`. The stored fields
@@ -36,6 +36,30 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
   Scale keys carry a circle (labels as on the fretboard) and the note name on the key
   unless the circles already show names. Frets, tuning and string options are hidden while
   Keyboard is chosen; the Octaves picker is hidden for the guitar.
+- Bass guitar (`Instrument.bass`): the same `FretboardLayout` and `FretboardView` as the
+  guitar, built from `PracticeSettings.boardOpenStrings` (four strings, or five for the
+  five-string tuning). The bass has its own tunings (`BassTuning` in `Music/BassTuning.swift`:
+  standard, half step down, drop D, five-string) in the optional field `bassTuning`, nil for
+  standard, so the guitar's tuning is kept when the player switches back.
+  `Instrument.isFretted` is true for guitar and bass; the gear popover shows the bass the
+  frets, its tuning (`bassTuningPicker`) and the string switches, and no capo. The TV
+  caption reads "Bass · Drop D" and the board is spoken as "Bass fretboard showing G Major".
+  Three instrument pills beside three label pills are wider than an iPhone, so the folded
+  toolbar's last fallback draws both pills with `WordWidthSegments` (a wrapped
+  `UISegmentedControl` whose segments are as wide as their own words) inside `SharedPillRow`.
+- Capo (the Capo row in the gear popover, guitar only; identifiers `capoPicker`, `capoAdvice`,
+  `capoNote`): `PracticeSettings.capoFret` is optional and nil for no capo. `FretboardLayout`
+  carries the capo's fret and leaves the frets behind it empty; `FretboardView` draws the bar
+  (`FretboardGeometry.capoBarRect`, palette colour `capo`). `CapoTransposition`
+  (`Music/Capo.swift`) names the shape each chord is fingered as: the whole key moves down by
+  the capo's fret and is spelled as the simpler of the two keys, so B♭ major on fret 3 is
+  fingered as G major. Each chord card carries the shape (`BoardChordChipContent.capoShape`:
+  "G shape" in green for an open chord, "Bm barre", "F♯° shape") and a line above the cards
+  names the key. `Capo.suggestions` counts the open chords each fret gives for the picker's
+  rows and `Capo.advice` names the best frets. Shapes are named only in standard and
+  half-step-down tuning (`Tuning.standardShapeOffset`; half step down counts one semitone
+  less); other tunings draw the capo alone, and the keyboard ignores it. The TV caption
+  reads "Standard tuning · Capo 3" (`PracticeSettings.boardCaption`).
 - Layout: `Scales/Music` is pure theory (spelling, formulas, tunings, fret positions) with no UI;
   `Scales/Session` holds the saved settings shared by both screens; `Scales/Views` draws them.
 - Chords on the Scales screen (`ScaleChordsRow`): the scale's `boardChords()` as chips
@@ -88,7 +112,13 @@ The Xcode project is **generated** by xcodegen from `project.yml`; edit the yml,
 - iPad: the app runs on iPhone and iPad (`TARGETED_DEVICE_FAMILY` "1,2"). iPadOS 26 ignores
   orientation requests because every iPad window can be resized, so `OrientationLock` only
   acts on the iPhone (`canRotateScreen`); on an upright iPad the full-screen board keeps the
-  TV's 16:9 shape and asks the player to turn the iPad. Wide windows (regular horizontal
+  TV's 16:9 shape and asks the player to turn the iPad. On an iPhone the full-screen board
+  uses `PhoneBoardMetrics` (Swift only, not mirrored): the title, the spelled notes, the
+  tuning and the close button share one header row, the overscan margins shrink to a
+  hair, and the keyboard stretches its keys taller than a real piano's
+  (`KeyboardGeometry.stretchedHeightToWidth`, capped at twice the true shape, mirrored in
+  Kotlin) so the board fills the screen; the TV and the Scales screen keep
+  `TVLayoutMetrics` and the true key shape. Wide windows (regular horizontal
   size class) get a taller board on the Scales screen and roomier chord tables; an iPad
   app sharing the screen with another one falls back to the phone sizes. The iPad shows its
   tabs floating at the top, which UI tests can't find as a tab bar, so tests open tabs

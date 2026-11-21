@@ -6,6 +6,8 @@ import com.alnourkhalifa.scales.core.assertSame
 import com.alnourkhalifa.scales.core.board.BoardChordChipContent
 import com.alnourkhalifa.scales.core.bool
 import com.alnourkhalifa.scales.core.int
+import com.alnourkhalifa.scales.core.music.BassTuning
+import com.alnourkhalifa.scales.core.music.Instrument
 import com.alnourkhalifa.scales.core.music.Letter
 import com.alnourkhalifa.scales.core.music.NoteName
 import com.alnourkhalifa.scales.core.music.ScaleChord
@@ -13,6 +15,7 @@ import com.alnourkhalifa.scales.core.music.ScaleDegree
 import com.alnourkhalifa.scales.core.music.ScaleEdit
 import com.alnourkhalifa.scales.core.music.ScaleReference
 import com.alnourkhalifa.scales.core.music.ScaleType
+import com.alnourkhalifa.scales.core.music.Tuning
 import com.alnourkhalifa.scales.core.music.boardChords
 import com.alnourkhalifa.scales.core.music.letterTriads
 import com.alnourkhalifa.scales.core.obj
@@ -41,7 +44,8 @@ import java.util.UUID
  * Two of Swift's quirks are pinned on purpose: the ringed chord stays picked when the scale
  * changes (step 2, no card marked and nothing ringed, since the chord is no longer one of the
  * cards), and a board change shows again when the player picks its scale in its key again
- * (step 7). The last three steps ring a blues scale's borrowed A7, whose C♯ stays unringed.
+ * (step 7). Then a blues scale's borrowed A7 is rung, whose C♯ stays unringed, and the last
+ * five steps put a capo on B♭ major and change the tuning and instrument under it.
  */
 class AnswersSessionTest {
     @get:Rule
@@ -65,8 +69,9 @@ class AnswersSessionTest {
 
     private val unknownId = UUID.fromString("00000000-0000-0000-0000-0000000000FF")
 
-    /** Every step in the generator's order: the G major walk, then the blues scale's. */
-    private fun steps(): List<Step> = noteChangeSteps() + borrowedChordSteps()
+    /** Every step in the generator's order: the G major walk, the blues scale's, then the
+     *  capo's. */
+    private fun steps(): List<Step> = noteChangeSteps() + borrowedChordSteps() + capoSteps()
 
     /** G major's chords ringed, a note changed and undone, and the I chord rung and cleared. */
     private fun noteChangeSteps(): List<Step> {
@@ -134,7 +139,44 @@ class AnswersSessionTest {
             },
         )
 
-    // feature: chord-chips-rings, note-edit-revert, chord-harmony
+    /** A capo on fret 3 of B♭ major, kept through a note change, a tuning without standard
+     *  shapes, a half-step-down tuning, and the keyboard, which ignores it. */
+    private fun capoSteps(): List<Step> =
+        listOf(
+            Step("B♭ Major with a capo on fret 3: the cards carry G Major's shapes") { session ->
+                session.choose(ScaleReference.BuiltIn(ScaleType.MAJOR), NoteName(Letter.B, -1))
+                session.updateSettings { settings -> settings.withSelectedCapoFret(CAPO_FRET) }
+            },
+            Step("lower the 7th with the capo on: changed and lost chords keep shapes") { session ->
+                session.transform(ScaleEdit.Lower(ScaleDegree.fromSymbol("7")))
+            },
+            Step("drop D with the capo on: the capo stays, the shapes go") { session ->
+                session.updateSettings { settings -> settings.copy(tuning = Tuning.DROP_D) }
+            },
+            Step("half step down with the capo on fret 3: shapes two semitones down") { session ->
+                session.updateSettings { settings -> settings.copy(tuning = Tuning.HALF_STEP_DOWN) }
+            },
+            Step("the keyboard with a capo fret still stored: no capo, no shapes") { session ->
+                session.updateSettings { settings ->
+                    val standard = settings.copy(tuning = Tuning.STANDARD)
+                    standard.withSelectedInstrument(Instrument.KEYBOARD)
+                }
+            },
+            Step(
+                "the bass with a capo fret still stored: its own caption, no capo, no shapes",
+            ) { session ->
+                session.updateSettings { settings ->
+                    settings.withSelectedInstrument(Instrument.BASS)
+                }
+            },
+            Step("the five-string bass: the caption names the tuning") { session ->
+                session.updateSettings { settings ->
+                    settings.withSelectedBassTuning(BassTuning.FIVE_STRING)
+                }
+            },
+        )
+
+    // feature: chord-chips-rings, note-edit-revert, chord-harmony, capo-shapes, bass
     @Test
     fun aScriptedSessionShowsWhatSwiftShows() {
         val answers = Answers.section("session").jsonArray
@@ -180,8 +222,16 @@ class AnswersSessionTest {
             state.boardChange != null,
         )
         checkBoardChange(case, expected, state.currentBoardChange)
-        val chips = BoardChordChipContent.chips(state.scale, state.currentBoardChange)
+        val capo = state.settings.capoTransposition(state.scale)
+        val chips = BoardChordChipContent.chips(state.scale, state.currentBoardChange, capo)
         checkChips(case, expected.array("chips"), chips, state.ringedChord)
+        assertSame("$case capoNote", expected.optionalString("capoNote"), capo?.note)
+        assertSame(
+            "$case boardCaption",
+            expected.string("boardCaption"),
+            state.settings.boardCaption,
+        )
+        assertSame("$case layout capoFret", state.settings.boardCapoFret, state.layout.capoFret)
         checkLibrary(case, expected, library)
     }
 
@@ -256,6 +306,11 @@ class AnswersSessionTest {
         return values
     }
 
+    private companion object {
+        /** The fret the generator puts the capo on. */
+        const val CAPO_FRET = 3
+    }
+
     /** Every card's words, Swift's `ChipAnswer`; shared with [AnswersChipsTest]'s reading. */
     private fun checkChips(
         case: String,
@@ -294,6 +349,14 @@ internal fun assertChipWords(
         "$case accessibilityLabel",
         answer.string("accessibilityLabel"),
         chip.accessibilityLabel,
+    )
+    assertSame("$case capoCaption", answer.optionalString("capoCaption"), chip.capoShape?.caption)
+    assertSame(
+        "$case capoFingering",
+        answer.optionalString("capoFingering"),
+        chip.capoShape
+            ?.fingering
+            ?.rawValue,
     )
 }
 

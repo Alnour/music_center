@@ -144,6 +144,23 @@ extension FretboardGeometry {
         max(3, cellWidth * 0.06)
     }
 
+    /// The capo's bar: a rounded bar across every string, centred in the capo fret's cell
+    /// and reaching a little past the outer strings, as a real capo does. It is narrower
+    /// than a note circle, so the notes on the capo's fret (the new open strings) are
+    /// drawn over it and stay readable.
+    func capoBarRect(fret: Int, stringCount: Int) -> CGRect {
+        let width = cellWidth * 0.3
+        let overhang = rowHeight * 0.46
+        let top = stringY(row: 0) - overhang
+        let bottom = stringY(row: stringCount - 1) + overhang
+        return CGRect(
+            x: noteX(fret: fret) - width / 2,
+            y: top,
+            width: width,
+            height: bottom - top
+        )
+    }
+
     /// The fret numbers above the board.
     var fretNumberFontSize: CGFloat {
         min(rowHeight, cellWidth) * 0.38

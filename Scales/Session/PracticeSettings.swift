@@ -61,6 +61,14 @@ struct PracticeSettings: Codable, Equatable, Sendable {
     /// `instrument` is nil for the guitar, so a default player's saved JSON and clip key
     /// never change.
     var keyboardOctaves: Int?
+    /// The fret the capo is on. Nil for no capo, the same way `instrument` is nil for the
+    /// guitar, so a player who never uses one keeps the same saved JSON and clip key.
+    var capoFret: Int?
+    /// How the bass guitar is tuned. The bass keeps its own tuning because the guitar's
+    /// six-string tunings (DADGAD, open G) have no four-string meaning. Nil for standard,
+    /// the same way `instrument` is nil for the guitar, so a player who never picks the
+    /// bass keeps the same saved JSON and clip key.
+    var bassTuning: BassTuning?
 
     /// Two octaves by default: a scale then shows its root twice and every chord shape
     /// fits without wrapping back to the start of the keyboard.
@@ -79,6 +87,57 @@ struct PracticeSettings: Codable, Equatable, Sendable {
     var selectedKeyboardOctaves: Int {
         get { keyboardOctaves ?? Self.defaultKeyboardOctaves }
         set { keyboardOctaves = newValue == Self.defaultKeyboardOctaves ? nil : newValue }
+    }
+
+    /// The capo's fret as the pickers see it; no capo is 0 and is stored as nil.
+    var selectedCapoFret: Int {
+        get { capoFret ?? 0 }
+        set { capoFret = newValue == 0 ? nil : newValue }
+    }
+
+    /// The bass guitar's tuning as the pickers see it; standard is stored as nil.
+    var selectedBassTuning: BassTuning {
+        get { bassTuning ?? .standard }
+        set { bassTuning = newValue == .standard ? nil : newValue }
+    }
+
+    /// The capo as the guitar's board draws it. The keyboard has no capo and bass players
+    /// do not use one, so a fret left set from the guitar is ignored on those boards.
+    var boardCapoFret: Int {
+        selectedInstrument == .guitar ? selectedCapoFret : 0
+    }
+
+    /// The open strings of the neck on the board, thickest first: the bass guitar's own
+    /// tuning while the bass is chosen, the guitar's tuning otherwise.
+    var boardOpenStrings: [NoteName] {
+        switch selectedInstrument {
+        case .bass: selectedBassTuning.openStrings
+        case .guitar, .keyboard: tuning.openStrings
+        }
+    }
+
+    /// How to rename the scale's chords as the shapes fingered with the capo on, or nil
+    /// when there is nothing to rename: the keyboard, the bass, no capo, or a tuning whose chord
+    /// shapes are not the standard ones.
+    func capoTransposition(for scale: Scale) -> CapoTransposition? {
+        CapoTransposition(scale: scale, capoFret: boardCapoFret, tuning: tuning)
+    }
+
+    /// The small caption beside the board's title on the TV: the tuning, and the capo's
+    /// fret when one is on. The tuning matters on a guitar, not on a piano. The bass names
+    /// itself first, because its neck could be mistaken for a guitar's from across a room.
+    var boardCaption: String {
+        switch selectedInstrument {
+        case .keyboard:
+            return Instrument.keyboard.title
+        case .bass:
+            return "\(Instrument.bass.title) · \(selectedBassTuning.shortName)"
+        case .guitar:
+            if boardCapoFret > 0 {
+                return "\(tuning.shortName) · Capo \(boardCapoFret)"
+            }
+            return tuning.shortName
+        }
     }
 
     /// The scale on the board, for pickers to select.

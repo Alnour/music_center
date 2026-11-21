@@ -181,7 +181,12 @@ final class PracticeSession {
     }
 
     var layout: FretboardLayout {
-        FretboardLayout(scale: scale, tuning: settings.tuning, fretCount: settings.fretCount)
+        FretboardLayout(
+            scale: scale,
+            openStrings: settings.boardOpenStrings,
+            fretCount: settings.fretCount,
+            capoFret: settings.boardCapoFret
+        )
     }
 
     var keyboardLayout: KeyboardLayout {

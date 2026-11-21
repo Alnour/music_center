@@ -27,8 +27,11 @@ struct Answers: Encodable {
     let scaleTypes: [ScaleTypeAnswer]
     let families: [FamilyAnswer]
     let tunings: [TuningAnswer]
+    let bassTunings: [TuningAnswer]
     let spellings: [SpellingAnswer]
     let fretboards: [FretboardAnswer]
+    let bassFretboards: [FretboardAnswer]
+    let capo: CapoSection
     let keyboards: KeyboardsSection
     let edits: [ScaleEditsAnswer]
     let identifier: IdentifierSection
@@ -49,8 +52,11 @@ func buildAnswers() throws -> Answers {
         scaleTypes: scaleTypesSection(),
         families: familiesSection(),
         tunings: tuningsSection(),
+        bassTunings: bassTuningsSection(),
         spellings: spellingsSection(),
         fretboards: fretboardsSection(),
+        bassFretboards: bassFretboardsSection(),
+        capo: capoSection(),
         keyboards: keyboardsSection(),
         edits: try editsSection(),
         identifier: identifierSection(),

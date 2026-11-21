@@ -30,6 +30,7 @@ struct FretboardView: View {
             drawInlays(context, geometry)
             drawFretWires(context, geometry)
             drawStrings(context, geometry)
+            drawCapo(context, geometry)
             drawTones(context, geometry)
         }
     }
@@ -123,6 +124,15 @@ struct FretboardView: View {
                 .foregroundStyle(palette.fretNumber)
             context.draw(label, at: CGPoint(x: geometry.tuningLabelX, y: y), anchor: .center)
         }
+    }
+
+    /// The capo's bar across the strings, under the notes of its own fret.
+    private func drawCapo(_ context: GraphicsContext, _ geometry: FretboardGeometry) {
+        guard layout.capoFret > 0 else { return }
+        let bar = geometry.capoBarRect(fret: layout.capoFret, stringCount: layout.strings.count)
+        let cornerRadius = bar.width / 2
+        let path = Path(roundedRect: bar, cornerRadius: cornerRadius)
+        context.fill(path, with: .color(palette.capo))
     }
 
     private func drawTones(_ context: GraphicsContext, _ geometry: FretboardGeometry) {

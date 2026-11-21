@@ -11,6 +11,8 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -27,7 +29,14 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.alnourkhalifa.scales.core.music.Capo
+import com.alnourkhalifa.scales.core.music.Letter
+import com.alnourkhalifa.scales.core.music.NoteName
+import com.alnourkhalifa.scales.core.music.Scale
+import com.alnourkhalifa.scales.core.music.ScaleType
+import com.alnourkhalifa.scales.core.music.Tuning
 import com.alnourkhalifa.scales.ui.BOARD_TEST_TAG
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
@@ -90,6 +99,37 @@ class PhoneScalesTest {
         compose.onNodeWithText("Guitar").performClick()
         openBoardSettings()
         compose.onNodeWithText("Tuning").assertExists("guitar options return")
+        closeSheet()
+    }
+
+    // The bass draws its own four-string neck, with its own tunings and no capo.
+    // feature: bass
+    @Test
+    fun choosingTheBassShowsItsNeckAndTunings() {
+        compose.onNodeWithText("Bass").performClick()
+        compose.onNodeWithText("Bass").assertIsSelected()
+        compose
+            .onNodeWithContentDescription("Bass fretboard showing G Major")
+            .assertExists("the bass neck replaces the guitar's")
+        assertEquals(4, phone.app.sessionState.value.layout.strings.size)
+        firstChordCard().assertExists("the chords sit under the bass")
+
+        openBoardSettings()
+        val tuning = compose.onNodeWithTag("bassTuningMenu")
+        tuning.assertTextContains("Standard (E A D G)")
+        compose.onNodeWithTag("capoPicker").assertDoesNotExist()
+        tuning.performClick()
+        compose.onNodeWithTag("bassTuning-fiveString").performClick()
+        compose.waitForIdle()
+        tuning.assertTextContains("Five-string (B E A D G)")
+        assertEquals(5, phone.app.sessionState.value.layout.strings.size)
+        closeSheet()
+        waitUntilGone("Tuning")
+
+        compose.onNodeWithText("Guitar").performClick()
+        assertEquals(6, phone.app.sessionState.value.layout.strings.size)
+        openBoardSettings()
+        compose.onNodeWithTag("capoPicker").assertExists("the guitar's capo returns")
         closeSheet()
     }
 
@@ -185,6 +225,46 @@ class PhoneScalesTest {
 
         compose.onNodeWithTag("revertBoardChange").performClick()
         waitForTitle("G Major")
+    }
+
+    // A capo on fret 3 of B♭ major: the picker gives its advice, each card names the G major
+    // shape to finger, the line under the cards says so, and the keyboard hides the picker.
+    // feature: capo-shapes
+    @Test
+    fun aCapoNamesTheShapesOnTheCards() {
+        chooseRoot("B♭")
+        waitForTitle("B♭ Major")
+        openBoardSettings()
+        val bFlatMajor = Scale(NoteName(Letter.B, -1), ScaleType.MAJOR)
+        val advice = Capo.advice(bFlatMajor, Tuning.STANDARD)
+        compose.onNodeWithTag("capoAdvice").assertTextEquals(advice)
+        val picker = compose.onNodeWithTag("capoPicker")
+        picker.performScrollTo()
+        picker.assertTextContains("No capo")
+        picker.performClick()
+        compose.onNodeWithText("Fret 3 · as G Major · 5 of 7 open").assertExists()
+        compose.onNodeWithTag("capoFret-3").performClick()
+        compose.waitForIdle()
+        picker.assertTextContains("Fret 3")
+        closeSheet()
+        waitUntilGone("Capo")
+
+        val tonic = "I, B♭ major: B♭, D, F. Fingered as G major, an open chord."
+        compose.onNodeWithContentDescription(tonic).assertExists("the I card names its shape")
+        val mediant =
+            hasContentDescription("iii, D minor: D, F, A. Fingered as B minor, a barre chord.")
+        compose.onNodeWithTag("boardChords").performScrollToNode(mediant)
+        compose.onNode(mediant).assertExists("a barre shape is named too")
+        compose
+            .onNodeWithTag("capoNote")
+            .assertTextEquals("Capo on fret 3: finger the chords as in G Major.")
+        assertEquals(3, phone.app.sessionState.value.settings.capoFret)
+
+        compose.onNodeWithText("Keyboard").performClick()
+        compose.onNodeWithTag("capoNote").assertDoesNotExist()
+        openBoardSettings()
+        compose.onNodeWithTag("capoPicker").assertDoesNotExist()
+        closeSheet()
     }
 
     // The pills change what the circles show; TalkBack hears it as the board's state.

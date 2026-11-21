@@ -56,7 +56,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alnourkhalifa.scales.core.board.BoardChordChipContent
+import com.alnourkhalifa.scales.core.music.CapoChordShape
 import com.alnourkhalifa.scales.core.music.ChordChange
+import com.alnourkhalifa.scales.core.music.ChordFingering
 import com.alnourkhalifa.scales.core.music.ScaleChord
 
 /**
@@ -67,7 +69,8 @@ import com.alnourkhalifa.scales.core.music.ScaleChord
  * @property fill a card's background, as UIKit's `secondarySystemFill`.
  * @property ringedFill the background of the card whose notes are ringed on the board.
  * @property ring the edge of that card, the board's chord colour (`FretboardPalette.chordRing`)
- *   so card and board match.
+ *   so card and board match. An open capo shape's line takes it too, so "easy chord" reads in
+ *   the same green the board rings chords in.
  * @property primary the notes, and major chord names, as SwiftUI's `.primary`.
  * @property secondary the numerals and the change sentence, as SwiftUI's `.secondary`.
  * @property orange the "was Gm" caption.
@@ -177,7 +180,7 @@ private const val CARD_TAP_LABEL = "Ring the chord's notes on the board"
  * a phone in two, each card large enough to read from playing distance.
  *
  * What differs from Swift: the caller builds [chips] with `BoardChordChipContent.chips(scale,
- * change)` (Swift's view takes the scale and the change and builds them itself), and passes
+ * change, capo)` (Swift's view takes the scale and the change and builds them itself), and passes
  * the [colors] because this module has no theme, and gives the [harmonyNote] only while no
  * change is showing (Swift checks `change == nil` itself). The grid is a `LazyVerticalGrid`,
  * so the caller gives it a bounded height, as the Scales screen does by capping it at a
@@ -189,6 +192,8 @@ private const val CARD_TAP_LABEL = "Ring the chord's notes on the board"
  *   chords make two rows; a wide window has room for roomier ones.
  * @param harmonyNote the line under the cards saying where borrowed chords come from
  *   (`Scale.harmonyNote`), or null for none.
+ * @param capoNote the line above the cards saying which key's shapes the capo lines name
+ *   (`CapoTransposition.note`), or null without a capo.
  */
 @Composable
 fun ScaleChordsRow(
@@ -199,6 +204,7 @@ fun ScaleChordsRow(
     modifier: Modifier = Modifier,
     cardMinimumWidth: Dp = 84.dp,
     harmonyNote: String? = null,
+    capoNote: String? = null,
 ) {
     if (chips.isEmpty()) {
         val emptyStyle = TextStyle(color = colors.secondary, fontSize = 13.sp)
@@ -214,6 +220,10 @@ fun ScaleChordsRow(
     // them to the start.
     val across = Arrangement.spacedBy(CARD_SPACING, Alignment.CenterHorizontally)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Above the cards, as on iOS, so it is read before the shape lines it explains.
+        if (capoNote != null) {
+            ChordFootnote(capoNote, "capoNote", colors)
+        }
         // Weighted without filling: as tall as its cards, but never pushing the note out.
         val gridModifier =
             Modifier
@@ -238,15 +248,26 @@ fun ScaleChordsRow(
             }
         }
         if (harmonyNote != null) {
-            val noteStyle =
-                TextStyle(color = colors.secondary, fontSize = 13.sp, fontFamily = MusicFontFamily)
-            BasicText(
-                text = harmonyNote,
-                style = noteStyle,
-                modifier = Modifier.testTag("harmonyNote"),
-            )
+            ChordFootnote(harmonyNote, "harmonyNote", colors)
         }
     }
+}
+
+/** One small grey line beside the cards: where borrowed chords come from (under them), or
+ *  which key's shapes the capo lines name (above them). */
+@Composable
+private fun ChordFootnote(
+    text: String,
+    tag: String,
+    colors: ChordChipColors,
+) {
+    val noteStyle =
+        TextStyle(color = colors.secondary, fontSize = 13.sp, fontFamily = MusicFontFamily)
+    BasicText(
+        text = text,
+        style = noteStyle,
+        modifier = Modifier.testTag(tag),
+    )
 }
 
 /**
@@ -414,7 +435,38 @@ private fun BoardChordChip(
         NumeralLine(chip, colors)
         ChordName(chip, colors)
         NotesLine(chip, colors)
+        val capoShape = chip.capoShape
+        if (capoShape != null) {
+            CapoShapeLine(capoShape, colors)
+        }
     }
+}
+
+/**
+ * The shape to finger with the capo on, "G shape" or "Bm barre", in small type under the
+ * notes. An open shape is green so the easy chords stand out across the row; a barre or
+ * movable shape stays in the secondary colour.
+ */
+@Composable
+private fun CapoShapeLine(
+    shape: CapoChordShape,
+    colors: ChordChipColors,
+) {
+    val isOpen = shape.fingering == ChordFingering.OPEN
+    val color = if (isOpen) colors.ring else colors.secondary
+    val style =
+        CAPTION2.copy(
+            color = color,
+            fontFamily = MusicFontFamily,
+            fontWeight = FontWeight.SemiBold,
+        )
+    BasicText(
+        text = shape.caption,
+        style = style,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 /** The numeral (♭III) in a semibold serif, with the change caption at the far end. */

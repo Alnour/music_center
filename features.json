@@ -131,6 +131,16 @@
       "test": "ui"
     },
     {
+      "id": "capo-shapes",
+      "title": "Capo: the bar on the neck, each chord's shape to finger, and the frets with the most open chords",
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "required",
+        "androidTv": "required"
+      },
+      "test": "ui"
+    },
+    {
       "id": "note-edit-revert",
       "title": "Change one note of the board's scale in place and go back",
       "platforms": {
@@ -154,6 +164,16 @@
     {
       "id": "keyboard",
       "title": "Keyboard instrument with one or two octaves",
+      "platforms": {
+        "ios": "required",
+        "androidPhone": "required",
+        "androidTv": "required"
+      },
+      "test": "ui"
+    },
+    {
+      "id": "bass",
+      "title": "Bass guitar instrument: a four- or five-string neck with its own tunings",
       "platforms": {
         "ios": "required",
         "androidPhone": "required",

@@ -28,6 +28,9 @@ struct ContentView: View {
     /// The largest share of the screen the chord cards may take, so the board always keeps
     /// most of the height even when a changed scale lists every chord it had and has.
     private static let chordsHeightShare: CGFloat = 0.34
+    /// With a capo on, every card is one line taller (its shape) and a line names the key,
+    /// so two rows of cards need a larger share to show without scrolling.
+    private static let chordsHeightShareWithCapo: CGFloat = 0.43
 
     var body: some View {
         @Bindable var session = session
@@ -71,12 +74,13 @@ struct ContentView: View {
                         ScaleChordsRow(
                             scale: session.scale,
                             change: session.currentBoardChange,
+                            capo: session.settings.capoTransposition(for: session.scale),
                             ringedChord: session.ringedChord,
                             onTap: { chord in session.toggleRing(for: chord) },
                             cardMinimumWidth: isWide ? 120 : 84
                         )
                     }
-                    .frame(maxHeight: proxy.size.height * Self.chordsHeightShare)
+                    .frame(maxHeight: proxy.size.height * chordsHeightShare)
                     .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, isWide ? 20 : 12)
@@ -113,7 +117,7 @@ struct ContentView: View {
                     }
                     .accessibilityIdentifier("boardSettings")
                     .popover(isPresented: $isShowingBoardSettings) {
-                        BoardSettingsMenu(settings: $session.settings)
+                        BoardSettingsMenu(settings: $session.settings, scale: session.scale)
                             .presentationCompactAdaptation(.popover)
                     }
                 }
@@ -146,12 +150,18 @@ struct ContentView: View {
         }
     }
 
+    /// The largest share of the screen's height the chord cards may take.
+    private var chordsHeightShare: CGFloat {
+        let hasCapoShapes = session.settings.capoTransposition(for: session.scale) != nil
+        return hasCapoShapes ? Self.chordsHeightShareWithCapo : Self.chordsHeightShare
+    }
+
     /// The fretboard or the piano octave, whichever instrument the player chose, filling
     /// whatever height the chords leave it.
     @ViewBuilder
     private func phoneBoard(palette: FretboardPalette) -> some View {
         switch session.settings.selectedInstrument {
-        case .guitar:
+        case .guitar, .bass:
             PhoneFretboard(
                 settings: session.settings,
                 layout: session.layout,
@@ -171,6 +181,7 @@ struct ContentView: View {
     private var boardAccessibilityLabel: String {
         switch session.settings.selectedInstrument {
         case .guitar: "Fretboard showing \(session.scale.title)"
+        case .bass: "Bass fretboard showing \(session.scale.title)"
         case .keyboard: "Keyboard showing \(session.scale.title)"
         }
     }
@@ -313,7 +324,9 @@ private struct PhoneKeyboard: View {
 
 /// One slim row above the board with everything a player changes while practising: the
 /// key and scale as menus, the instrument and the labels as small segmented pills, and the
-/// note-change menu. On a narrow phone the row folds into two lines.
+/// note-change menu. On a narrow phone the row folds into two lines, and when the pills are
+/// still wider than the screen at their natural size (three instruments and three label
+/// styles on an iPhone) they share the line's width, each segment as wide as its own word.
 private struct BoardToolbar: View {
     @Binding var root: NoteName
     @Binding var scale: ScaleReference
@@ -331,14 +344,27 @@ private struct BoardToolbar: View {
                 changeNoteButton
             }
             VStack(spacing: 6) {
-                HStack(spacing: 12) {
-                    scaleMenus
-                    Spacer(minLength: 0)
-                    changeNoteButton
-                }
+                menusLine
                 HStack(spacing: 8) {
                     pills
                     Spacer(minLength: 0)
+                }
+            }
+            VStack(spacing: 6) {
+                menusLine
+                SharedPillRow {
+                    WordWidthSegments(
+                        label: "Instrument",
+                        choices: Instrument.allCases,
+                        titles: Instrument.allCases.map(\.title),
+                        selection: $instrument
+                    )
+                    WordWidthSegments(
+                        label: "Labels",
+                        choices: NoteLabelStyle.allCases,
+                        titles: NoteLabelStyle.allCases.map(\.title),
+                        selection: $labelStyle
+                    )
                 }
             }
         }
@@ -361,6 +387,17 @@ private struct BoardToolbar: View {
         .fixedSize()
     }
 
+    /// The Root and Scale menus with the note-change button, the first of two lines.
+    private var menusLine: some View {
+        HStack(spacing: 12) {
+            scaleMenus
+            Spacer(minLength: 0)
+            changeNoteButton
+        }
+    }
+
+    /// The instrument and label pills at their natural size, where each segment is as wide
+    /// as the pill's longest word.
     @ViewBuilder
     private var pills: some View {
         Picker("Instrument", selection: $instrument) {
@@ -386,16 +423,124 @@ private struct BoardToolbar: View {
     }
 }
 
-/// One-time setup behind the gear button: frets, tuning and string order for the guitar,
-/// the octave count for the keyboard. Each instrument shows only its own rows.
+/// Lays the instrument pill and the label pill side by side across the whole width, each
+/// taking the share of it that its natural width asks for, so the pill with the longer
+/// words gets more room.
+private struct SharedPillRow: Layout {
+    private static let spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        var height: CGFloat = 0
+        for subview in subviews {
+            let subviewHeight = subview.sizeThatFits(.unspecified).height
+            height = max(height, subviewHeight)
+        }
+        let width = proposal.width ?? 0
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) {
+        guard subviews.count == 2 else { return }
+        let firstNaturalWidth = subviews[0].sizeThatFits(.unspecified).width
+        let secondNaturalWidth = subviews[1].sizeThatFits(.unspecified).width
+        let naturalWidth = firstNaturalWidth + secondNaturalWidth
+        guard naturalWidth > 0 else { return }
+        let sharedWidth = bounds.width - Self.spacing
+        let firstWidth = sharedWidth * firstNaturalWidth / naturalWidth
+        let secondWidth = sharedWidth - firstWidth
+        let firstProposal = ProposedViewSize(width: firstWidth, height: bounds.height)
+        let secondProposal = ProposedViewSize(width: secondWidth, height: bounds.height)
+        subviews[0].place(at: bounds.origin, proposal: firstProposal)
+        let secondOrigin = CGPoint(x: bounds.minX + firstWidth + Self.spacing, y: bounds.minY)
+        subviews[1].place(at: secondOrigin, proposal: secondProposal)
+    }
+}
+
+/// A segmented pill whose segments are as wide as their own words.
+///
+/// SwiftUI's segmented picker makes every segment as wide as the longest word, so
+/// "Guitar | Bass | Keyboard" beside "Notes | Degrees | Dots" needs more width than an
+/// iPhone has and "Keyboard" is cut short. UIKit's control can size each segment by its
+/// content, which SwiftUI does not expose, so the narrow toolbar wraps the control itself.
+private struct WordWidthSegments<Choice: Hashable>: UIViewRepresentable {
+    /// What VoiceOver calls the whole pill.
+    let label: String
+    let choices: [Choice]
+    /// One title per choice, in the same order.
+    let titles: [String]
+    @Binding var selection: Choice
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(owner: self)
+    }
+
+    func makeUIView(context: Context) -> UISegmentedControl {
+        let control = UISegmentedControl(items: titles)
+        control.apportionsSegmentWidthsByContent = true
+        control.accessibilityLabel = label
+        control.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.segmentChanged(_:)),
+            for: .valueChanged
+        )
+        return control
+    }
+
+    func updateUIView(_ control: UISegmentedControl, context: Context) {
+        context.coordinator.owner = self
+        let selectedIndex = choices.firstIndex(of: selection) ?? UISegmentedControl.noSegment
+        if control.selectedSegmentIndex != selectedIndex {
+            control.selectedSegmentIndex = selectedIndex
+        }
+    }
+
+    /// The control fills the width it is offered and keeps its own height.
+    func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        uiView control: UISegmentedControl,
+        context: Context
+    ) -> CGSize? {
+        let naturalSize = control.intrinsicContentSize
+        let width = proposal.width ?? naturalSize.width
+        return CGSize(width: width, height: naturalSize.height)
+    }
+
+    @MainActor
+    final class Coordinator: NSObject {
+        var owner: WordWidthSegments
+
+        init(owner: WordWidthSegments) {
+            self.owner = owner
+        }
+
+        @objc func segmentChanged(_ control: UISegmentedControl) {
+            let index = control.selectedSegmentIndex
+            guard owner.choices.indices.contains(index) else { return }
+            owner.selection = owner.choices[index]
+        }
+    }
+}
+
+/// One-time setup behind the gear button: frets, tuning, capo and string order for the
+/// guitar, the same without the capo for the bass, the octave count for the keyboard.
+/// Each instrument shows only its own rows.
 private struct BoardSettingsMenu: View {
     @Binding var settings: PracticeSettings
+    /// The scale on the board, which decides how many open chords each capo fret gives.
+    let scale: Scale
 
     var body: some View {
         Form {
             switch settings.selectedInstrument {
             case .guitar:
                 guitarOptions
+            case .bass:
+                bassOptions
             case .keyboard:
                 Picker("Octaves", selection: $settings.selectedKeyboardOctaves) {
                     ForEach(PracticeSettings.keyboardOctaveChoices, id: \.self) { count in
@@ -405,22 +550,80 @@ private struct BoardSettingsMenu: View {
                 .pickerStyle(.segmented)
             }
         }
-        .frame(minWidth: 300, minHeight: 240)
+        .frame(minWidth: 320, minHeight: 380)
         .presentationBackground(.regularMaterial)
+    }
+
+    /// The capo's fret, each choice saying which key's shapes it gives and how many of
+    /// them are open chords, with one line naming the best frets. A tuning without the
+    /// standard shapes lists the bare frets.
+    @ViewBuilder
+    private var capoOptions: some View {
+        let suggestions = Capo.suggestions(for: scale, tuning: settings.tuning)
+        // The row shows only the chosen fret; the open menu spells out what each fret
+        // gives, which is too long for the row on a phone.
+        Picker(selection: $settings.selectedCapoFret) {
+            if suggestions.isEmpty {
+                ForEach(Capo.fretChoices, id: \.self) { fret in
+                    Text(Self.capoTitle(fret: fret)).tag(fret)
+                }
+            } else {
+                ForEach(suggestions, id: \.capoFret) { suggestion in
+                    Text(suggestion.label).tag(suggestion.capoFret)
+                }
+            }
+        } label: {
+            Text("Capo")
+        } currentValueLabel: {
+            Text(Self.capoTitle(fret: settings.selectedCapoFret))
+        }
+        .accessibilityIdentifier("capoPicker")
+        Text(Capo.advice(for: scale, tuning: settings.tuning))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("capoAdvice")
+    }
+
+    private static func capoTitle(fret: Int) -> String {
+        fret == 0 ? "No capo" : "Fret \(fret)"
     }
 
     @ViewBuilder
     private var guitarOptions: some View {
-        Picker("Frets", selection: $settings.fretCount) {
-            ForEach(PracticeSettings.fretCountChoices, id: \.self) { count in
-                Text("\(count) frets").tag(count)
-            }
-        }
+        fretCountPicker
         Picker("Tuning", selection: $settings.tuning) {
             ForEach(Tuning.allCases) { tuning in
                 Text(tuning.displayName).tag(tuning)
             }
         }
+        capoOptions
+        stringOrderToggles
+    }
+
+    /// The bass guitar's rows: the guitar's without the capo, and with the bass's own
+    /// tunings, so the guitar's tuning is still there when the player switches back.
+    @ViewBuilder
+    private var bassOptions: some View {
+        fretCountPicker
+        Picker("Tuning", selection: $settings.selectedBassTuning) {
+            ForEach(BassTuning.allCases) { tuning in
+                Text(tuning.displayName).tag(tuning)
+            }
+        }
+        .accessibilityIdentifier("bassTuningPicker")
+        stringOrderToggles
+    }
+
+    private var fretCountPicker: some View {
+        Picker("Frets", selection: $settings.fretCount) {
+            ForEach(PracticeSettings.fretCountChoices, id: \.self) { count in
+                Text("\(count) frets").tag(count)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var stringOrderToggles: some View {
         Toggle("Thin string on top", isOn: $settings.thinStringOnTop)
         Toggle("Left-handed", isOn: $settings.isLeftHanded)
     }

@@ -40,6 +40,9 @@ data class FretboardPalette(
     val chordFill: Color,
     val chordText: Color,
     val chordRing: Color,
+    /** The capo's bar: darker than the strings and fret wires it clamps, lighter than the
+     *  note circles drawn over it. */
+    val capo: Color,
 ) {
     /** The two palettes and the choice between them. */
     companion object {
@@ -63,6 +66,7 @@ data class FretboardPalette(
                 chordFill = Color(0xFF2E9E6B),
                 chordText = Color(0xFFFFFFFF),
                 chordRing = Color(0xFF1F7A50),
+                capo = Color(0xFF4A4F5C),
             )
 
         val dark: FretboardPalette =
@@ -85,6 +89,7 @@ data class FretboardPalette(
                 chordFill = Color(0xFF4CD98F),
                 chordText = Color(0xFF07261A),
                 chordRing = Color(0xFF7CF0B4),
+                capo = Color(0xFF5C6478),
             )
 
         /** The palette for a dark or a light screen. */

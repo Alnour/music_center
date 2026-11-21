@@ -37,8 +37,26 @@ struct KeyboardGeometry {
         CGFloat(whiteKeyCount) / whiteKeyHeightToWidth
     }
 
-    init(size: CGSize, whiteKeyCount: Int) {
-        let widthToHeight = Self.widthToHeight(whiteKeyCount: whiteKeyCount)
+    /// The tallest a white key may be stretched when the keyboard fills a short, wide
+    /// screen (an iPhone turned sideways): twice its true shape, still a readable key.
+    static let maxStretchedHeightToWidth: CGFloat = whiteKeyHeightToWidth * 2
+
+    /// The key shape that fills this frame, for the full-screen board on a phone: the keys
+    /// grow taller than a real piano's so the board is not a strip across a short screen,
+    /// up to `maxStretchedHeightToWidth`, and never shorter than their true shape.
+    static func stretchedHeightToWidth(size: CGSize, whiteKeyCount: Int) -> CGFloat {
+        let whiteKeyWidth = size.width / CGFloat(whiteKeyCount)
+        let fillingHeightToWidth = size.height / whiteKeyWidth
+        let cappedHeightToWidth = min(fillingHeightToWidth, maxStretchedHeightToWidth)
+        return max(cappedHeightToWidth, whiteKeyHeightToWidth)
+    }
+
+    init(
+        size: CGSize,
+        whiteKeyCount: Int,
+        whiteKeyHeightToWidth: CGFloat = KeyboardGeometry.whiteKeyHeightToWidth
+    ) {
+        let widthToHeight = CGFloat(whiteKeyCount) / whiteKeyHeightToWidth
         let fittedWidth = min(size.width, size.height * widthToHeight)
         let fittedHeight = fittedWidth / widthToHeight
         whiteKeyWidth = fittedWidth / CGFloat(whiteKeyCount)

@@ -1,6 +1,5 @@
 package com.alnourkhalifa.scales.app.tv
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -57,7 +56,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Border
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.MaterialTheme
@@ -94,7 +92,7 @@ private const val NAME_UNITS = 4f
 private const val NOTES_UNITS = 2.4f
 
 /** The change sentence, the button's words and the empty footnote, in screen units. */
-private const val SMALL_TEXT_UNITS = 2.2f
+internal const val SMALL_TEXT_UNITS = 2.2f
 
 /** The "Back to …" button's height in screen units: its words' line plus a little room. */
 private const val BUTTON_HEIGHT_UNITS = 4.4f
@@ -107,7 +105,8 @@ private const val EMPTY_FOOTNOTE = "This scale's notes don't stack into three-no
  * to …" button above them while that change is showing. The TV twin of the phone's
  * `ScaleChordsRow` and `BoardChangeRow`. A pentatonic or blues scale shows the chords it is
  * played over (`Scale.boardChords`): a chord note the scale lacks is faint, and a line under
- * the chips says where the chords come from while no change is showing.
+ * the chips says where the chords come from while no change is showing. With a capo on, each
+ * chip names the shape to finger and a line under the chips says which key's shapes they are.
  *
  * Why its own composable rather than the phone's grid: the phone's cards are touch targets in
  * a grid that wraps; a remote moves focus one step at a time, so the TV puts every chord on
@@ -145,7 +144,8 @@ fun TvChordRow(
             palette = palette,
         )
     val change = state.currentBoardChange
-    val chips = BoardChordChipContent.chips(state.scale, change)
+    val capo = state.settings.capoTransposition(state.scale)
+    val chips = BoardChordChipContent.chips(state.scale, change, capo)
     val rowModifier =
         modifier
             .fillMaxWidth()
@@ -169,18 +169,12 @@ fun TvChordRow(
         // the footnote's size and colour. It takes no focus, so D-pad moves are unchanged.
         val harmonyNote = state.scale.harmonyNote
         if (change == null && harmonyNote != null) {
-            val noteStyle =
-                unitStyle(unit, SMALL_TEXT_UNITS).copy(
-                    color = colors.secondary,
-                    fontFamily = MusicFontFamily,
-                )
-            BasicText(
-                text = harmonyNote,
-                style = noteStyle,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = unit * 0.8f).testTag("harmonyNote"),
-            )
+            TvChipFootnote(harmonyNote, "harmonyNote", colors, unit)
+        }
+        // "Capo on fret 3: finger the chords as in G Major.", after any harmony note, and
+        // kept through a note change because the chips still name their shapes then.
+        if (capo != null) {
+            TvChipFootnote(capo.note, "capoNote", colors, unit)
         }
     }
 }
@@ -210,7 +204,7 @@ private fun screenUnit(): Dp {
 }
 
 /** A text style of [multiple] screen units, its line a little taller than the glyphs. */
-private fun unitStyle(
+internal fun unitStyle(
     unit: Dp,
     multiple: Float,
 ): TextStyle {
@@ -508,17 +502,7 @@ private fun TvChordChip(
             focusedSelectedContainerColor = colors.ringedFill,
             pressedSelectedContainerColor = colors.ringedFill,
         )
-    val ringBorder = Border(BorderStroke(2.dp, colors.ring), shape = shape)
-    val focusBorder = Border(BorderStroke(2.dp, colors.primary), shape = shape)
-    val focusedRingBorder = Border(BorderStroke(3.dp, colors.ring), shape = shape)
-    val borders =
-        SelectableSurfaceDefaults.border(
-            focusedBorder = focusBorder,
-            pressedBorder = focusBorder,
-            selectedBorder = ringBorder,
-            focusedSelectedBorder = focusedRingBorder,
-            pressedSelectedBorder = focusedRingBorder,
-        )
+    val borders = tvChipBorders(colors, shape)
     val semanticsModifier =
         modifier.semantics {
             contentDescription = chip.accessibilityLabel
@@ -543,6 +527,7 @@ private fun TvChordChip(
             NumeralLine(chip, colors, unit)
             ChordName(chip, colors, unit)
             NotesLine(chip, colors, unit)
+            TvCapoShapeLine(chip.capoShape, colors, unit)
         }
     }
 }

@@ -38,6 +38,18 @@ enum Tuning: String, CaseIterable, Codable, Identifiable, Sendable {
         }
     }
 
+    /// How far the tuning sits from standard when its chord shapes are the standard ones:
+    /// 0 for standard, -1 a half step down (an E shape then sounds E♭). Nil for the
+    /// tunings that change the gaps between strings, where the open chord shapes of the
+    /// books no longer apply, so a capo names no shapes there.
+    var standardShapeOffset: Int? {
+        switch self {
+        case .standard: 0
+        case .halfStepDown: -1
+        case .dropD, .dadgad, .openG, .openD: nil
+        }
+    }
+
     /// Open-string notes from the thickest (6th) string to the thinnest (1st).
     var openStrings: [NoteName] {
         switch self {

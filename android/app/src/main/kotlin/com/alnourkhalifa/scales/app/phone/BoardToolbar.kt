@@ -24,7 +24,7 @@ import com.alnourkhalifa.scales.core.session.SessionState
  * It grows with the system font size, since the labels do, so large text folds the row
  * rather than squeezing the pills.
  */
-private val ONE_ROW_MINIMUM_WIDTH = 600.dp
+private val ONE_ROW_MINIMUM_WIDTH = 680.dp
 
 /**
  * One slim row above the board with everything a player changes while practising: the key
@@ -78,9 +78,10 @@ fun BoardToolbar(
 }
 
 /**
- * The pills on their own line under a narrow phone's menus. They share the width by their
- * segment counts (two for the instrument, three for the labels), so every segment is the
- * same width, as on the iPhone.
+ * The pills on their own line under a narrow phone's menus. Three instruments and three label
+ * styles are wider than a phone when every segment is as wide as the longest word, so here
+ * the pills and their segments share the width by the length of their words
+ * ([wordWeight]), as the iPhone's folded toolbar does.
  */
 @Composable
 private fun FoldedPills(
@@ -91,16 +92,41 @@ private fun FoldedPills(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val instrumentShare =
-            Instrument.entries.size
-                .toFloat()
-        val labelShare =
-            NoteLabelStyle.entries.size
-                .toFloat()
-        InstrumentPill(state, session, Modifier.weight(instrumentShare))
-        LabelPill(state, session, Modifier.weight(labelShare))
+        var instrumentShare = 0f
+        for (instrument in Instrument.entries) {
+            instrumentShare += wordWeight(instrument.title)
+        }
+        var labelShare = 0f
+        for (style in NoteLabelStyle.entries) {
+            labelShare += wordWeight(style.title)
+        }
+        InstrumentPill(
+            state = state,
+            session = session,
+            modifier = Modifier.weight(instrumentShare),
+            sharesWidthByWord = true,
+        )
+        LabelPill(
+            state = state,
+            session = session,
+            modifier = Modifier.weight(labelShare),
+            sharesWidthByWord = true,
+        )
     }
 }
+
+/** The letters' worth of width a segment's padding takes, added to every word's length. */
+private const val SEGMENT_PADDING_IN_LETTERS = 2f
+
+/**
+ * The share of a pill's width a segment with this word gets: its letters plus its padding.
+ * Counting letters stands in for measuring the text, which is close enough for six short
+ * words and keeps the row a plain weighted row.
+ */
+private fun wordWeight(title: String): Float = title.length + SEGMENT_PADDING_IN_LETTERS
+
+/** Every segment equally wide, the control's own default. */
+private const val EQUAL_SEGMENT_WEIGHT = 1f
 
 /** The Root and Scale menus side by side. */
 @Composable
@@ -126,12 +152,13 @@ private fun ScaleMenus(
     }
 }
 
-/** Guitar | Keyboard. */
+/** Guitar | Bass | Keyboard. */
 @Composable
 private fun InstrumentPill(
     state: SessionState,
     session: PracticeSession,
     modifier: Modifier = Modifier,
+    sharesWidthByWord: Boolean = false,
 ) {
     IosSegmentedControl(
         options = Instrument.entries,
@@ -141,6 +168,9 @@ private fun InstrumentPill(
             session.updateSettings { settings -> settings.withSelectedInstrument(instrument) }
         },
         modifier = modifier.testTag("instrumentPill"),
+        segmentWeight = { instrument ->
+            if (sharesWidthByWord) wordWeight(instrument.title) else EQUAL_SEGMENT_WEIGHT
+        },
     )
 }
 
@@ -150,6 +180,7 @@ private fun LabelPill(
     state: SessionState,
     session: PracticeSession,
     modifier: Modifier = Modifier,
+    sharesWidthByWord: Boolean = false,
 ) {
     IosSegmentedControl(
         options = NoteLabelStyle.entries,
@@ -159,5 +190,8 @@ private fun LabelPill(
             session.updateSettings { settings -> settings.copy(labelStyle = style) }
         },
         modifier = modifier.testTag("labelPill"),
+        segmentWeight = { style ->
+            if (sharesWidthByWord) wordWeight(style.title) else EQUAL_SEGMENT_WEIGHT
+        },
     )
 }
